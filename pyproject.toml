@@ -1,0 +1,15 @@
+[project]
+name = "structrender"
+version = "0.0.0"
+description = "Engine-grounded neural game rendering with Engine-Keyed Persistent Appearance Memory (EPAM)"
+requires-python = ">=3.10"
+# Runtime/training dependencies are added milestone by milestone (KB §10),
+# starting at Milestone 2 (dataset pipeline). Kept empty deliberately for now.
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []

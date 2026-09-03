@@ -1,0 +1,161 @@
+[gd_scene load_steps=15 format=3 uid="uid://d220a5f57ka1r"]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/coin.gd" id="2_coin"]
+[ext_resource type="Script" path="res://scripts/spawner.gd" id="3_spawner"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
+size = Vector3(20, 2, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ns"]
+size = Vector3(20, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
+size = Vector3(0.5, 2, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ew"]
+size = Vector3(0.5, 2, 20)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_player"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_coin"]
+radius = 1.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_coin"]
+radius = 0.5
+height = 1.0
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.09, 0.11, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.6, 0.6, 0.6, 1)
+ambient_light_energy = 0.6
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8660254, -0.25, 0.4330127, 0, 0.8660254, 0.5, -0.5, -0.4330127, 0.75, 0, 12, 0)
+
+[node name="Arena" type="StaticBody3D" parent="."]
+
+[node name="GroundCollision" type="CollisionShape3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="GroundMesh" type="MeshInstance3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+mesh = SubResource("BoxMesh_ground")
+
+[node name="WallNorthCollision" type="CollisionShape3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -10)
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallNorthMesh" type="MeshInstance3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -10)
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="WallSouthCollision" type="CollisionShape3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 10)
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallSouthMesh" type="MeshInstance3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 10)
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="WallEastCollision" type="CollisionShape3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1, 0)
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="WallEastMesh" type="MeshInstance3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1, 0)
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="WallWestCollision" type="CollisionShape3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, 0)
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="WallWestMesh" type="MeshInstance3D" parent="Arena"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, 0)
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 8)
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="MainCamera" type="Camera3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 0.8660254, 0.5, 0, -0.5, 0.8660254, 0, 7, 12)
+
+[node name="Coin_0" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
+script = ExtResource("2_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Coin_0"]
+shape = SubResource("SphereShape3D_coin")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Coin_0"]
+mesh = SubResource("SphereMesh_coin")
+
+[node name="Coin_1" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1, 0)
+script = ExtResource("2_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Coin_1"]
+shape = SubResource("SphereShape3D_coin")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Coin_1"]
+mesh = SubResource("SphereMesh_coin")
+
+[node name="Coin_2" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 1, 0)
+script = ExtResource("2_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Coin_2"]
+shape = SubResource("SphereShape3D_coin")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Coin_2"]
+mesh = SubResource("SphereMesh_coin")
+
+[node name="Coin_3" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1, -7)
+script = ExtResource("2_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Coin_3"]
+shape = SubResource("SphereShape3D_coin")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Coin_3"]
+mesh = SubResource("SphereMesh_coin")
+
+[node name="Coin_4" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 1, -7)
+script = ExtResource("2_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Coin_4"]
+shape = SubResource("SphereShape3D_coin")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Coin_4"]
+mesh = SubResource("SphereMesh_coin")
+
+[node name="Spawner" type="Node3D" parent="."]
+script = ExtResource("3_spawner")

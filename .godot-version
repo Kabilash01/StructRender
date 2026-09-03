@@ -1,0 +1,6 @@
+4.7.2-stable
+# Full identifier: 4.7.2.stable.official.ed1daf0bf
+# Standard build (non-mono), linux.x86_64, from github.com/godotengine/godot releases.
+# Pinned per KB §12 "Fragile Areas -> Godot Structural Export" (pinned engine version).
+# Do not bump without re-running ./scripts/test.sh and noting it in the KB Decision Log
+# if any structural-export behaviour changes.

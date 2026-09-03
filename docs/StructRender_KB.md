@@ -2012,6 +2012,54 @@ Example:
 
 ---
 
+### Decision 22: M0 Logging Autoload Is Named `GameLog`, Not `Logger` (2026-09-03)
+
+- **Context:**  
+  `agent/specifications/m0_minimal_game.md` names the logging autoload `Logger`. Godot `4.7.2-stable` ships a built-in native `Logger` class (`ClassDB.class_exists("Logger") == true`). In GDScript the native class name shadows the autoload's global identifier, so any script referencing `Logger.log_event(...)` fails at parse time with `Static function "log_event()" not found in base "GDScriptNativeClass"`, and the autoload itself fails to instantiate.
+
+- **Chosen Path:**  
+  Register the M0 logging autoload as `GameLog` (script still `game_project/scripts/logger.gd`). All engine-side references use `GameLog`. The M0 spec's event schema, file layout (`user://logs/session_<unix_ts>.jsonl`), and NDJSON format are unchanged.
+
+- **Rejected Alternatives:**  
+  Keeping the name `Logger` (blocked by the engine); using `class_name` gymnastics or `Engine.get_singleton` lookups everywhere (adds noise for no benefit); downgrading Godot (engine version is pinned for structural-export reasons).
+
+- **Follow-up:**  
+  `agent/specifications/m0_minimal_game.md` should be updated to say `GameLog`; M1+ instrumentation must not reintroduce a `Logger` autoload.
+
+---
+
+### Decision 23: Structural-Export Render Path Is Pinned to Forward+ (2026-09-03)
+
+- **Context:**  
+  §12 "Fragile Areas → Godot Structural Export" names "version/rendering-path differences" a fragile area, but the KB never fixed a render path. Milestone 0's `game_project/project.godot` had to pick one; it sets `rendering/renderer/rendering_method = "forward_plus"` and also overrides the mobile method to `forward_plus`. Milestone 1's depth/normal/albedo/material/motion exporters and Milestone 10's runtime capture will be written against whatever path M0 established, so leaving it as an undocumented in-file choice risks a silent mismatch later.
+
+- **Chosen Path:**  
+  Pin the structural-export render path to **Forward+** for the current project horizon. Godot's Forward+ renderer exposes the G-buffer-style data (depth prepass, normal-roughness, per-pixel motion vectors) the structural exporters need; the Mobile and Compatibility paths do not expose the same buffers consistently. The `.mobile` override to `forward_plus` exists so a device/feature-tag fallback cannot silently switch the project onto an export-incompatible path.
+
+- **Rejected Alternatives:**  
+  Mobile / Compatibility render paths (missing or inconsistent structural buffers); leaving the render path unpinned (defeats the §12 "pinned engine version" style of mitigation and invites M1 exporter drift).
+
+- **Scope:**  
+  Changing the render path after this point is an architecture-breaking change for the data pipeline — it requires a new dated entry here and re-validation of every structural exporter, not a quiet `project.godot` edit.
+
+---
+
+### Decision 24: Test / Instrumentation Autoloads May Ship in `game_project`, Guarded (2026-09-03)
+
+- **Context:**  
+  Milestone 0 ships `SimDriver` — a headless input-driving, auto-quitting controller — as a project autoload in `game_project`, gated by a `structrender_sim` feature tag / headless check and a per-frame `Engine`-meta opt-out (`structrender_no_sim`). Milestones 1–2 will add more instrumentation autoloads (structural capture, entity-lifecycle recording) into the same shipped project. The KB had no convention for this.
+
+- **Chosen Path:**  
+  Instrumentation and test-support autoloads may live in `game_project`, but must be **inert by default in a normal windowed play session** — activated only by an explicit feature tag, headless detection, or an engine-meta / CLI flag — and must never write to `GameState` or otherwise become a source of gameplay truth (§4 Game Runtime boundary). Each such autoload documents its activation condition in its own file header.
+
+- **Rejected Alternatives:**  
+  A separate instrumented copy of the game project (duplication, drift between play and capture builds); unconditional instrumentation autoloads (risk of altering a normal play session, and of an input driver running during real play).
+
+- **Note:**  
+  `.claude/agent-memory/godot-engine/godot47_headless_testing.md` records that `set_physics_process(false)` is not reliably sticky for a node that defines `_physics_process`; instrumentation that needs a hard off-switch should use an explicit per-frame guard, not rely on disabling processing.
+
+---
+
 ## 10. Roadmap & Milestones
 
 ### Current Phase
@@ -2492,7 +2540,7 @@ Risk:
 
 Mitigation:
 - synthetic scenes;
-- pinned engine version;
+- pinned engine version — **Godot `4.7.2-stable` (`4.7.2.stable.official.ed1daf0bf`), standard build**, recorded in `/.godot-version` (pinned at Milestone 0, 2026-09-03);
 - visualization utilities;
 - early instrumentation prototype.
 

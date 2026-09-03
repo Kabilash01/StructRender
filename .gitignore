@@ -1,15 +1,28 @@
 # Data and checkpoints
-checkpoints/
+checkpoints/*
+!checkpoints/.gitkeep
 *.checkpoint
 *.pkl
 *.pth
 *.pt
 
 # Large data files
-data/
+/data/
 *.bin
 *.safetensors
 *.model
+
+# Recorded datasets (large; kept locally / on external storage — KB §5)
+data_pipeline/recorder/*
+!data_pipeline/recorder/.gitkeep
+
+# Deployment build artifacts (KB §10)
+*.onnx
+*.engine
+
+# Godot
+.godot/
+/game_project/android/
 
 # Python
 __pycache__/
@@ -42,6 +55,7 @@ wheels/
 *.swp
 *.swo
 *~
+*.bak
 
 # OS
 .DS_Store
