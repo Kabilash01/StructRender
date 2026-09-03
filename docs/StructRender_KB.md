@@ -2060,6 +2060,44 @@ Example:
 
 ---
 
+### Decision 25: Motion Vector Convention Pinned (2026-09-03)
+
+- **Context:**  
+  §12 flags "Motion Coordinate Convention" as the top fragile area (previous/current direction, NDC vs UV, Y-axis inversion, camera-only vs object motion). Milestone 1 computes motion vectors; leaving the convention implicit invites warp-direction bugs in Milestone 6 (temporal reprojection), where the sign of the field silently determines whether history is pulled from the right place.
+
+- **Chosen Path:**  
+  Motion is **backward** (frame `t` → frame `t-1`), **screen-UV normalized `[0,1]`**, **Y-down** (same axis as all structural buffers), includes **camera + rigid-object** motion, and is computed **analytically from engine transforms** (unproject current depth → apply `M_{t-1} M_t^{-1}` → reproject with the previous-frame camera), never estimated from pixels (consistent with Decision 7/8). Full definition in `data_pipeline/schemas/frame_structure.md` §4.
+
+- **The three "no valid previous correspondence" cases all resolve to `motion = (0,0)`, never a guess:**  
+  1. **Frame 0** (no `t-1` at all) — whole-frame zero buffer, plus `motion_valid = false` on the frame.  
+  2. **Background / sky** (`depth == +inf`) — per-pixel zero. Not reprojected at the far plane for camera-only motion: zero-history background is discarded by the M6 disocclusion confidence mask regardless, so far-plane camera motion buys nothing and adds a parallax failure mode.  
+  3. **Entity with no `t-1` transform** (spawned or first registered this frame) — per-pixel zero for that entity's pixels. It recovers correct analytic motion on the next frame once it has a previous transform. `motion_valid` stays a whole-frame flag; these per-pixel zeros are not separately flagged in the buffer.
+
+- **Rejected Alternatives:**  
+  Forward motion (t → t+1, needs future state); NDC-space or pixel-space units (resolution-coupled, and NDC Y is up while the buffers are Y-down — a guaranteed sign bug); camera-only motion (breaks on moving entities); pixel-estimated flow (redundant, non-deterministic, violates Decision 7); reprojecting background at the far plane (adds a failure mode for zero benefit — see above); falling back to identity for a new entity's `M_{t-1}` (produces a geometrically meaningless non-zero vector — the original M1 bug this clause fixes).
+
+- **Verification:**  
+  Synthetic scenes S2 (known camera translation, sign + direction), S3 (known object translation, moving vs static pixels), S4 (checkerboard backward-warp photometric alignment), S7 (entity spawned after frame 0 → zero motion that frame, correct analytic motion the next frame).
+
+---
+
+### Decision 26: M1 Structural Export Is Override-Shader Re-Render, Not Native G-Buffer Readback (2026-09-03)
+
+- **Context:**  
+  Decision 23's rationale for pinning Forward+ mentions it "exposes the G-buffer-style data … the structural exporters need". The Milestone 1 exporter does **not** read Godot's internal Forward+ buffers. It renders the scene into a `SubViewport` several times with every mesh's `material_override` swapped for an unshaded pass shader (depth = eye-space Z, world normal, flat linear albedo, packed entity-id), reads each back with `get_image()`, and computes motion analytically on the CPU from stored per-entity + per-camera transforms. This was chosen because GDScript has no clean, version-stable access to the Forward+ G-buffer in Godot `4.7.2`, and the override-shader path is directly verifiable (S1–S7).
+
+- **Chosen Path:**  
+  Keep the override-shader multi-pass approach for the **offline data pipeline** (M1 export, M2 recorder). It is correct and testable; readback cost and the ~8 SceneTree frames advanced per `export_frame` call are acceptable offline (KB §12 already lists readback cost as a known risk).
+
+- **Forward constraints this creates:**  
+  - **M2 recorder** must drive the exporter as an isolated capture mode — never inside a live play loop — because each captured frame advances the SceneTree ~8× and briefly swaps every material. Determinism is preserved only if the sim is stepped under the recorder's control (consistent with Decision 24).  
+  - **M10 runtime capture** (live inference loop, ~30 FPS budget) **cannot** use an 8-pass re-render per displayed frame. It needs a different mechanism — a `CompositorEffect` / `RenderingDevice` tap of the native Forward+ buffers, or a single MRT pass. This is explicitly deferred to M10 and is expected to require its own validation against the M1 `frame_structure.md` contract (the contract is the invariant; the production mechanism is not).
+
+- **Rejected Alternatives:**  
+  Blocking M1 on a `RenderingDevice`/compositor G-buffer implementation (fragile, version-coupled, hard to verify — wrong risk to take for the offline pipeline); assuming the M1 mechanism carries through to the runtime (it does not — flagged here so M10 budgets for the rework).
+
+---
+
 ## 10. Roadmap & Milestones
 
 ### Current Phase
@@ -2119,6 +2157,17 @@ Exit criteria:
 
 - corrupted sessions are rejected;
 - valid sessions replay correctly.
+
+Notes carried from M1:
+
+- The M1 exporter's own guard (`frame_structure.md` §6) catches *total* channel
+  failure (a whole pass returning empty / all-zero). The M2 validator must also
+  catch *partial* channel dropout — e.g. a subset of real geometry pixels
+  reading as background `+inf` / id `0` while the rest of the frame is fine —
+  which the per-frame exporter guard is not positioned to see.
+- The gameplay debug log (`user://logs/session_*.jsonl`, KB Decision 22) and the
+  dataset manifest are **separate artifacts** with separate "session" concepts;
+  the recorder must not conflate them.
 
 ---
 

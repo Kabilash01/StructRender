@@ -65,6 +65,9 @@ for t in "$GAME_DIR"/tests/test_*.gd; do
 done
 shopt -u nullglob
 
+# M1 structural-export verification scenes S1-S7 (need a real GPU; see the script).
+run_step "structural export S1-S7" "$ROOT/scripts/test_structural.sh"
+
 echo ""
 echo "=================================================================="
 echo "SUMMARY"

@@ -19,6 +19,7 @@ func _spawn() -> void:
 	_spawned = true
 	var enemy: CharacterBody3D = ENEMY_SCENE.instantiate()
 	enemy.name = "Enemy_0"
+	enemy.add_to_group(&"structrender_entity")  # M1: structural-export entity (see data_pipeline/schemas/frame_structure.md §5)
 	get_tree().current_scene.add_child(enemy)
 	enemy.global_position = SPAWN_POSITION
 	GameState.register_enemy_spawned(enemy.name)

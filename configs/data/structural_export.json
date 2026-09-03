@@ -1,0 +1,8 @@
+{
+  "schema_version": "m1.0",
+  "resolution": [512, 288],
+  "background_id": 0,
+  "instance_id_start": 1,
+  "depth_sentinel": "inf",
+  "notes": "Config for the Milestone 1 structural exporter. Resolution is [W, H]. See data_pipeline/schemas/frame_structure.md for the full contract."
+}
