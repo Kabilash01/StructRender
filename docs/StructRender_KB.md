@@ -2098,6 +2098,69 @@ Example:
 
 ---
 
+### Decision 27: M2 Dataset Storage Format and Schema Extensions (2026-09-03)
+
+- **Context:**  
+  §5 *Training Frame* defines the manifest record but not the on-disk buffer format, and the M1 exporter's own `.npy` debug dumps are uncompressed full-`float32`. A recorded dataset of thousands of 512×288 frames × 5 channels needs a compact, reproducible-by-content format, and the validator needs a couple of signals §5 does not carry.
+
+- **Chosen Path:**  
+  - **Buffer storage:** one compressed `.npz` per frame (`depth`, `normal`, `albedo`, `motion` as `float16`; `entity_id` as `int32`), native RGB as an 8-bit sRGB `.png`. For `depth`/`normal`/`albedo` this is lossless: the M1 exporter renders those three into a half-float GPU target (Decision 26), so `float16` in the dataset is exactly what the exporter ever had; `entity_id` stays exact. **`motion` is the exception** — it is computed analytically on the CPU as `float32` (Decision 8, `frame_structure.md` §4), so storing it as `float16` is a deliberate precision reduction. It is bounded and harmless for the training use: for typical screen-UV displacements (≪ 1) the half-float ULP is sub-pixel; the only pixels where it degrades are the large-magnitude disocclusion pixels at reappearance boundaries (Decision 29 cites ~64 UV), and those are exactly the pixels M6's confidence/disocclusion mask discards. If a future stage needs full-precision motion everywhere, bump the dtype (see §7 / bump policy). This is the **dataset** format — the M1 `.npy` debug dumps are unchanged, and `data_pipeline/schemas/frame_structure.md` still governs every channel's value semantics, ranges, and conventions.
+  - **Reproducibility:** buffer *content* is bit-exact across re-recordings of the same scenario; the `.npz` ZIP *container* is not byte-identical (`ZIPPacker` stamps per-member mtime). Determinism tests compare decoded arrays, not container bytes.
+  - **Schema extensions beyond §5** (both in `dataset_manifest.md`): `tick` (true sim tick per frame — so a reduced recording rate is explicit in the data, not a silent `frame_id` gap) and `motion_valid` (the M1 whole-frame flag from `frame_structure.md` §4 — without it the validator cannot tell a frame-0 "no previous frame" zero-motion buffer from a real one). The `{session_id, instance_id, generation}` triple is stored alongside §5's `entity_key` string so consumers never parse the string.
+  - **Namespacing:** dataset sessions are `ds_<unix_ts>_<8 hex>` under dataset root `data_pipeline/recorder/` (env `STRUCTRENDER_DATASET_ROOT` overrides). Deliberately disjoint from the `GameLog` debug log's `session_<unix_ts>` under `user://logs/` (Decision 22) — the two artifacts share no files and no id namespace, per the M2 carry-over note.
+
+- **Rejected Alternatives:**  
+  Raw `.npy` per channel (≈4× the size, no gain); `float32` storage for all channels (the exporter never had that precision for depth/normal/albedo; for `motion` the extra precision only matters on disocclusion pixels that M6 masks out — not worth ~2× on that channel); a single monolithic archive per session (defeats streaming / partial reads); reusing the debug-log `session_` namespace (conflates the gameplay log with the dataset — explicitly forbidden by the M1 review).
+
+- **Bump policy:**  
+  `schema_version` is `m<major>.<minor>`, at session and frame level. Minor = backward-compatible addition; major = dtype/shape/path/convention change or the arrival of real targets (`has_targets: true`). A validated dataset is immutable (§5) — a major bump is a new dataset, not an in-place migration. Each bump gets a dated Decision Log entry.
+
+---
+
+### Decision 28: M2 Seed Reappearance Ladder Is a Training Fixture, Distinct from the Eval Headline Ladder (2026-09-03)
+
+- **Context:**  
+  §11 Scenario 4 fixes the headline eval ladder at unseen durations {1, 5, 10, 30, 60} s. Recording that at full rate is ~tens of GB for a single 60 s rung. Milestone 2's job is a working recorder + validator, not the eval dataset.
+
+- **Chosen Path:**  
+  The M2 seed dataset uses a compressed proof-of-coverage ladder **{0.5, 1, 2, 4, 8} s**, both `camera_away` and `entity_away` mechanisms, 1–2 target entities, single `native` style — on the order of ~100 MB (990 frames, deflate-compressed; measured 99 MB), regenerable, gitignored, exercising every recorder and validator code path. Gaps ≤ 2 s are recorded at full rate; the 4 s / 8 s gaps may be recorded at a reduced rate **during the out-of-view span only** (boundary frames always exact, every frame carries true `tick`/`timestamp_s`, so `unseen_seconds` stays exact) — a **seed-fixture-only expedient**.  
+  The full §11 {1, 5, 10, 30, 60} s ladder **and** the eval-dataset during-gap recording policy are deferred to the **eval-harness subagent**, to be settled before the scaled collection run (post-M3).
+
+- **Rejected Alternatives:**  
+  Recording the full {1,5,10,30,60} s ladder at M2 (tens of GB, and it prematurely locks the during-gap policy that belongs with the eval harness); leaving reappearance coverage to incidental play (the headline RCS-vs-time-unseen figure needs the durations covered by construction).
+
+---
+
+### Decision 29: M2 Dataset Validator Acceptance Rules (2026-09-03)
+
+- **Context:**  
+  `dataset_manifest.md` is the recorder-side contract; several of its "the validator checks X" lines and the KB M2 "Notes carried from M1" leave the *method* and *thresholds* to the validator. Milestone 2 exit criteria (① corrupted sessions rejected, ② valid sessions replay) need those pinned so a pass/fail verdict is reproducible. The validator lives at `data_pipeline/validation/` (module + `python -m data_pipeline.validation` CLI); it only reports and writes the `VALIDATED` marker — it never repairs or mutates a session.
+
+- **Chosen Path:**  
+  - **Partial channel dropout** (`dataset_manifest.md` §6.1) is detected by strict per-pixel channel cross-agreement, tolerance **0** by default (`--dropout-tolerance` overrides). The four signals, all of which are exactly 0 on every frame of the seed session: `entity_id != 0 ∧ depth == +inf`; `entity_id != 0 ∧ normal == (0,0,0)`; `depth finite ∧ normal == (0,0,0)`; `depth == +inf ∧ normal != (0,0,0)`. Rationale: the M1 override-shader re-render (Decision 26) produces all five channels from one geometry pass, so a non-background `entity_id` implies rendered geometry implies finite depth, and `normal` is exactly `(0,0,0)` iff `depth` is `+inf` (`frame_structure.md` §2.2). `albedo` is deliberately **not** a dropout signal — a legitimately black material is indistinguishable from a dropped albedo pixel.  
+  - **Motion magnitude is unbounded.** The validator checks `motion` is finite but imposes no magnitude ceiling: analytic backward reprojection of a surface that was far off-screen during a fast camera swing legitimately produces screen-UV displacements ≫ 1 (observed up to ~64 at reappearance boundaries in the seed session). `frame_structure.md` §4 never bounded it; consumers must not clamp it.  
+  - **`motion_valid` on a temporal window's first frame must be `false`.** A temporal window is a dense standalone clip (`dataset_manifest.md` §4/§5) with no in-window history, so its first frame is treated like frame 0. `motion_valid == false` additionally requires an all-zero motion buffer; `motion_valid == true` on `frame_id 0` is a fault.  
+  - **Derived reappearance fields are recomputed, not trusted.** `last_seen_frame` / `first_seen_again_frame` must equal the actual last/first visible frames bracketing the (single, contiguous) unseen gap; `unseen_frames` and `unseen_seconds` must equal `tick` / `timestamp_s` differences of those two boundary frames exactly; `generation_before/after` must equal the target entity's `generation` at those frames and match `identity_stable`. `gap_ticks_configured` mismatch is a **warning**, not a failure (`dataset_manifest.md` §4 marks it "cross-check only").  
+  - **Debug-log separation** (`dataset_manifest.md` §6.2) is enforced structurally: the session dir may contain only `manifest.json`, `manifest.jsonl`, `events.jsonl`, `frames/`, and (validator-written) `VALIDATED`; `frames/` may contain only `frame_NNNNN{.npz,_rgb.png,_camera.json}`; any `session_*` name or `logs/` artifact is rejected as `GameLog` namespace leakage.  
+  - **`VALIDATED` marker** is JSON (validator version, UTC timestamp, git commit, session id, schema version, frame count, checks run, dropout tolerance, warnings). Written only on a full clean run (never for a `--limit` partial run); re-validation overwrites it idempotently.  
+  - **Test fixture policy:** corrupted-session tests are built programmatically by copying the gitignored seed session (a prefix slice ending on a sequence boundary for speed, plus one full-session replay test) and mutating one thing. The seed session dir name carries a per-recording timestamp (`ds_<unix>_<hex>`, Decision 27), so the tests **discover** it — `$STRUCTRENDER_SEED_SESSION`, else the newest `ds_*` dir under `$STRUCTRENDER_DATASET_ROOT` (default `data_pipeline/recorder/`) — and read every asserted frame count / session id back from its own `manifest.json`; nothing is hardcoded to one recording. When no seed session is present, `scripts/test_validator.sh` **exits 2 = SKIPPED** (distinct from PASS) and `scripts/test.sh` reports it as SKIP, never as a pass — an all-skipped pytest run must not masquerade as verification of exit criterion ①. `scripts/test_validator.sh` is wired into `scripts/test.sh` after the recorder step.
+
+- **Rejected Alternatives:**  
+  A fractional dropout threshold (would mask small dropped patches, which are exactly the failure mode the per-frame exporter guard can't see); using `albedo` as a dropout signal (false-positives on black materials); a motion magnitude ceiling (rejects valid fast-camera reprojection); trusting the manifest's `unseen_*` / boundary fields instead of recomputing (defeats the point — they are derived, per §4/§5); an LRU/eviction or auto-repair path in the validator (out of scope and forbidden — validator reports only).
+
+---
+
+### Decision 30: M2 Loose Ends — Validator Tolerances, Native-RGB Capture Settings, `--limit` Mode (2026-09-03)
+
+Recorded from the M2 spec-guardian review; none of these change a locked decision, they pin choices the earlier M2 entries left implicit.
+
+- **Validator numeric tolerances** (`data_pipeline/validation/validator.py`), alongside the dropout tolerance of Decision 29: unit-normal acceptance band `0.9–1.1` on finite-depth pixels (consistent with the exporter's `NORMAL_LEN_TOL = 0.1`); per-component `|normal| ≤ 1.02`; `albedo ≥ -0.01`; inline-vs-sidecar camera-matrix agreement `1e-4`; `timestamp_s == tick / tick_rate` within `1e-6`; `unseen_seconds` derived-equality within `1e-6`. These are half-float / float32 round-trip slop, not semantic thresholds; a channel value outside them is a real fault. If a future channel dtype bump (§7) changes the round-trip error, revisit these with it.
+- **Native-RGB capture settings** are a recorder-side choice with M3 alignment implications (§3C, §4 Offline Teacher): `dataset_recorder.gd` renders the native (unstyled) frame through its **own** `SubViewport` + `Camera3D` cloned from the source camera, with MSAA off, TAA off, screen-space-AA off, positional shadow atlas 0, `use_hdr_2d = false` → RGBA8 → 8-bit sRGB PNG. It is captured **before** the exporter swaps `material_override` on every mesh, so it is frame-aligned with that frame's structural buffers by construction. M3's teacher adapter must consume this exact image and must not assume different capture settings; a change here is a schema-affecting change (dated entry + bump).
+- **`--limit N` validator mode** (`python -m data_pipeline.validation … --limit N`) inspects only the first N frames' buffers. It is a debugging shortcut, never a replay: `report.replayable` is false and the `VALIDATED` marker is never written (already implied by Decision 29's "never for a `--limit` partial run").
+- **Provenance decision list:** the recorder's `provenance.kb_decisions_in_force` now also lists Decision 9 (entity IDs are addresses) and Decision 29 (validator acceptance rules), which its entity-id handling and the validator contract materially depend on.
+
+---
+
 ## 10. Roadmap & Milestones
 
 ### Current Phase

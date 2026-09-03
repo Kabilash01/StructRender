@@ -15,17 +15,26 @@ TEST_TIMEOUT_S="${TEST_TIMEOUT_S:-90}"
 
 pass=0
 fail=0
+skip=0
 declare -a results
 
+# A step may exit 2 to mean SKIPPED (e.g. a GPU/fixture-gated step whose inputs
+# are absent) — distinct from PASS so the summary never claims a step verified
+# something it never ran.
 run_step() {
   local name="$1"; shift
+  local code
   echo ""
   echo "=================================================================="
   echo ">> $name"
   echo "=================================================================="
-  if "$@"; then
+  "$@"; code=$?
+  if [[ $code -eq 0 ]]; then
     results+=("PASS  $name")
     pass=$((pass + 1))
+  elif [[ $code -eq 2 ]]; then
+    results+=("SKIP  $name")
+    skip=$((skip + 1))
   else
     results+=("FAIL  $name")
     fail=$((fail + 1))
@@ -68,6 +77,13 @@ shopt -u nullglob
 # M1 structural-export verification scenes S1-S7 (need a real GPU; see the script).
 run_step "structural export S1-S7" "$ROOT/scripts/test_structural.sh"
 
+# M2 dataset recorder — tiny fixture + recorder assertions (needs a real GPU).
+run_step "dataset recorder (M2)" "$ROOT/scripts/test_dataset.sh"
+
+# M2 dataset validator — pytest suite over the seed session (no GPU; reports
+# SKIP, not PASS, if the gitignored seed session is absent).
+run_step "dataset validator (M2)" "$ROOT/scripts/test_validator.sh"
+
 echo ""
 echo "=================================================================="
 echo "SUMMARY"
@@ -76,10 +92,14 @@ for r in "${results[@]}"; do
   echo "  $r"
 done
 echo "------------------------------------------------------------------"
-echo "  $pass passed, $fail failed"
+echo "  $pass passed, $fail failed, $skip skipped"
 
 if [[ $fail -ne 0 ]]; then
   echo "  RESULT: FAIL"
   exit 1
+fi
+if [[ $skip -ne 0 ]]; then
+  echo "  RESULT: PASS (with $skip skipped — not a full verification)"
+  exit 0
 fi
 echo "  RESULT: PASS"

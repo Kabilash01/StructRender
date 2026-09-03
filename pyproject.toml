@@ -4,8 +4,16 @@ version = "0.0.0"
 description = "Engine-grounded neural game rendering with Engine-Keyed Persistent Appearance Memory (EPAM)"
 requires-python = ">=3.10"
 # Runtime/training dependencies are added milestone by milestone (KB §10),
-# starting at Milestone 2 (dataset pipeline). Kept empty deliberately for now.
-dependencies = []
+# starting at Milestone 2 (dataset pipeline).
+dependencies = [
+    "numpy>=2.0",
+    "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

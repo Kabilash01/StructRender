@@ -10,7 +10,7 @@ required_dirs=(
   configs/data configs/teacher configs/structformer configs/training configs/eval configs/deployment
   agent/prompts agent/specifications agent/workflows agent/validators
   game_project/scenes game_project/scripts game_project/assets game_project/instrumentation
-  game_project/tests game_project/tests/structural
+  game_project/tests game_project/tests/structural game_project/tests/dataset
   data_pipeline/exporters
   data_pipeline/recorder
   data_pipeline/exporters/depth data_pipeline/exporters/normals data_pipeline/exporters/material
