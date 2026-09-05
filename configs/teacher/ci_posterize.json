@@ -1,0 +1,18 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "ci_posterize",
+  "backend": "deterministic",
+  "prompt": "flat posterised cel shading with ink outlines",
+  "negative_prompt": "",
+  "reference_image": null,
+  "teacher": {},
+  "seed": 0,
+  "params": {
+    "levels": 6,
+    "smooth_iters": 2,
+    "sigma_color": 0.02,
+    "edge_strength": 0.9,
+    "edge_threshold": 0.0035
+  },
+  "notes": "CI / test teacher (KB Decision 31). Dependency-free, bit-exact, perfectly aligned. NOT research grade - never use these targets for reported results."
+}

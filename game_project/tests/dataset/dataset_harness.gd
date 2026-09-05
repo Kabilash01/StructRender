@@ -88,15 +88,53 @@ static func build_scene(tree: SceneTree, two_entities: bool) -> Dictionary:
 	return {"world": world, "cam": cam, "e0": e0, "e1": e1}
 
 
-## Record `count` consecutive frames with the sim advancing 1 tick/frame and all
-## entities left in place. `S` carries {rec, tick}. Returns the last frame_id.
+## Record `count` consecutive frames with the sim advancing 1 tick/frame.
+##
+## The camera and target are kept gently MOVING (see `_apply_drift`) rather than
+## frozen. Holding them still made 830 of the seed session's 990 frames
+## byte-identical copies of just three images — the reappearance *semantics* were
+## correct but the set carried almost no visual diversity, which makes a
+## downstream overfit test pass vacuously. Amplitudes are small and bounded so
+## the target's visibility state is unchanged. `S` carries {rec, tick}.
+## Returns the last frame_id.
 static func record_still(S: Dictionary, count: int) -> int:
 	var last := -1
 	for _i in count:
 		S.tick += 1
+		_apply_drift(S, true)
 		var r: Dictionary = await S.rec.record_frame(S.tick)
 		last = int(r.frame_id)
 	return last
+
+
+## Small continuous motion around the current phase's base pose, driven by the
+## sim tick so it is fully deterministic and re-recordable.
+##
+## `target_visible` selects the base pose: the home pair when the target is meant
+## to be on screen, the aimed-away camera / off-screen target position when it is
+## not. Amplitudes are deliberately far inside the frustum margin (the target
+## sits ~1.5 units off-centre in a view whose horizontal half-extent is ~8.9
+## units at that depth), so drift NEVER changes whether the target is visible —
+## the property every reappearance sequence's semantics depend on. If that ever
+## stops holding, the M2 validator recomputes last_seen/first_seen_again from the
+## recorded data and rejects the session rather than silently mislabelling it.
+static func _apply_drift(S: Dictionary, target_visible: bool) -> void:
+	var t := float(S.tick) / float(TICK_RATE)
+	var base_cam: Transform3D = S.cam_home if target_visible else _camera_aimed_away(S.cam_home)
+
+	var yaw := deg_to_rad(6.0) * sin(t * 0.9)
+	var xf := base_cam
+	xf.basis = Basis(Vector3.UP, yaw) * base_cam.basis
+	xf.origin = base_cam.origin + Vector3(0.35 * sin(t * 0.7), 0.18 * sin(t * 1.3), 0.0)
+	S.cam.global_transform = xf
+
+	var base_pos: Vector3 = S.target_home if target_visible else S.occluder_pos
+	S.target.global_position = base_pos + Vector3(0.6 * sin(t * 1.1), 0.22 * sin(t * 1.7), 0.4 * sin(t * 0.5))
+
+	# a second entity, when the scene has one, drifts on its own phase
+	if S.has("target2") and S.target2 != null:
+		var h2: Vector3 = S.target2_home
+		S.target2.global_position = h2 + Vector3(0.5 * sin(t * 0.8 + 2.1), 0.2 * sin(t * 1.5 + 0.7), 0.3 * sin(t * 0.6 + 1.3))
 
 
 ## Drive one reappearance rung and register the sequence.
@@ -109,27 +147,34 @@ static func run_rung(S: Dictionary, sequence_id: String, gap_ticks: int, mechani
 	S.target.global_position = S.target_home
 	var f0: int = S.rec.frame_count()
 
-	# --- PRE: target fully visible ---
+	# --- PRE: target fully visible (and drifting) ---
 	await record_still(S, pre_frames)
 
 	# --- GAP: target out of view for exactly `gap_ticks` sim ticks ---
+	# The scene keeps moving through the gap too, so the frames recorded while the
+	# target is hidden are not copies of each other either. Only the BASE pose
+	# switches; `_apply_drift` keeps the target off screen for the whole span and
+	# returns it to the visible base on the final tick.
 	var full_rate_max: int = int(S.get("full_rate_max", FULL_RATE_MAX_TICKS))
 	var reduced := gap_ticks > full_rate_max
 	for k in range(1, gap_ticks + 1):
 		S.tick += 1
-		if k < gap_ticks:
-			if mechanism == "camera_away":
-				S.cam.global_transform = _camera_aimed_away(S.cam_home)
-			else:
-				S.target.global_position = S.occluder_pos
+		if mechanism == "camera_away":
+			# Only the CAMERA moves for this mechanism (dataset_manifest.md §4):
+			# the target is frozen for the whole gap, final tick included.
+			var was: Vector3 = S.target.global_position
+			_apply_drift(S, k >= gap_ticks)
+			S.target.global_position = was
 		else:
-			# last gap tick: back to the visible home state -> first_seen_again
-			S.cam.global_transform = S.cam_home
-			S.target.global_position = S.target_home
+			# Only the TARGET moves for this mechanism: the camera is frozen for
+			# the whole gap, final tick included.
+			var cam_was: Transform3D = S.cam.global_transform
+			_apply_drift(S, k >= gap_ticks)
+			S.cam.global_transform = cam_was
 		if k == gap_ticks or not reduced or k % REDUCED_STRIDE == 0:
 			await S.rec.record_frame(S.tick)
 
-	# --- POST: target visible again ---
+	# --- POST: target visible again (and drifting) ---
 	await record_still(S, post_frames - 1)
 	var f1: int = S.rec.frame_count() - 1
 

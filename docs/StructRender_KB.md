@@ -2161,6 +2161,91 @@ Recorded from the M2 spec-guardian review; none of these change a locked decisio
 
 ---
 
+### Decision 31: M3 Teacher Method, Style Scope, and Sidecar Target Storage (2026-09-05)
+
+- **Context:**  
+  §10 Milestone 3 names four deliverables (teacher adapter, selected target style(s), cached styled targets, alignment validation) and one qualitative exit criterion — "target frames preserve intended scene layout sufficiently for supervised training". Decision 6 fixes the teacher as *offline diffusion* but names no model; §12 flags *Teacher Structural Distortion* as a live risk without a rejection rule; and Decision 27's bump policy says the arrival of real targets (`has_targets: true`) is a **major** bump / "a new dataset", which collides with the M2 structural session being **immutable and VALIDATED**. All three gaps are settled here.
+
+- **Chosen Path:**  
+  - **Teacher = Stable Diffusion 1.5 + ControlNet-depth img2img**, driven by the dataset's own exported depth buffer rather than an estimated depth map — structural preservation is a *conditioning input*, not a hope. Fits the local 8 GB card (the teacher is offline and is **not** bound by the runtime 8 GB budget per §4, but fitting locally avoids a cloud dependency at M3). Licences: SD 1.5 CreativeML OpenRAIL-M, ControlNet Apache-2.0 — both acceptable for research use and to be attributed in the repo. Generation is seed-pinned and deterministic on a fixed machine but **not bit-exact across GPU/driver**, which is precisely why targets are cached and version-keyed rather than regenerated on demand (§3C.5).
+  - **A second, dependency-free `deterministic` backend** (classical edge-preserving / posterising filters over the native RGB) ships behind the same adapter interface as the CI and test teacher. It is perfectly aligned and bit-exact, so the adapter contract, cache, and alignment-validation code paths are all testable on a clean checkout with no model download. It is **not** a research-grade teacher and must never be the source of targets used to report results.
+  - **Style scope: one real style at M3, but every path is style-keyed from day one** — directory layout, target manifest `style_ids`, adapter signature, cache key. Unlike the M2 reappearance ladder (Decision 28), which needed re-recording and was therefore genuinely cheaper to settle early, targets are a **derived sidecar over shared structural data**: adding style B later costs one generation run and *zero* code change. EPAM's style-reset behaviour (Decision 12, §11 Scenario 6) is not exercised until M8, so nothing before then requires the second style. A single-style dataset must not be allowed to bake in single-style assumptions — the "add a second style by config alone" path is a **tested** deliverable at M3, not an aspiration.
+  - **Targets live in a sidecar dataset**, `data_pipeline/teacher_targets/<style_id>/<session_id>/`, with its own manifest referencing the immutable m2.0 structural session by `session_id` + `frame_id`. This **interprets, and does not override, Decision 27's bump policy**: a validated structural session is never mutated, never re-recorded, and never duplicated per style. `has_targets` / `target_rgb_path` in the *structural* manifest stay as recorded at M2; a consumer joins structure to targets through the sidecar manifest. The schema-major-bump rule of Decision 27 continues to apply to the **structural** dataset only.
+
+- **Rejected Alternatives:**  
+  An in-engine second-style render pass (perfectly aligned and free, but a low quality ceiling and not the "high-quality offline teacher" Decision 6 means — it would weaken the supervision M4/M5 learn from); a Blender path-traced re-render (highest quality and geometrically exact, but needs a Godot→Blender scene export plus per-frame transform replay — a multi-week pipeline, disproportionate to a milestone whose job is to unblock M4); classical stylisation as the *primary* teacher (kept, but only as the test/CI backend); two styles at M3 (no cheaper now than later given the sidecar design, and 2× generation cost for capability nothing needs until M8); a new `m3.0` dataset with targets inlined (the literal reading of Decision 27, but it duplicates ~99 MB of structural data per style and would require re-recording or copying the one artifact whose bit-exact frame alignment makes the targets valid at all).
+
+- **Open at time of writing:**  
+  The alignment-validation pass/fail thresholds are **not** locked by this entry. Starting values are boundary F-measure ≥ 0.60 @ 2 px against the engine structural edge map (depth discontinuity ∪ `entity_id` boundary), spurious-edge ratio ≤ 0.35, and per-entity silhouette support ≥ 50 % for entities ≥ 200 visible px. These are to be **calibrated against the observed metric distribution on real generated targets** and then pinned in their own dated entry — guessing thresholds before seeing the distribution produces a gate that passes everything or nothing.
+
+---
+
+### Decision 32: M3 Alignment Gates — Four, Not Three; Calibrated Thresholds (2026-09-05)
+
+- **Context:**  
+  Decision 31 left the alignment thresholds explicitly unlocked pending calibration against real generated targets. Calibration produced two findings that changed the gate *set*, not just its numbers.
+
+- **Finding 1 — three gates were not enough.**  
+  Gates 1–3 all ask "did the structure survive". The perfect way to satisfy every one of them is to change nothing at all: measured on the seed session, the **untouched native frame** scores `boundary_f = 0.976`, `spurious = 0.000` — better than any real target. So "lower the denoise strength until it passes" converges on a teacher that does nothing, and the M3 exit criterion would be satisfied by a passthrough. **Gate 4 (`align.not_stylised`)** puts a floor on how far the target moved from the native frame, measured as colour-histogram L1 distance (the histogram term carries the gate because the scene is dark: a real restyle shifts the palette far while moving mean |Δpixel| only ~2 levels of 255). `test_passthrough_native_frame_is_rejected` locks this in and asserts it is *that* gate doing the work, not a structural one.
+
+- **Finding 2 — the first teacher config failed on motion.**  
+  At `strength 0.65 / controlnet 1.0`, 39 of 990 frames failed the hallucination gate — **every one inside the moving-camera window**, none in the ladder. Stronger conditioning fixes them decisively (frame 61: spurious `0.545 → 0.000`), and on genuinely varied content it costs almost no stylisation. Pinned at **`strength 0.45 / controlnet_conditioning_scale 1.3`**. Going further (`0.35 / 1.5`) also passes but trades away restyling for alignment already in hand.
+
+- **Chosen Path — gates, and the evidence they were calibrated against.**  
+  Measured over the full 990-frame validated set (`ds_1788624547_cf0ceeda`, `gouache`, real teacher), **0 frames failing**:
+
+  | gate | threshold | observed min / p05 / median / max |
+  |---|---|---|
+  | 1 `boundary_f` | ≥ 0.60 | 0.709 / 0.878 / 0.980 / 1.000 |
+  | 2 `spurious_edge_ratio` | ≤ 0.35 | 0.000 / 0.000 / 0.000 / **0.337** |
+  | 3 `min_silhouette_support` | ≥ 0.60 (entities ≥ 200 px) | 0.661 / 0.818 / 0.993 / 1.000 |
+  | 4 `stylisation_hist` | ≥ 0.15 | 0.232 / 0.310 / 0.509 / 0.955 |
+
+  Supporting parameters: `tolerance_px 2`, `edge_threshold 0.008`, `strong_edge_threshold 0.04`, `depth_rel_jump 0.05`, `normal_angle_deg 30`, `albedo_jump 0.05`. `max_fail_frac` stays **0.0 (strict)** — one failing frame rejects the set; the knob exists for a documented exception, not as a default cushion.
+
+  **Every threshold was fixed before this data was seen** (they are Decision 31's starting values, except gate 3 which moved 0.50 → 0.60 during calibration and gate 4 which is new). This is a genuine pass, not a threshold fitted to the result.
+
+- **Known limitation — gate 2's margin is thin.**  
+  The worst frame scores 0.337 against a 0.35 limit: **0.013 of headroom**. A busier scene, a more painterly style, or a longer recording could cross it legitimately. When that happens the correct response is to re-examine whether the edges are genuinely unsupported (as was done here — the `reference` vs `support` map split exists precisely because scoring painterly strokes along texture boundaries as hallucinated geometry produced false positives), **not** to raise the number. Any change to gate 2 needs its own dated entry with the evidence.
+
+- **Rejected Alternatives:**  
+  Relaxing gate 2 to ~0.55 so the original 39 failures passed (fits the threshold to the data and stops the gate catching real hallucination); raising `max_fail_frac` to ~0.05 to absorb them (would have hidden a 24 %-of-distinct-content failure rate behind duplicate frames — see Decision 33); pixel-domain SSIM/LPIPS against the native frame (punishes the stylisation we asked for); measuring gate 1's precision on the permissive edge set (rejects the real teacher while accepting a 3 px misaligned one).
+
+---
+
+### Decision 33: Seed Sessions Must Carry Visual Diversity; Target Cache Is Content-Addressed (2026-09-05)
+
+- **Context:**  
+  Found while validating the first full M3 target set. The M2 seed session `ds_1788430292_4c77250c` contains **163 distinct images across 990 frames** — three static frames account for **830 of them** (295× / 295× / 240×). Cause: `dataset_harness.gd::run_rung` reset the camera and target to fixed `cam_home` / `target_home` poses and then held them frozen through each rung's pre-margin, out-of-view gap, and post-margin. The reappearance *semantics* were correct throughout (Decision 29's recomputed `last_seen` / `first_seen_again` / tick deltas all validated), so M2's validator had no reason to object — it checks structural and sequence correctness, and never asked whether the frames differ from each other.
+
+- **Why it matters:**  
+  It silently invalidates downstream measurement rather than breaking anything visibly. M3's alignment failure rate reads 39/990 = 3.9 %, but every failure falls in the 160-frame moving-camera window, so the rate on *distinct* content is 39/163 ≈ 24 %. Worse, M4's exit criterion "model overfits a tiny set" would pass **vacuously** against a set that is 84 % three images, as would any claim about temporal or reappearance learning. A dataset defect that makes success criteria easier to meet is the most dangerous kind, because nothing fails.
+
+- **Chosen Path:**  
+  - **Seed recording keeps the scene moving.** `record_still` / `run_rung` apply a small, bounded, tick-driven drift (`_apply_drift`) to the camera and entities through *every* phase, gap included. Amplitudes sit far inside the frustum margin so the target's visibility state is never altered — the property all reappearance semantics rest on — and per-mechanism exclusivity is preserved for the pair `dataset_manifest.md` §4 actually constrains, **the target entity and the camera**, for the whole gap: under `camera_away` the target is frozen and the camera moves; under `entity_away` the camera is frozen and the target moves. **Other entities keep drifting under either mechanism** — they are not the subject of the sequence and their motion does not enter its semantics; the seed scene's second entity does exactly this. Drift is a pure function of the sim tick, so re-recording stays deterministic.
+  - **A seed session is not fit for purpose on sequence correctness alone.** Any future recorder change must be checked for *frame diversity*, not just schema and sequence validity. Distinct-frame count is the cheap proxy (hash the native RGB); a session whose distinct fraction collapses is a defect even when every validator gate passes.
+  - **Target cache is content-addressed** (`cache.content_key`): keyed on a hash of the teacher's actual conditioning inputs (native RGB + depth) plus `teacher_version` and `seed`, in addition to the per-frame `(session_id, frame_id, style_id, teacher_version, seed)` key. Identical inputs generate once and are reused, with `content_key` / `content_source_frame` recorded per manifest line. This is **not an approximation**: `sd15_controlnet.py` seeds one generator per *style*, not per frame, so identical inputs under the same version and seed are guaranteed to produce identical output — the reused render is exactly what regeneration would have written. **If a backend is ever changed to seed per frame, this equivalence breaks and content reuse must be disabled with it.** Not primed from the existing index under `--force`, which must regenerate rather than silently reuse what it was asked to replace.
+
+- **Rejected Alternatives:**  
+  Accepting the duplicate-heavy seed and documenting it only (leaves M4's overfit criterion meaningless and defers the debt to a worse moment); regenerating targets for the defective dataset first and fixing the recorder later (pays the expensive generation twice and measures M3 against content that cannot support the claim); regenerating only the frames that failed a gate (fastest, but produces a target set whose frames were made with different generation parameters than the manifest records — a reproducibility regression in the one artifact whose entire purpose is cached, versioned, reproducible supervision).
+
+---
+
+### Decision 34: M3 Review Follow-ups — Measurement Limits, Enforced Rules, Code Location (2026-09-05)
+
+Recorded from the M3 spec-guardian review. Nothing here overrides a locked decision; each item either pins a limit that was measured but undocumented, or replaces a rule that existed only as prose with something the code enforces.
+
+- **Alignment translation-detection floor.** The gates do not catch a small *purely horizontal* target shift on this scene, because its dominant structure (the ground/backdrop horizon) is a long horizontal line and therefore near-invariant under horizontal translation. Measured floors: **3 px diagonal, 8 px x-only** — at 5 px x-only the worst frame still scores `F = 0.717`, `spurious = 0.294`, `silhouette = 0.630`, inside every gate. **A systematic sub-5 px horizontal misalignment would pass all four gates and reach training as supervision.** Recorded in `teacher_targets.md`, `metrics.py`, and pinned by `test_purely_horizontal_shift_is_rejected`. A scene with more vertical structure would raise the floor; do not assume this number transfers.
+- **Partial circularity in the alignment measurement.** The teacher is conditioned on the exported depth buffer, and gate 1's recall is measured against a reference map derived from that same buffer. The `support` map adds normal and albedo discontinuities, which are *not* conditioning inputs, so this is partly mitigated — but these metrics **cannot detect a structural distortion that ControlNet-depth is itself blind to**. Breaking the circularity would need a signal the teacher never sees; deferred, and it is a real limit on what "alignment PASS" asserts.
+- **Gate 3 does not cover every frame.** `min_silhouette_support` is defined only where at least one entity has ≥ `min_entity_px` visible pixels: on the seed session that is 695 of 990 frames, so **~30 % of frames are ungated on entity silhouette**. Decision 32's table reads as 990 samples per row; this is the correction.
+- **Frame diversity is now a check, not a sentence.** Decision 33 required future recorder changes to be checked for frame diversity but left that to whoever remembered. It is now `diversity.low` in the M2 validator (`_check_frame_diversity`), hashing native RGB and reporting `distinct_frames` / `distinct_frac` / `most_repeated_frame` into the `VALIDATED` marker. Emitted as a **warning**, not an error — a short or deliberately static session is legitimate and this validator's errors mean "structurally invalid" — with the threshold at `--min-distinct-frac 0.5`. Verified against both sessions: the retired seed warns at 163/990 (16.5 %, 295× repeat), the current one is clean at 990/990.
+- **Content-addressed reuse is gated by a backend capability flag.** Decision 33 stated that a backend seeding per frame breaks reuse's correctness and must disable it, but nothing bound the two. `TeacherBackend.CONTENT_ADDRESSABLE` now does, **defaulting to `False`** so a new backend opts in deliberately; `generate.py` reads it off the class (no model load) and skips the reuse path entirely when it is unset. Both current backends set it: `deterministic` has no per-frame randomness, `sd15_controlnet_depth` seeds one generator per *style*.
+- **An unvalidated structural session is now an error, not a warning.** `ALIGNED` asserts the targets are usable supervision; that claim is unsound over a base that never passed M2, since every alignment metric is computed from that session's own buffers. It also made the M3 validator laxer than the M2 one, which refuses to write `VALIDATED` for anything short of a clean full run.
+- **Code location:** §8 lists `scripts/generate_teacher_targets.py`; the implementation is the package `data_pipeline/teacher/` driven by `python -m data_pipeline.teacher`, matching how the M2 validator is laid out (`data_pipeline/validation/`) rather than adding a loose script. `data_pipeline/teacher_targets/` remains the *artifact* root as §8 and Decision 31 specify. `check_layout.sh` enforces the actual layout.
+- **Retired seed session.** `ds_1788430292_4c77250c` (the 163-distinct-frame defect) is kept on disk for comparison but is superseded by `ds_1788624547_cf0ceeda`. It is gitignored and regenerable. Fixture discovery takes the newest `ds_*`, so it is inert — but anything that pins `$STRUCTRENDER_SEED_SESSION` to it is running against a session Decision 33 retired, and it now self-identifies through the `diversity.low` warning.
+
+---
+
 ## 10. Roadmap & Milestones
 
 ### Current Phase

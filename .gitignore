@@ -16,6 +16,10 @@ checkpoints/*
 data_pipeline/recorder/*
 !data_pipeline/recorder/.gitkeep
 
+# Generated teacher targets (large, regenerable sidecar artifacts — KB Decision 31)
+data_pipeline/teacher_targets/*
+!data_pipeline/teacher_targets/.gitkeep
+
 # Deployment build artifacts (KB §10)
 *.onnx
 *.engine

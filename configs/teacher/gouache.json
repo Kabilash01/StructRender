@@ -1,0 +1,22 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "gouache",
+  "backend": "sd15_controlnet_depth",
+  "prompt": "gouache painted video game concept art, hand painted matte textures, soft flat lighting, muted earthy palette, clean readable shapes, painterly brushwork",
+  "negative_prompt": "photograph, photorealistic, text, watermark, signature, blurry, extra objects, cluttered background, distorted geometry, duplicated shapes, fisheye",
+  "reference_image": null,
+  "teacher": {
+    "model_id": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet_model_id": "lllyasviel/sd-controlnet-depth",
+    "controlnet_revision": "35e42a3ea49845b3c76f202f145f257b9fb1b7d4"
+  },
+  "seed": 20260905,
+  "params": {
+    "num_inference_steps": 24,
+    "guidance_scale": 7.0,
+    "strength": 0.45,
+    "controlnet_conditioning_scale": 1.3
+  },
+  "notes": "The M3 real style (KB Decision 31: one real style, every path style-keyed). Control signal is the dataset's own exported depth buffer, not an estimated depth map. strength/controlnet_conditioning_scale were 0.65/1.0 in the first full run: that failed the hallucination gate on 39 frames, all of them in the moving-camera window. 0.45/1.3 is the measured knee — it fixes every one of those (spurious 0.545 -> 0.000 on the worst frame) while keeping ~80% of the stylisation magnitude. Going further to 0.35/1.5 also passes but trades away more restyling for alignment we already have; see KB Decision 32. Licences: SD 1.5 CreativeML OpenRAIL-M, ControlNet Apache-2.0."
+}

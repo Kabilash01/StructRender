@@ -16,6 +16,7 @@ required_dirs=(
   data_pipeline/exporters/depth data_pipeline/exporters/normals data_pipeline/exporters/material
   data_pipeline/exporters/motion data_pipeline/exporters/entity_id
   data_pipeline/entity_lifecycle data_pipeline/validation data_pipeline/schemas data_pipeline/teacher_targets
+  data_pipeline/teacher data_pipeline/teacher/backends data_pipeline/teacher/tests
   renderer/structformer renderer/baselines renderer/temporal renderer/epam renderer/style
   renderer/losses renderer/training renderer/optional/gradient_balancing renderer/optional/one_step_dit
   inference/export inference/tensorrt/builder inference/tensorrt/benchmark
@@ -28,6 +29,8 @@ required_dirs=(
 required_files=(
   README.md pyproject.toml CMakeLists.txt .gitignore .godot-version
   docs/StructRender_KB.md CLAUDE.md
+  data_pipeline/schemas/frame_structure.md data_pipeline/schemas/dataset_manifest.md
+  data_pipeline/schemas/teacher_targets.md
 )
 
 fail=0

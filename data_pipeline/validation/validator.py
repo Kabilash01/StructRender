@@ -13,6 +13,7 @@ frame / manifest. On a fully clean session it writes a ``VALIDATED`` marker
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import json
 import math
 import os
@@ -54,6 +55,9 @@ VALID_EVENTS = {"spawn", "destroy", "visible", "hidden"}
 # 0 violations, so the default dropout tolerance is 0 (strict). It is exposed as
 # a knob only for future half-float silhouette edge cases.
 DEFAULT_DROPOUT_TOLERANCE = 0
+# KB Decision 33: below this fraction of distinct native frames the session is
+# flagged as low-diversity (a warning, not a structural error).
+DEFAULT_MIN_DISTINCT_FRAC = 0.5
 _NORMAL_ABS_MAX = 1.02
 _ALBEDO_MIN = -0.01
 _TS_TICK_TOL = 1e-6
@@ -169,6 +173,7 @@ def validate_session(
     dropout_tolerance: int = DEFAULT_DROPOUT_TOLERANCE,
     frame_limit: int | None = None,
     write_marker: bool = True,
+    min_distinct_frac: float = DEFAULT_MIN_DISTINCT_FRAC,
 ) -> ValidationReport:
     """Validate a recorded dataset session directory.
 
@@ -235,6 +240,10 @@ def validate_session(
     # -- events --
     report.check("events")
     _check_events(events_path, header, frames, by_id, report)
+
+    # -- frame diversity (KB Decision 33) --
+    report.check("frame_diversity")
+    _check_frame_diversity(frames, session_dir, report, min_distinct_frac, frame_limit)
 
     # -- success marker --
     if report.replayable and write_marker:
@@ -870,6 +879,69 @@ def _check_frame_buffers(
 
     report.stats["frames_buffer_checked"] = len(res_frames)
     report.stats["frames_with_dropout"] = dropout_hits
+
+
+def _check_frame_diversity(
+    frames: list[dict],
+    session_dir: Path,
+    report: ValidationReport,
+    min_distinct_frac: float,
+    frame_limit: int | None,
+) -> None:
+    """How many of the recorded frames are actually *different* (KB Decision 33).
+
+    Every other check in this validator asks whether the session is internally
+    correct. A session can pass all of them and still be near-useless: the first
+    M2 seed held its poses through each reappearance gap and shipped 990 frames
+    that were only **163 distinct images**, three of them repeated 295/295/240
+    times. Sequence semantics were perfect, so nothing failed — and a downstream
+    "model overfits a tiny set" criterion would have passed vacuously against
+    what is effectively three pictures.
+
+    That is why this is a check and not a note in a document: a defect that makes
+    success criteria *easier* to meet cannot be left to whoever remembers to look.
+
+    Reported as a WARNING, not an error: a short or deliberately static session
+    is legitimate, and this validator's errors mean "structurally invalid". The
+    warning is recorded in the VALIDATED marker, so it stays visible.
+    """
+    if frame_limit is not None:
+        return  # a partial run cannot judge the whole session's diversity
+
+    digests: set[str] = set()
+    counts: dict[str, int] = {}
+    missing = 0
+    for f in frames:
+        rel = f.get("native_rgb_path")
+        if not isinstance(rel, str):
+            continue
+        p = session_dir / rel
+        if not p.is_file():
+            missing += 1
+            continue
+        d = hashlib.sha256(p.read_bytes()).hexdigest()
+        digests.add(d)
+        counts[d] = counts.get(d, 0) + 1
+
+    n = len(frames)
+    if not n or missing == n:
+        return
+    distinct = len(digests)
+    frac = distinct / n
+    worst = max(counts.values()) if counts else 0
+    report.stats["distinct_frames"] = distinct
+    report.stats["distinct_frac"] = round(frac, 4)
+    report.stats["most_repeated_frame"] = worst
+
+    if frac < min_distinct_frac:
+        report.warn(
+            "diversity.low",
+            f"only {distinct}/{n} native frames are distinct ({frac:.1%} < "
+            f"{min_distinct_frac:.0%}); the most repeated frame appears {worst}x. "
+            "The session is structurally valid but carries little visual variety, "
+            "which silently weakens anything trained or measured on it "
+            "(KB Decision 33). Check that the recorder keeps the scene moving.",
+        )
 
 
 def _check_events(events_path: Path, header: dict, frames: list[dict], by_id: dict, report: ValidationReport) -> None:

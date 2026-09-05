@@ -41,6 +41,9 @@ func _initialize() -> void:
 		"rec": rec, "rec_adapter": adapter, "tick": 0,
 		"cam": sc.cam, "cam_home": cam_home,
 		"target": sc.e0, "target_home": target_home,
+		# the second entity drifts on its own phase so the ladder frames carry
+		# independent motion rather than repeating one pose (KB Decision 33)
+		"target2": sc.e1, "target2_home": (sc.e1.global_position if sc.e1 != null else Vector3.ZERO),
 		"occluder_pos": Vector3(1000, 0, -6),
 		"full_rate_max": DH.FULL_RATE_MAX_TICKS,
 	}

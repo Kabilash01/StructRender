@@ -212,11 +212,19 @@ describes the semantically meaningful spans within the session.
 }
 ```
 
-- `mechanism`:
-  - `camera_away` — the camera turns/moves so the target leaves the view
-    frustum; the target does not move.
-  - `entity_away` — the target moves out of the view frustum (off-screen /
-    behind an occluder); the camera does not move.
+- `mechanism` — these constraints apply **during the out-of-view gap**, which is
+  the span whose semantics they define. Outside the gap (the pre- and
+  post-margins) both the camera and the entities drift continuously, so that
+  recorded frames are not near-duplicates of one another (KB Decision 33); that
+  drift is bounded and never changes the target's visibility state.
+  - `camera_away` — during the gap the camera turns/moves so the target leaves
+    the view frustum; **the target does not move**.
+  - `entity_away` — during the gap the target moves out of the view frustum
+    (off-screen / behind an occluder); **the camera does not move**.
+
+  The constraint binds the *target* entity and the camera. Other entities in the
+  scene keep drifting under either mechanism — they are not the subject of the
+  reappearance sequence and their motion does not affect its semantics.
 - `unseen_seconds` / `unseen_frames` are **derived from the recorded
   `timestamp_s` / `tick` of the two boundary frames**, never asserted — so they
   stay exact even where the during-gap recording rate was reduced (§5).

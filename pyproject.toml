@@ -14,6 +14,16 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+# Milestone 3 offline teacher (SD 1.5 + ControlNet-depth, KB Decision 31).
+# Deliberately NOT a core dependency: the `deterministic` CI teacher, the cache
+# and the whole alignment validator must run on a clean checkout without them.
+teacher = [
+    "torch>=2.5",
+    "diffusers>=0.30",
+    "transformers>=4.40",
+    "accelerate>=0.30",
+    "safetensors>=0.4",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

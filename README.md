@@ -38,7 +38,7 @@ checkpoints/    model artifacts (git-ignored)
 
 ## Current status
 
-**Milestone 0 — Repository + Minimal Godot Game.** See KB §10.
+**Milestone 3 — Offline Teacher Targets.** M0–M3 complete; see KB §10.
 
 ## Development
 
@@ -47,3 +47,19 @@ checkpoints/    model artifacts (git-ignored)
 ```
 
 Godot version is pinned in [`.godot-version`](.godot-version).
+
+## Third-party models
+
+The **offline teacher** (Milestone 3) generates styled training targets. It never
+runs in the game loop and is not a runtime dependency — `torch`/`diffusers` are
+an optional `[teacher]` extra, not core requirements. Model weights are not
+redistributed here; they are fetched from the Hugging Face Hub at pinned
+revisions recorded in `configs/teacher/*.json`.
+
+| Model | Used for | Licence |
+|---|---|---|
+| [Stable Diffusion v1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) | img2img stylisation of native engine frames | CreativeML OpenRAIL-M |
+| [`lllyasviel/sd-controlnet-depth`](https://huggingface.co/lllyasviel/sd-controlnet-depth) | depth conditioning, driven by the engine's own exported depth buffer | Apache-2.0 |
+
+Generated targets inherit the CreativeML OpenRAIL-M use restrictions. They are
+gitignored, regenerable, and used only as offline supervision.
