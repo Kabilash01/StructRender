@@ -88,6 +88,11 @@ run_step "dataset validator (M2)" "$ROOT/scripts/test_validator.sh"
 # alignment validation (no GPU / no model download; SKIP without the seed session).
 run_step "teacher targets (M3)" "$ROOT/scripts/test_teacher.sh"
 
+# M4 CNN/U-Net baseline — split contract, input channels, overfit thresholds and
+# ONNX export parity (the overfit check needs CUDA and skips without it; the whole
+# step SKIPs without the seed session / targets).
+run_step "cnn baseline (M4)" "$ROOT/scripts/test_baseline.sh"
+
 echo ""
 echo "=================================================================="
 echo "SUMMARY"

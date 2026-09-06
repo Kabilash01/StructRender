@@ -1,0 +1,62 @@
+{
+  "parameters": 7853763,
+  "trained_weights": true,
+  "graph": {
+    "ir_version": 8,
+    "opset": 17,
+    "producer": "pytorch",
+    "inputs": {
+      "structure": [
+        1,
+        7,
+        288,
+        512
+      ]
+    },
+    "outputs": {
+      "rgb": [
+        1,
+        3,
+        288,
+        512
+      ]
+    },
+    "op_types": {
+      "Add": 18,
+      "Concat": 4,
+      "Constant": 58,
+      "Conv": 19,
+      "InstanceNormalization": 18,
+      "MaxPool": 4,
+      "Mul": 18,
+      "Relu": 18,
+      "Reshape": 36,
+      "Resize": 4,
+      "Shape": 18,
+      "Sigmoid": 1
+    },
+    "size_bytes": 31448002
+  },
+  "parity": {
+    "onnx_input_shape": [
+      1,
+      7,
+      288,
+      512
+    ],
+    "onnx_output_shape": [
+      1,
+      3,
+      288,
+      512
+    ],
+    "n_samples": 3,
+    "max_abs_diff": 6.467103958129883e-06,
+    "mean_abs_diff": 1.099120140679588e-06,
+    "onnxruntime_version": "1.29.0",
+    "providers": [
+      "CPUExecutionProvider"
+    ]
+  },
+  "tolerance_max_abs": 0.001
+}

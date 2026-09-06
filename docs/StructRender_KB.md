@@ -1568,6 +1568,8 @@ structrender/
 │   │   └── optional_adversarial.py
 │   │
 │   ├── training/
+│   │   ├── dataset.py            # M4 (Decision 35)
+│   │   ├── train_baseline.py     # M4 (Decision 35)
 │   │   ├── train_structure.py
 │   │   ├── train_geometry.py
 │   │   ├── train_temporal.py
@@ -2243,6 +2245,92 @@ Recorded from the M3 spec-guardian review. Nothing here overrides a locked decis
 - **An unvalidated structural session is now an error, not a warning.** `ALIGNED` asserts the targets are usable supervision; that claim is unsound over a base that never passed M2, since every alignment metric is computed from that session's own buffers. It also made the M3 validator laxer than the M2 one, which refuses to write `VALIDATED` for anything short of a clean full run.
 - **Code location:** §8 lists `scripts/generate_teacher_targets.py`; the implementation is the package `data_pipeline/teacher/` driven by `python -m data_pipeline.teacher`, matching how the M2 validator is laid out (`data_pipeline/validation/`) rather than adding a loose script. `data_pipeline/teacher_targets/` remains the *artifact* root as §8 and Decision 31 specify. `check_layout.sh` enforces the actual layout.
 - **Retired seed session.** `ds_1788430292_4c77250c` (the 163-distinct-frame defect) is kept on disk for comparison but is superseded by `ds_1788624547_cf0ceeda`. It is gitignored and regenerable. Fixture discovery takes the newest `ds_*`, so it is inert — but anything that pins `$STRUCTRENDER_SEED_SESSION` to it is running against a session Decision 33 retired, and it now self-identifies through the `diversity.low` warning.
+
+---
+
+### Decision 35: M4 Baseline — Input Channels, Sequence-Holdout Split, Pre-Fixed Overfit Thresholds (2026-09-05)
+
+Pins the acceptance rules Milestone 4 introduces. Nothing here overrides a locked decision; each item makes an M4 exit criterion reproducible instead of a judgement call. Config: `configs/training/m4_unet_baseline.json`; tests: `renderer/training/tests/`; runner: `scripts/test_baseline.sh`.
+
+**Revised 2026-09-06 after the M4 spec-guardian review.** Four things in the original entry were wrong or overstated rather than merely incomplete, and are corrected in place below: the overfit set was N = 8, **below §11's mandatory 32–128 range**; the quoted overfit numbers were from a run the test suite had since overwritten; "recognizable styled output" rested on a metric that rewards blur; and LPIPS was recommended as the ladder headline without its do-nothing anchor ever being measured (it is the *worst* of the three, not the best). The superseded text is not preserved — the corrections state what was wrong.
+
+- **Input is 7 channels: depth (1) + normals (3) + albedo (3). Motion and entity IDs are out.**
+  This is §4 *StructFormer CNN Stem* read literally ("normalized depth; normals; material/albedo features", and its Explicit Boundaries: "raw entity IDs are not concatenated here; motion is not treated as an unexplained appearance channel"), plus Decision 8 (motion has an explicit warp operation, arriving at M6) and Decision 9 (IDs are addresses). The ladder position is what makes this non-negotiable rather than merely tidy: §11's Model **A** is Temporal *No* / Structured Entity Use *No*, and the optional Model **N** exists *only* to show that raw-ID input is not equivalent to structured entity use. An ID channel in Model A would delete that control. Asserted by `test_entity_id_is_not_an_input_channel` (permuting `entity_id` must not change the built input) and `test_motion_is_not_an_input_channel`.
+
+- **Depth normalization is inverse depth, `d_inv = 1 / (1 + d)`.**
+  `depth` is raw linear eye-space metres with `+inf` for background (`frame_structure.md` §2.1). `1/(1+inf) == 0` exactly, so the background sentinel lands at the bottom of the range with no magic constant, no clamp and no scene-dependent far-plane normalisation; the result is bounded `[0,1]` and monotone in nearness. Rejected: min/max or near/far normalisation (couples the network to one scene's depth range and needs a separate background mask), and `1/d` (unbounded as `d -> 0`).
+
+- **Train/val split is by contiguous sequence with a guard band — never by random frame.**
+  All 990 frames come from ONE session at 60 fps with continuous drift (Decision 33 deliberately made neighbouring frames *non-identical*, not *independent*), so a random frame split puts a val frame's immediate neighbours in train and reports a leak as a result. Held out: the two 8 s reappearance rungs `reap_camera_away_8s` [492, 574] and `reap_entity_away_8s` [907, 989] — 166 frames. Additionally `guard_frames = 60` (1.0 s of drift) of train frames on each side of every held-out span are **dropped from both splits**, so train and val are non-adjacent, not merely disjoint: 644 train / 166 val / 180 dropped. `test_train_and_val_are_non_adjacent` asserts the minimum train-to-val frame distance exceeds the guard. The split is recorded in every metrics report and in the checkpoint. Measured representativeness: entities are visible in 107/166 val frames (64 %) vs 437/644 train (68 %) — the reappearance rungs do not bias the held-out set toward empty scenes.
+
+- **The overfit exit criterion's thresholds were fixed before the first training run; N = 32 is §11's mandated floor.**
+  N = **32** frames (evenly spaced across the training span, not the first 32 — consecutive frames would make the criterion nearly vacuous), max 2000 steps, batch 2, lr 2e-4 **pinned in the `overfit` block** (not inherited from `train.lr`, so retuning the training LR cannot silently move an exit criterion), seed 20260905. Pass requires **all** of: PSNR ≥ 30 dB, final L1 ≤ 0.02, final L1 at least 10× below the step-0 loss, SSIM ≥ 0.95. They live in the config and are asserted one-per-test so a failure names the criterion. This is the direct answer to Decision 33's warning that "a dataset defect that makes success criteria easier to meet is the most dangerous kind" — the same applies to a criterion chosen after seeing the result.
+  **N was 8 in the first M4 pass, which violated §11's *Local Pre-Cloud Training Gate* item 4 ("overfit 32–128 frames", "mandatory to protect the compute budget"). 8 frames are strictly easier to memorise than 32, so that run was a weaker test than the gate requires.** Re-run at N = 32 against the *same* unrelaxed thresholds (2026-09-06): **39.58 dB / 0.004307 / 78.5× / 0.99294 — all four pass.** For reference the retired N = 8 run scored 42.18 dB / 0.003326 / 102.3× / 0.99418; the degradation is the expected cost of 4× the frames and leaves large margin on every threshold. `eval/reports/m4_overfit.json` is the N = 32 artifact.
+  The **loss-drop factor is a sanity check, not one of four independent gates.** The head is sigmoid-initialised (output ≈ 0.5) against dark targets, so step-0 L1 is large by construction and clearing 10× is close to vacuous — it measured 78–102×. PSNR, final L1 and SSIM carry the verdict.
+
+- **"Recognizable styled output" is quantified, not eyeballed — and the quantification must be blur-aware.** On the selection split the prediction must (a) be closer to the teacher target than the engine's own **unstyled** native render is, (b) travel at least 0.8× the target's colour-histogram distance from the native palette — the quantity M3's gate 4 uses to reject a passthrough (Decision 32, Finding 1) — and (c) keep ≥ 0.9 of the target's high-frequency energy. Measured: 40.10 dB vs the native frame's 35.03 dB; histogram travel 0.561 vs the target's 0.548; `sharpness_ratio` **0.9926**. Native RGB is used here **only** as an evaluation reference and never as a model input.
+  **(b) alone is not sufficient, and this is a correction to how M3's gate was carried into M4.** The histogram term rises under smoothing as much as under restyling — a blurred frame keeps its shifted palette — so `hist_pred 0.561 > hist_target 0.548` was equally consistent with "blurrier than the target". Gate 4 was calibrated against a *teacher* whose failure mode is doing nothing; a trained regressor's failure mode is blur, which that metric rewards. Hence (c): `sharpness_ratio = grad_energy(pred)/grad_energy(target)`, high-pass (squared Sobel) energy on luma. Unlike the overfit thresholds, 0.9 and 0.8 were set **after** the model existed; 0.9 is calibrated against the failure mode rather than the model's score — Gaussian-blurring the teacher targets gives ratios 0.977 / 0.897 / 0.761 / 0.654 at σ = 0.5 / 1.0 / 1.5 / 2.0, so 0.9 means "no softer than a ≈ 1 px blur of the target".
+  **Metric finding worth carrying forward:** the *mean absolute* Sobel magnitude — the obvious first choice — is **non-monotone under blur on this content**: it rises (1.00 → 1.04 → 1.14 → 1.19 at the same σ), because the frames are mostly flat 8-bit-quantised regions where the gradient is exactly zero and blurring spreads the few real edges over more pixels. A mean-magnitude sharpness gate here would have been backwards, not merely weak. Pinned by `test_gradient_energy_falls_monotonically_under_blur`.
+
+- **The held-out split doubles as the model-selection set — quantified, and now labelled as such.**
+  `train_baseline.py` checkpoints on the lowest `val_l1` and the reported metrics are then computed with that checkpoint, so they are best-of-N-epochs on the same frames rather than a clean generalisation estimate. With 990 frames from one session there was no room to carve a third guarded block without starving training, so the effect is **measured** instead: best epoch 45 gives `val_l1` 0.004440, the final epoch 59 gives 0.004499 — a selection gain of **1.3 % in L1, about 0.1 dB**. Negligible here because the val curve is flat by then, and it does not affect any M4 exit criterion (none of the four need an unbiased generalisation estimate).
+  The number being small does not license calling it something it is not, so the report key is **`selection_set`, never `held_out`**, and carries a `selection_set_note` stating the bias inline; `test_reported_metrics_are_labelled_as_the_selection_set` fails if `held_out` reappears. **Ladder protocol (§11):** every model on the ladder must use the *identical* selection rule (checkpoint on lowest `val_l1` over the same split at the same eval cadence), or a genuinely untouched test split must be carved out first. A headline number may not be quoted as *generalisation* under the current setup — only as "best epoch on the selection split, same rule for every model".
+
+- **KB §11's Required "finite loss" and "gradient flow" unit tests live at M4**, since M4 is the first milestone with a loss and a backward pass: `renderer/training/tests/test_loss_and_gradients.py`, pure CPU on synthetic tensors with no session, no targets, no checkpoint and no GPU — so they run on a clean checkout, where every data-backed M4 test skips. §11 pre-cloud gate item 3 ("verify no NaN/Inf") is additionally enforced *inside* the training loop by `assert_finite_loss`, which raises `NonFiniteLossError` and aborts; it never clamps, substitutes or skips the step. Gradient flow is asserted as "every parameter has a **non-zero** finite gradient", not merely a non-`None` one — an all-zero gradient over a whole tensor is what a severed skip connection looks like and a finite-loss check cannot see it.
+
+- **Test runs must not overwrite committed evidence.** The first M4 pass had `test_overfit.py` and `test_onnx_export.py` write straight into `eval/reports/`, so any verification run destroyed the artifact this Decision cites — which is how the KB came to quote overfit numbers (42.49 / 0.0035 / 96× / 0.9944) that no committed file reproduced. Both tests now write to a pytest tmp path by default; the committed report is refreshed only under the explicit opt-in `STRUCTRENDER_REFRESH_REPORTS=1`. The numbers in this Decision are the ones in the committed artifacts.
+
+- **Qualitative strips must include moving-camera frames.** The val split is the two 8 s reappearance rungs, which hold the camera still for most of their length, so six strips drawn only from it are near-static and under-report what the model does under motion. `eval/reports/m4_qualitative/` now carries both: `frame_*` (six evenly-spaced val frames) and `trainmove_*` (the six training frames with the largest frame-to-frame view-matrix delta, ≥ 30 frames apart — deterministic, no seed). The moving-camera strips show the model smoothing out the speckled brush detail the teacher paints along the horizon, which the aggregate `sharpness_ratio` of 0.9926 dilutes because most of the frame is flat ground and sky.
+
+- **Loss at M4 is `L_rec` (L1) alone.** No perceptual, geometry, temporal or entity term, and no adversarial loss (Decision 4). Consequence to honour later: whatever loss the ladder's later models train under, **Model A must be re-run with the same one** or the §11 comparison is confounded by the objective rather than the architecture.
+
+- **ONNX export, opset 17, fixed shapes `(1,7,288,512) -> (1,3,288,512)`, parity tolerance `1e-3` max-abs.** §12's mitigation applied from M4 so the path is proven before M5 sends custom attention/masking down it. Measured max |onnxruntime − PyTorch| = 6.5e-06. **Operator finding:** the TorchScript exporter never emits the native `GroupNormalization` op — at opset 17, 18 and 20 alike it lowers every `nn.GroupNorm` to `Shape -> Reshape -> InstanceNormalization -> Reshape -> Mul -> Add`, putting one `Shape` node per norm layer in the graph. All TensorRT-supported, so nothing needed working *around*, but that is where to look if a shape-free graph is ever required. The export test carries an explicit operator allow-list so a new op in M5's graph shows up as a visible diff.
+
+- **LPIPS is the reference implementation or it is absent.** `lpips` (AlexNet trunk) is an optional extra because it pulls `torchvision` and fetches AlexNet weights on first use. When it is missing the reports say `lpips_implementation: unavailable` and carry SSIM/PSNR only. There is deliberately no fallback approximation — a home-made number published under the name "LPIPS" is worse than no number.
+
+- **Measurement caveat for the ladder — and a correction: LPIPS is *not* the fix.** The first version of this bullet said PSNR's range is too small on this scene and recommended LPIPS as the headline. That asserted LPIPS's range without measuring it. It is now measured: `style_acquisition` reports a **do-nothing anchor for every metric** — the score the *unstyled* engine frame gets against the teacher target — because that anchor is what bounds each metric's usable range.
+
+  | metric | do-nothing (native) | M4 baseline | perfect | fraction of the do-nothing→perfect gap the model closes |
+  |---|---|---|---|---|
+  | PSNR | 35.03 dB | 40.10 dB | ∞ | +5.07 dB = 3.22× lower MSE |
+  | SSIM | 0.98988 | 0.99304 | 1.0 | **31.2 %** |
+  | LPIPS (alex) | 0.04254 | 0.04181 | 0.0 | **1.7 %** |
+
+  **LPIPS compresses harder than PSNR or SSIM here, not less.** On this dark, low-contrast scene the `gouache` teacher target is already perceptually almost indistinguishable from the native frame (LPIPS 0.043 between them), so LPIPS separates the trained model from doing nothing by 0.0007 — noise. Making it the ladder headline would have produced a figure on which Models A through the full EPAM model are all within a rounding error of the unstyled engine. `sharpness_ratio` tells the same story: 0.993 for the model vs 1.041 for the native frame.
+  **Revised recommendation:** do not elevate any single metric on this session/style — the problem is the scene, not the metric. Report all three *always paired with their do-nothing anchor* (or as the gap-fraction in the table above), which is the only form in which they are interpretable. The real fix before the §11 ladder is a headline scene/style with more stylisation contrast than `gouache` on this dark exterior; **the headline result is RCS versus time-outside-view, which does not depend on this at all** — the image-quality ladder is the secondary figure. Recorded as a limit on what M4's numbers can support, not as a task for M5.
+
+---
+
+### Decision 36: M3's Stylisation Gate Is More Permissive Than It Looked — Strengthen the Style Before M5 (2026-09-06)
+
+- **Context:**  
+  Surfaced by M4, not by M3's own validation. Decision 32 added gate 4 (`stylisation_hist >= 0.15`) specifically so a teacher that does nothing could not pass, and the `gouache` target set cleared it comfortably (median 0.509, min 0.232). Training a model against those targets then produced the anchors that gate could not see:
+
+  | measured on the M4 eval split | do-nothing (native) | teacher target |
+  |---|---|---|
+  | LPIPS vs target | **0.0425** | 0 |
+  | SSIM vs target | **0.98988** | 1.0 |
+  | PSNR vs target | **35.03 dB** | ∞ |
+  | gradient energy vs target | **1.041** (native is *sharper*) | 1.0 |
+
+  The unstyled engine frame is already perceptually near-identical to its own teacher target. Visually the "gouache painted concept art" target is the same washed-out grey render with slightly different shading.
+
+- **Why gate 4 passed anyway:**  
+  A colour-histogram L1 moves a long way under a **palette shift** while the image stays perceptually almost unchanged. Gate 4 measures *displacement in colour statistics*, which is a good detector of the failure mode it was designed against (a literal passthrough, distance exactly 0) and a poor measure of *how much the image actually changed*. The gate is not wrong — it is answering a narrower question than its name suggests, and 0.509 does not mean "half-way restyled".
+
+- **Contributing cause:**  
+  Decision 32 pinned `strength 0.45` precisely to stop the hallucinated geometry that failed 39 frames at 0.65. Lower img2img strength keeps the output near its input by construction, so alignment and stylisation trade off directly against each other. The scene compounds it: two grey cubes on a grey floor under flat ambient light, with a substantial fraction of frames near-empty, gives a style little to act on.
+
+- **Chosen Path:**  
+  **Strengthen the style before M5.** §11's ladder compares models on output quality; with this little style signal that axis cannot discriminate Model A from full StructRender, and "StructFormer paints the frame in the chosen style" would be asserted rather than demonstrated. Regenerate the M3 targets with a visually distinct prompt and/or higher strength, re-run all four M3 alignment gates, and re-tune if hallucination returns. M4's implementation is style-agnostic and unaffected; its **trained checkpoint and reported metrics must be regenerated** against the new targets before they are used as the ladder's Model A.
+
+- **Consequences to honour:**  
+  - **Report image-quality metrics against their do-nothing anchor, always.** A bare "LPIPS 0.0418" is uninterpretable; the informative quantity is the fraction of the native→target gap closed. On this data that is SSIM 31.2 %, PSNR 3.2× MSE, **LPIPS 1.7 %** — so LPIPS compresses hardest here, and Decision 35's original recommendation of LPIPS as the ladder headline is **withdrawn** (see the revised bullet there).
+  - Gate 4's threshold is not re-tuned by this entry. If a future style is rejected by gates 1-3 while gate 4 is comfortable, that is the alignment/stylisation trade-off of Decision 32 doing its job, not a reason to relax either.
+  - The RCS headline (reappearance consistency vs time-unseen) does not depend on style strength; this affects the image-quality axis of the ladder, not the project's main claim.
+
+- **Rejected Alternatives:**  
+  Accepting the weak style and proceeding to M5 (cheapest, but leaves the ladder's quality axis near-uninformative and the styled-rendering claim unevidenced); enriching the game scene as well (addresses the root cause that there is little to style, but reopens M0/M2 and is a large detour — kept available if a stronger style alone proves insufficient); adding the deferred second style now instead (Decision 31 makes it config-only and M8 needs it eventually, but it does not fix the reference style the ladder is measured on).
 
 ---
 

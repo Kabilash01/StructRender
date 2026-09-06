@@ -18,7 +18,8 @@ required_dirs=(
   data_pipeline/entity_lifecycle data_pipeline/validation data_pipeline/schemas data_pipeline/teacher_targets
   data_pipeline/teacher data_pipeline/teacher/backends data_pipeline/teacher/tests
   renderer/structformer renderer/baselines renderer/temporal renderer/epam renderer/style
-  renderer/losses renderer/training renderer/optional/gradient_balancing renderer/optional/one_step_dit
+  renderer/losses renderer/training renderer/training/tests
+  renderer/optional/gradient_balancing renderer/optional/one_step_dit
   inference/export inference/tensorrt/builder inference/tensorrt/benchmark
   inference/cuda/temporal_warp inference/cpp_runtime/include inference/cpp_runtime/src
   eval/protocols eval/baselines eval/metrics eval/plots eval/reports

@@ -38,7 +38,7 @@ checkpoints/    model artifacts (git-ignored)
 
 ## Current status
 
-**Milestone 3 — Offline Teacher Targets.** M0–M3 complete; see KB §10.
+**Milestone 4 — CNN/U-Net Baseline.** M0–M4 complete; see KB §10.
 
 ## Development
 
