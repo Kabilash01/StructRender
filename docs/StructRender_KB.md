@@ -2734,6 +2734,29 @@ Second cleanup pass, continuing Decision 51. No training, no third attempt, no t
 
 ---
 
+### Decision 53: RCS Implemented and Measured — The Headline Metric Does Not Degrade With Time Unseen (2026-09-09)
+
+§11's headline figure, **RCS versus time outside view**, had never been computed. Six milestones were complete and `eval/` contained only `image_quality.py`. Implemented in `eval/metrics/rcs.py`, run by `eval/protocols/run_rcs.py`, artifact `eval/reports/rcs.json`. Measured on the existing M4 and M5 checkpoints — **no training**.
+
+- **Three choices §11 does not fix, made here.** `E` is a **masked deep-feature descriptor**: AlexNet conv taps (the LPIPS trunk, already a dependency), average-pooled over the entity's pixels, per-layer L2-normalised, concatenated. The mask always comes from the **engine's** `entity_id` map, never from the rendered image, so it cannot move with a render's own errors — `entity_id` is used as an address here, exactly as Decision 9 requires. There is **no fallback descriptor**: if the trunk is unavailable the caller gets an error, never a home-made number published under the name RCS (Decision 35's rule).
+
+- **The first implementation was confounded and the first numbers were wrong.** Masked *pooling* alone does not exclude background: conv features have receptive fields, so pixels around the silhouette reach the descriptor. Measured — replacing the **entire** background scored **0.979** while inverting the **entity itself** scored **0.971**, comparable magnitudes, i.e. the descriptor was reading the scene nearly as much as the entity it was supposed to describe. Fixed by zeroing the background **before** the trunk, after which the same background swap scores exactly **1.000**. Caught by a test written to be non-vacuous rather than by inspection, and the pre-fix numbers are not reported anywhere.
+
+- **The measured baseline.** Ten reappearance sequences — 0.5/1/2/4/8 s × `camera_away`/`entity_away`, built by M2 for exactly this. The **native engine** scores **0.973** (the ceiling that pose change alone allows; not 1.0 because the object is seen from a different angle after the gap). The **teacher targets** score **0.918** — *less* consistent than the engine, so the supervision itself injects inconsistency. All three trained models land at **0.926–0.927**, indistinguishable from one another against a per-source sd of ~0.02, and slightly **above** their own teacher.
+
+- **The finding that matters: RCS does not degrade with time outside view.** Across a 16× range of unseen durations the change from 0.5 s to 8 s is **−0.012 to −0.028** for the models and **+0.000** for the engine, against a sd of ~0.02 — inside noise, and non-monotone (2 s is the worst rung for most sources, including the engine, so it is a property of that rung's pose, not of elapsed time).
+  **This is expected by construction and was not previously stated.** A frame-independent renderer computes appearance from the current frame's structure alone; it has no representation of how long an entity was away, so its RCS *cannot* be a function of elapsed time. It is a function of pose difference.
+
+- **Consequence for M8, decided before EPAM is built.** §11 says "a strong EPAM result should degrade materially slower as time unseen increases". **That framing presumes a baseline that degrades, and against the frame-independent rungs no such baseline exists** — a slope comparison against Models A or C is unwinnable because there is no slope to beat. Two consequences:
+  1. EPAM's demonstrable claim on this dataset is a **level** improvement — closing the gap from **0.926** toward the engine's **0.973**, about **0.047** of headroom. With model-to-model sd near 0.02, EPAM must move RCS by roughly 2 sd to be credible. That is a demanding bar and it is now known in advance rather than after the fact.
+  2. A **slope** effect can only appear against a model that carries state across frames and can therefore drift — the **temporal** rung (M6). If the slope figure §11 describes is wanted, M6 is its baseline, not M4 or M5.
+
+- **A confound to carry forward.** The models score *above* their teacher, and blur is the likely reason: averaging suppresses the high-frequency variation that differs between two views. The same softness that failed M5's sharpness gate plausibly *helps* RCS. So RCS must never be read alone — it is paired with the sharpness ratio, or a blurrier model looks like a more consistent one.
+
+- **Scope.** One session, one style, one entity per sequence, n = 10, and a descriptor whose absolute scale has no meaning outside comparisons made with it. The ordering (engine > models > teacher) and the absence of a time trend are the results; the third decimal place is not.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
