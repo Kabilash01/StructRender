@@ -1,0 +1,32 @@
+{
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "checkpoint": "/home/kabilash01/StructRender/checkpoints/m4_unet_seed_repeat/best.pt",
+  "seed": 20260908,
+  "parameters": 7853763,
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-08T12:49:19+00:00",
+  "torch_version": "2.13.0+cu132",
+  "selection_set": {
+    "n_frames": 166,
+    "l1": 0.009916350245475769,
+    "psnr_db": 33.34196853637695,
+    "ssim": 0.9672919511795044,
+    "lpips_alex": 0.050900597125291824
+  },
+  "style_acquisition_selection_set": {
+    "psnr_pred_vs_target_db": 33.34196472167969,
+    "psnr_native_vs_target_db": 29.94843292236328,
+    "ssim_pred_vs_target": 0.9672958850860596,
+    "ssim_native_vs_target": 0.9640238881111145,
+    "hist_pred_vs_native": 0.555598015978846,
+    "hist_target_vs_native": 0.6007446125648427,
+    "grad_energy_pred": 0.01948237605392933,
+    "grad_energy_target": 0.020866671577095985,
+    "grad_energy_native": 0.020721780136227608,
+    "sharpness_ratio": 0.9336599745650807,
+    "sharpness_ratio_native": 0.9930563223591722,
+    "lpips_pred_vs_target": 0.050900597125291824,
+    "lpips_native_vs_target": 0.10103161633014679
+  }
+}

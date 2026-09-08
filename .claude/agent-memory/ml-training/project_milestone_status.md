@@ -20,10 +20,12 @@ KB §10 in order.
   contiguous-sequence holdout split with a guard band, pre-fixed overfit
   thresholds, ONNX opset 17 / fixed shapes) as amended by Decisions 41-42.
 
-Next is M5 (StructFormer baseline: CNN stem + window transformer encoder +
-decoder + RGB head + style conditioning), whose exit criteria include a
-**TensorRT benchmark at M5, not at the end**. Then M6 temporal, M7 entity,
-M8 EPAM.
+**M5 is in progress** (StructFormer baseline: CNN stem + window transformer
+encoder + decoder + RGB head + style conditioning), whose exit criteria include a
+**TensorRT benchmark at M5, not at the end**. Step 2 — the pre-architecture
+ONNX/TensorRT attention probe — is complete; see [[m5-export-probe]]. Still open
+at M5: training, and "better or competitive output against the CNN baseline".
+Then M6 temporal, M7 entity, M8 EPAM.
 
 **Why:** an earlier version of this memory named the retired style, the retired
 objective and the retired scene's anchors — every one of which would have sent

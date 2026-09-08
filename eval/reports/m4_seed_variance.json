@@ -1,0 +1,103 @@
+{
+  "purpose": "Model A run-to-run variance over 3 seeds, measured to pre-register M5's better/competitive margin BEFORE StructFormer trains, and to replace the unmeasured 'training reproduces exactly' claim removed from KB Decisions 35 and 42.",
+  "generated_utc": "2026-09-08T13:08:48+00:00",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "n_runs": 3,
+  "config_note": "All three identical to configs/training/m4_unet_baseline.json except train.seed and train.checkpoint_dir. Split, loss, data, overfit and style_acquisition blocks byte-identical.",
+  "runs": [
+    {
+      "seed": 20260905,
+      "env": ".venv / torch 2.14.0+cu130 (committed Model A)",
+      "psnr_db": 33.28075408935547,
+      "ssim": 0.9671375155448914,
+      "l1": 0.010064337402582169,
+      "lpips_alex": 0.053062018007040024,
+      "sharpness_ratio": 0.9302505313670113,
+      "hist_pred_vs_native": 0.5552337387745426
+    },
+    {
+      "seed": 20260908,
+      "env": "dl / torch 2.13.0+cu132",
+      "psnr_db": 33.34196853637695,
+      "ssim": 0.9672919511795044,
+      "l1": 0.009916350245475769,
+      "lpips_alex": 0.050900597125291824,
+      "sharpness_ratio": 0.9336599745650807,
+      "hist_pred_vs_native": 0.555598015978846
+    },
+    {
+      "seed": 20260909,
+      "env": "dl / torch 2.13.0+cu132",
+      "psnr_db": 33.030513763427734,
+      "ssim": 0.9675331711769104,
+      "l1": 0.010533026419579983,
+      "lpips_alex": 0.056667476892471313,
+      "sharpness_ratio": 0.9084241142030914,
+      "hist_pred_vs_native": 0.5748157288441963
+    }
+  ],
+  "statistics": {
+    "psnr_db": {
+      "mean": 33.21774546305338,
+      "sd": 0.16501086067156015,
+      "min": 33.030513763427734,
+      "max": 33.34196853637695,
+      "range": 0.31145477294921875
+    },
+    "ssim": {
+      "mean": 0.9673208793004354,
+      "sd": 0.0001994078030633344,
+      "min": 0.9671375155448914,
+      "max": 0.9675331711769104,
+      "range": 0.00039565563201904297
+    },
+    "l1": {
+      "mean": 0.010171238022545973,
+      "sd": 0.00032193661307536455,
+      "min": 0.009916350245475769,
+      "max": 0.010533026419579983,
+      "range": 0.0006166761741042137
+    },
+    "lpips_alex": {
+      "mean": 0.05354336400826772,
+      "sd": 0.0029134165582610154,
+      "min": 0.050900597125291824,
+      "max": 0.056667476892471313,
+      "range": 0.005766879767179489
+    },
+    "sharpness_ratio": {
+      "mean": 0.9241115400450611,
+      "sd": 0.013692244990895,
+      "min": 0.9084241142030914,
+      "max": 0.9336599745650807,
+      "range": 0.025235860361989215
+    },
+    "hist_pred_vs_native": {
+      "mean": 0.5618824945325283,
+      "sd": 0.011201990304886613,
+      "min": 0.5552337387745426,
+      "max": 0.5748157288441963,
+      "range": 0.019581990069653665
+    }
+  },
+  "m5_margin": {
+    "reference": "mean of the 3 Model A runs, not the single committed run",
+    "reference_psnr_db": 33.21774546305338,
+    "sigma_psnr_db": 0.16501086067156015,
+    "better_psnr_db_at_least": 33.547767184396506,
+    "competitive_psnr_db_range": [
+      32.88772374171026,
+      33.547767184396506
+    ],
+    "rule": "better >= +2sd; competitive within +/-2sd; worse below. Pre-registered before StructFormer trains."
+  },
+  "sharpness_finding": {
+    "floor": 0.9,
+    "worst_seed_value": 0.9084241142030914,
+    "worst_seed_headroom": 0.008424114203091415,
+    "sd": 0.013692244990895,
+    "note": "M4 exit criterion 3(c) is seed-fragile: the gate margin is ~2.2 sd, so a different seed could plausibly fail it. See KB Decision 46."
+  }
+}

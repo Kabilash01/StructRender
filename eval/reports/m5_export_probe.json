@@ -1,0 +1,1963 @@
+{
+  "milestone": 5,
+  "step": "2 \u2014 window-attention export probe (design-time, pre-architecture)",
+  "purpose": "KB \u00a712 'custom attention/masking operation exports poorly' \u2014 prove each attention hazard reaches TensorRT before the M5 architecture is trained, so a blocker changes the design instead of wasting a run.",
+  "generated_utc": "2026-09-08T11:22:21+00:00",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "onnx_version": "1.22.0",
+  "onnxruntime_version": "1.23.2",
+  "opset": 17,
+  "cuda_version": "13.2",
+  "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "trt_probed": true,
+  "trained_weights": false,
+  "weights_note": "Random init, no training. This probe measures operator support and shape flow, never output quality.",
+  "capacity_note": "embed_dim=32, heads=1, 1-2 blocks per stage, window 8. Minimum capacity, op-identical to the intended model.",
+  "latency_note": "Latency is for THIS minimal-width graph on this GPU. It is NOT evidence about \u00a712's 15-20 ms StructFormer budget, which depends on the trained width. Compare variants against each other only.",
+  "numerics_note": "trt.fp32 is built with TF32 disabled so max_abs_diff measures operator correctness rather than TensorRT's default precision mode; it is gated at tolerance_max_abs. trt.fp16 is the \u00a74 target precision \u2014 its max_abs_diff is reported against the SAME fp32 PyTorch reference and is deliberately NOT gated, because its error is precision, not operator, error.",
+  "trt11_api_note": "TensorRT 11 removed BuilderFlag.FP16/INT8/BF16. Reduced precision now comes only from a STRONGLY_TYPED network whose dtypes are those of the ONNX graph, so an FP16 engine requires an FP16 export.",
+  "tolerance_max_abs": 0.001,
+  "k_max_probe": 8,
+  "m4_operator_baseline": [
+    "Add",
+    "Concat",
+    "Constant",
+    "Conv",
+    "InstanceNormalization",
+    "MaxPool",
+    "Mul",
+    "Relu",
+    "Reshape",
+    "Resize",
+    "Shape",
+    "Sigmoid"
+  ],
+  "new_ops_vs_m4_union": [
+    "Cast",
+    "ConstantOfShape",
+    "Div",
+    "Erf",
+    "Expand",
+    "Gather",
+    "Gemm",
+    "Identity",
+    "LayerNormalization",
+    "MatMul",
+    "ReduceMax",
+    "Slice",
+    "Softmax",
+    "Sqrt",
+    "Sub",
+    "Tile",
+    "Transpose",
+    "Unsqueeze"
+  ],
+  "variants": {
+    "h1_window_partition_reverse": {
+      "hazard": "1 window partition/reverse",
+      "attn_impl": null,
+      "shift_impl": null,
+      "parameters": 0,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Constant": 4,
+          "Reshape": 4,
+          "Transpose": 4
+        },
+        "n_nodes": 12,
+        "n_gather_nodes": 0,
+        "gather_indices_all_constant": null,
+        "size_bytes": 1260
+      },
+      "new_ops_vs_m4": [
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 0.0,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 8,
+          "engine_bytes": 2972,
+          "run_ok": true,
+          "max_abs_diff": 0.0,
+          "latency_ms_mean": 0.0064,
+          "latency_ms_p50": 0.0059,
+          "latency_ms_min": 0.0047
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 8,
+          "engine_bytes": 2972,
+          "run_ok": true,
+          "max_abs_diff": 0.0019221305847167969,
+          "latency_ms_mean": 0.0049,
+          "latency_ms_p50": 0.0043,
+          "latency_ms_min": 0.0039
+        }
+      }
+    },
+    "h3_rel_pos_bias_only": {
+      "hazard": "3 relative position bias (gather on learned table)",
+      "attn_impl": null,
+      "shift_impl": null,
+      "parameters": 225,
+      "output_shape": [
+        1,
+        1,
+        64,
+        64
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            1,
+            64,
+            64
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            1,
+            64,
+            64
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 1
+        },
+        "n_nodes": 1,
+        "n_gather_nodes": 0,
+        "gather_indices_all_constant": null,
+        "size_bytes": 16550
+      },
+      "new_ops_vs_m4": [],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 0.0,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 2,
+          "engine_bytes": 28772,
+          "run_ok": true,
+          "max_abs_diff": 0.0,
+          "latency_ms_mean": 0.0042,
+          "latency_ms_p50": 0.0039,
+          "latency_ms_min": 0.0034
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 2,
+          "engine_bytes": 20580,
+          "run_ok": true,
+          "max_abs_diff": 0.0017960071563720703,
+          "latency_ms_mean": 0.0043,
+          "latency_ms_p50": 0.0038,
+          "latency_ms_min": 0.0033
+        }
+      }
+    },
+    "h2_attn_manual": {
+      "hazard": "2 attention form, no bias, no mask",
+      "attn_impl": "manual",
+      "shift_impl": null,
+      "parameters": 4224,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 2,
+          "Constant": 10,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 1,
+          "Reshape": 6,
+          "Softmax": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 34,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 20422
+      },
+      "new_ops_vs_m4": [
+        "Gather",
+        "MatMul",
+        "Softmax",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.4901161193847656e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 41,
+          "engine_bytes": 167028,
+          "run_ok": true,
+          "max_abs_diff": 8.940696716308594e-08,
+          "latency_ms_mean": 0.0525,
+          "latency_ms_p50": 0.0526,
+          "latency_ms_min": 0.0507
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 41,
+          "engine_bytes": 134228,
+          "run_ok": true,
+          "max_abs_diff": 0.0004044175148010254,
+          "latency_ms_mean": 0.0284,
+          "latency_ms_p50": 0.0282,
+          "latency_ms_min": 0.0264
+        }
+      }
+    },
+    "h23_attn_manual_relpos": {
+      "hazard": "2+3 attention with relative position bias",
+      "attn_impl": "manual",
+      "shift_impl": null,
+      "parameters": 4449,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 3,
+          "Constant": 10,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 1,
+          "Reshape": 6,
+          "Softmax": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 35,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 36912
+      },
+      "new_ops_vs_m4": [
+        "Gather",
+        "MatMul",
+        "Softmax",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.1920928955078125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 43,
+          "engine_bytes": 183796,
+          "run_ok": true,
+          "max_abs_diff": 1.1920928955078125e-07,
+          "latency_ms_mean": 0.0528,
+          "latency_ms_p50": 0.0527,
+          "latency_ms_min": 0.0508
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 43,
+          "engine_bytes": 126756,
+          "run_ok": true,
+          "max_abs_diff": 0.000392913818359375,
+          "latency_ms_mean": 0.0304,
+          "latency_ms_p50": 0.0302,
+          "latency_ms_min": 0.0278
+        }
+      }
+    },
+    "h234_attn_manual_relpos_mask": {
+      "hazard": "2+3+4 attention with bias and additive pre-softmax mask",
+      "attn_impl": "manual",
+      "shift_impl": null,
+      "parameters": 4449,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 4,
+          "Constant": 13,
+          "ConstantOfShape": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 1,
+          "Reshape": 6,
+          "Softmax": 1,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 42,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2396885
+      },
+      "new_ops_vs_m4": [
+        "ConstantOfShape",
+        "Expand",
+        "Gather",
+        "MatMul",
+        "Softmax",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.1920928955078125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 56,
+          "engine_bytes": 2526932,
+          "run_ok": true,
+          "max_abs_diff": 1.1920928955078125e-07,
+          "latency_ms_mean": 0.053,
+          "latency_ms_p50": 0.0526,
+          "latency_ms_min": 0.0507
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 56,
+          "engine_bytes": 1298700,
+          "run_ok": true,
+          "max_abs_diff": 0.0004153251647949219,
+          "latency_ms_mean": 0.0294,
+          "latency_ms_p50": 0.029,
+          "latency_ms_min": 0.0279
+        }
+      }
+    },
+    "h5_block_manual_noshift": {
+      "hazard": "5 control: full block, shift_size=0 (no roll)",
+      "attn_impl": "manual",
+      "shift_impl": "n/a",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 8,
+          "Constant": 13,
+          "Div": 1,
+          "Erf": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 3,
+          "Reshape": 6,
+          "Softmax": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 53,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 55823
+      },
+      "new_ops_vs_m4": [
+        "Div",
+        "Erf",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Softmax",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 9.5367431640625e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 78,
+          "engine_bytes": 244220,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.0783,
+          "latency_ms_p50": 0.0782,
+          "latency_ms_min": 0.0761
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 78,
+          "engine_bytes": 309188,
+          "run_ok": true,
+          "max_abs_diff": 0.004156589508056641,
+          "latency_ms_mean": 0.048,
+          "latency_ms_p50": 0.0485,
+          "latency_ms_min": 0.0461
+        }
+      }
+    },
+    "h5_block_manual_shift_roll": {
+      "hazard": "5 shifted window via roll",
+      "attn_impl": "manual",
+      "shift_impl": "roll",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 9,
+          "Concat": 4,
+          "Constant": 40,
+          "ConstantOfShape": 1,
+          "Div": 1,
+          "Erf": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 3,
+          "Reshape": 6,
+          "Slice": 8,
+          "Softmax": 1,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 96,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2419026
+      },
+      "new_ops_vs_m4": [
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 311,
+          "engine_bytes": 2619628,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.08,
+          "latency_ms_p50": 0.0794,
+          "latency_ms_min": 0.0789
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 311,
+          "engine_bytes": 1467124,
+          "run_ok": true,
+          "max_abs_diff": 0.005115032196044922,
+          "latency_ms_mean": 0.0492,
+          "latency_ms_p50": 0.0487,
+          "latency_ms_min": 0.0467
+        }
+      }
+    },
+    "h5_block_manual_shift_slice": {
+      "hazard": "5 shifted window via slice",
+      "attn_impl": "manual",
+      "shift_impl": "slice",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 9,
+          "Concat": 4,
+          "Constant": 48,
+          "ConstantOfShape": 1,
+          "Div": 1,
+          "Erf": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 3,
+          "Reshape": 6,
+          "Slice": 8,
+          "Softmax": 1,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 104,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2419832
+      },
+      "new_ops_vs_m4": [
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 311,
+          "engine_bytes": 2618476,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.0804,
+          "latency_ms_p50": 0.0795,
+          "latency_ms_min": 0.0788
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 311,
+          "engine_bytes": 1483692,
+          "run_ok": true,
+          "max_abs_diff": 0.005055904388427734,
+          "latency_ms_mean": 0.0498,
+          "latency_ms_p50": 0.0496,
+          "latency_ms_min": 0.0482
+        }
+      }
+    },
+    "h6_entity_masked_xattn_manual": {
+      "hazard": "6 M7 entity-masked cross-attention (probe only, K_max=8)",
+      "attn_impl": "manual",
+      "shift_impl": null,
+      "parameters": 4352,
+      "output_shape": [
+        1,
+        32,
+        36,
+        64
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            36,
+            64
+          ],
+          "entity_tokens": [
+            1,
+            8,
+            32
+          ],
+          "entity_mask": [
+            1,
+            8,
+            36,
+            64
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            36,
+            64
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 6,
+          "Concat": 2,
+          "Constant": 17,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 3,
+          "ReduceMax": 1,
+          "Reshape": 7,
+          "Shape": 2,
+          "Slice": 2,
+          "Softmax": 1,
+          "Sub": 1,
+          "Transpose": 7,
+          "Unsqueeze": 1
+        },
+        "n_nodes": 60,
+        "n_gather_nodes": 0,
+        "gather_indices_all_constant": null,
+        "size_bytes": 23882
+      },
+      "new_ops_vs_m4": [
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "ReduceMax",
+        "Slice",
+        "Softmax",
+        "Sub",
+        "Transpose",
+        "Unsqueeze"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 2.384185791015625e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 129,
+          "engine_bytes": 192100,
+          "run_ok": true,
+          "max_abs_diff": 2.384185791015625e-07,
+          "latency_ms_mean": 0.0287,
+          "latency_ms_p50": 0.0286,
+          "latency_ms_min": 0.027
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 129,
+          "engine_bytes": 278772,
+          "run_ok": true,
+          "max_abs_diff": 0.0020008087158203125,
+          "latency_ms_mean": 0.0251,
+          "latency_ms_p50": 0.0247,
+          "latency_ms_min": 0.0213
+        }
+      }
+    },
+    "e2e_structformer_manual_shift": {
+      "hazard": "end-to-end fixed-shape path, depth 2 (shifted blocks present)",
+      "attn_impl": "manual",
+      "shift_impl": "roll",
+      "parameters": 145385,
+      "output_shape": [
+        1,
+        3,
+        288,
+        512
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "structure": [
+            1,
+            7,
+            288,
+            512
+          ],
+          "style_token": [
+            1,
+            16
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            3,
+            288,
+            512
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 58,
+          "Concat": 12,
+          "Constant": 166,
+          "ConstantOfShape": 3,
+          "Conv": 6,
+          "Div": 7,
+          "Erf": 6,
+          "Expand": 3,
+          "Gather": 19,
+          "Gemm": 1,
+          "Identity": 24,
+          "InstanceNormalization": 3,
+          "LayerNormalization": 12,
+          "MatMul": 36,
+          "Mul": 24,
+          "Relu": 3,
+          "Reshape": 42,
+          "Resize": 3,
+          "Shape": 4,
+          "Sigmoid": 1,
+          "Slice": 26,
+          "Softmax": 6,
+          "Tile": 3,
+          "Transpose": 36,
+          "Unsqueeze": 4
+        },
+        "n_nodes": 508,
+        "n_gather_nodes": 19,
+        "gather_indices_all_constant": true,
+        "size_bytes": 3224423
+      },
+      "new_ops_vs_m4": [
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Gemm",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Tile",
+        "Transpose",
+        "Unsqueeze"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 6.556510925292969e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 1291,
+          "engine_bytes": 6511132,
+          "run_ok": true,
+          "max_abs_diff": 4.172325134277344e-07,
+          "latency_ms_mean": 0.8579,
+          "latency_ms_p50": 0.8579,
+          "latency_ms_min": 0.85
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 1291,
+          "engine_bytes": 4616348,
+          "run_ok": true,
+          "max_abs_diff": 0.001278519630432129,
+          "latency_ms_mean": 0.408,
+          "latency_ms_p50": 0.4076,
+          "latency_ms_min": 0.4056
+        }
+      }
+    },
+    "h2_attn_sdpa": {
+      "hazard": "2 attention form, no bias, no mask",
+      "attn_impl": "sdpa",
+      "shift_impl": null,
+      "parameters": 4224,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 2,
+          "Cast": 2,
+          "Constant": 12,
+          "Div": 1,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 2,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 1,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Transpose": 7
+        },
+        "n_nodes": 45,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 21298
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "Div",
+        "Gather",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.341104507446289e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 78,
+          "engine_bytes": 167148,
+          "run_ok": true,
+          "max_abs_diff": 1.1920928955078125e-07,
+          "latency_ms_mean": 0.0532,
+          "latency_ms_p50": 0.0527,
+          "latency_ms_min": 0.0515
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 79,
+          "engine_bytes": 117940,
+          "run_ok": true,
+          "max_abs_diff": 0.0003628730773925781,
+          "latency_ms_mean": 0.0285,
+          "latency_ms_p50": 0.0282,
+          "latency_ms_min": 0.0267
+        }
+      }
+    },
+    "h23_attn_sdpa_relpos": {
+      "hazard": "2+3 attention with relative position bias",
+      "attn_impl": "sdpa",
+      "shift_impl": null,
+      "parameters": 4449,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 3,
+          "Cast": 2,
+          "Constant": 12,
+          "Div": 1,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 2,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 1,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Transpose": 7
+        },
+        "n_nodes": 46,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 37788
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "Div",
+        "Gather",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.341104507446289e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 80,
+          "engine_bytes": 183780,
+          "run_ok": true,
+          "max_abs_diff": 1.1920928955078125e-07,
+          "latency_ms_mean": 0.0527,
+          "latency_ms_p50": 0.0526,
+          "latency_ms_min": 0.051
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 81,
+          "engine_bytes": 172292,
+          "run_ok": true,
+          "max_abs_diff": 0.0003635287284851074,
+          "latency_ms_mean": 0.0403,
+          "latency_ms_p50": 0.0395,
+          "latency_ms_min": 0.0385
+        }
+      }
+    },
+    "h234_attn_sdpa_relpos_mask": {
+      "hazard": "2+3+4 attention with bias and additive pre-softmax mask",
+      "attn_impl": "sdpa",
+      "shift_impl": null,
+      "parameters": 4449,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 4,
+          "Cast": 2,
+          "Constant": 15,
+          "ConstantOfShape": 1,
+          "Div": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "MatMul": 4,
+          "Mul": 2,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 1,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 53,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2397761
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "ConstantOfShape",
+        "Div",
+        "Expand",
+        "Gather",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 1.1920928955078125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 93,
+          "engine_bytes": 2526972,
+          "run_ok": true,
+          "max_abs_diff": 1.1920928955078125e-07,
+          "latency_ms_mean": 0.053,
+          "latency_ms_p50": 0.0527,
+          "latency_ms_min": 0.0514
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 94,
+          "engine_bytes": 1327492,
+          "run_ok": true,
+          "max_abs_diff": 0.00038173794746398926,
+          "latency_ms_mean": 0.0394,
+          "latency_ms_p50": 0.0383,
+          "latency_ms_min": 0.0379
+        }
+      }
+    },
+    "h5_block_sdpa_noshift": {
+      "hazard": "5 control: full block, shift_size=0 (no roll)",
+      "attn_impl": "sdpa",
+      "shift_impl": "n/a",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 8,
+          "Cast": 2,
+          "Constant": 15,
+          "Div": 2,
+          "Erf": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 4,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 1,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Transpose": 7
+        },
+        "n_nodes": 64,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 56699
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "Div",
+        "Erf",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 115,
+          "engine_bytes": 265284,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.0783,
+          "latency_ms_p50": 0.0782,
+          "latency_ms_min": 0.0764
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 116,
+          "engine_bytes": 337564,
+          "run_ok": true,
+          "max_abs_diff": 0.0036725997924804688,
+          "latency_ms_mean": 0.0581,
+          "latency_ms_p50": 0.0579,
+          "latency_ms_min": 0.0549
+        }
+      }
+    },
+    "h5_block_sdpa_shift_roll": {
+      "hazard": "5 shifted window via roll",
+      "attn_impl": "sdpa",
+      "shift_impl": "roll",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 9,
+          "Cast": 2,
+          "Concat": 4,
+          "Constant": 42,
+          "ConstantOfShape": 1,
+          "Div": 2,
+          "Erf": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 4,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 9,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 107,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2419902
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 348,
+          "engine_bytes": 2619676,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.0796,
+          "latency_ms_p50": 0.0793,
+          "latency_ms_min": 0.0785
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 349,
+          "engine_bytes": 1512060,
+          "run_ok": true,
+          "max_abs_diff": 0.004069805145263672,
+          "latency_ms_mean": 0.0603,
+          "latency_ms_p50": 0.06,
+          "latency_ms_min": 0.0583
+        }
+      }
+    },
+    "h5_block_sdpa_shift_slice": {
+      "hazard": "5 shifted window via slice",
+      "attn_impl": "sdpa",
+      "shift_impl": "slice",
+      "parameters": 8769,
+      "output_shape": [
+        1,
+        32,
+        72,
+        128
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            72,
+            128
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 9,
+          "Cast": 2,
+          "Concat": 4,
+          "Constant": 50,
+          "ConstantOfShape": 1,
+          "Div": 2,
+          "Erf": 1,
+          "Expand": 1,
+          "Gather": 3,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 4,
+          "Reshape": 6,
+          "Shape": 1,
+          "Slice": 9,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Tile": 1,
+          "Transpose": 7
+        },
+        "n_nodes": 115,
+        "n_gather_nodes": 3,
+        "gather_indices_all_constant": true,
+        "size_bytes": 2420708
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Tile",
+        "Transpose"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 348,
+          "engine_bytes": 2607780,
+          "run_ok": true,
+          "max_abs_diff": 4.76837158203125e-07,
+          "latency_ms_mean": 0.0796,
+          "latency_ms_p50": 0.0793,
+          "latency_ms_min": 0.0784
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 349,
+          "engine_bytes": 1495492,
+          "run_ok": true,
+          "max_abs_diff": 0.0046329498291015625,
+          "latency_ms_mean": 0.0602,
+          "latency_ms_p50": 0.0598,
+          "latency_ms_min": 0.058
+        }
+      }
+    },
+    "h6_entity_masked_xattn_sdpa": {
+      "hazard": "6 M7 entity-masked cross-attention (probe only, K_max=8)",
+      "attn_impl": "sdpa",
+      "shift_impl": null,
+      "parameters": 4352,
+      "output_shape": [
+        1,
+        32,
+        36,
+        64
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "x": [
+            1,
+            32,
+            36,
+            64
+          ],
+          "entity_tokens": [
+            1,
+            8,
+            32
+          ],
+          "entity_mask": [
+            1,
+            8,
+            36,
+            64
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            32,
+            36,
+            64
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 6,
+          "Cast": 2,
+          "Concat": 2,
+          "Constant": 19,
+          "Div": 1,
+          "Identity": 2,
+          "LayerNormalization": 2,
+          "MatMul": 6,
+          "Mul": 4,
+          "ReduceMax": 1,
+          "Reshape": 7,
+          "Shape": 3,
+          "Slice": 3,
+          "Softmax": 1,
+          "Sqrt": 3,
+          "Sub": 1,
+          "Transpose": 7,
+          "Unsqueeze": 1
+        },
+        "n_nodes": 71,
+        "n_gather_nodes": 0,
+        "gather_indices_all_constant": null,
+        "size_bytes": 24817
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "Div",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "ReduceMax",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Sub",
+        "Transpose",
+        "Unsqueeze"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 166,
+          "engine_bytes": 192604,
+          "run_ok": true,
+          "max_abs_diff": 2.384185791015625e-07,
+          "latency_ms_mean": 0.0286,
+          "latency_ms_p50": 0.0288,
+          "latency_ms_min": 0.027
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 167,
+          "engine_bytes": 294236,
+          "run_ok": true,
+          "max_abs_diff": 0.001728057861328125,
+          "latency_ms_mean": 0.0271,
+          "latency_ms_p50": 0.027,
+          "latency_ms_min": 0.025
+        }
+      }
+    },
+    "e2e_structformer_sdpa_shift": {
+      "hazard": "end-to-end fixed-shape path, depth 2 (shifted blocks present)",
+      "attn_impl": "sdpa",
+      "shift_impl": "roll",
+      "parameters": 145385,
+      "output_shape": [
+        1,
+        3,
+        288,
+        512
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "structure": [
+            1,
+            7,
+            288,
+            512
+          ],
+          "style_token": [
+            1,
+            16
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            3,
+            288,
+            512
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 58,
+          "Cast": 12,
+          "Concat": 12,
+          "Constant": 178,
+          "ConstantOfShape": 3,
+          "Conv": 6,
+          "Div": 13,
+          "Erf": 6,
+          "Expand": 3,
+          "Gather": 19,
+          "Gemm": 1,
+          "Identity": 24,
+          "InstanceNormalization": 3,
+          "LayerNormalization": 12,
+          "MatMul": 36,
+          "Mul": 30,
+          "Relu": 3,
+          "Reshape": 42,
+          "Resize": 3,
+          "Shape": 10,
+          "Sigmoid": 1,
+          "Slice": 32,
+          "Softmax": 6,
+          "Sqrt": 18,
+          "Tile": 3,
+          "Transpose": 36,
+          "Unsqueeze": 4
+        },
+        "n_nodes": 574,
+        "n_gather_nodes": 19,
+        "gather_indices_all_constant": true,
+        "size_bytes": 3233127
+      },
+      "new_ops_vs_m4": [
+        "Cast",
+        "ConstantOfShape",
+        "Div",
+        "Erf",
+        "Expand",
+        "Gather",
+        "Gemm",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Sqrt",
+        "Tile",
+        "Transpose",
+        "Unsqueeze"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 5.066394805908203e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 1513,
+          "engine_bytes": 6460300,
+          "run_ok": true,
+          "max_abs_diff": 3.5762786865234375e-07,
+          "latency_ms_mean": 0.8588,
+          "latency_ms_p50": 0.8577,
+          "latency_ms_min": 0.8526
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 1519,
+          "engine_bytes": 4708452,
+          "run_ok": true,
+          "max_abs_diff": 0.001055598258972168,
+          "latency_ms_mean": 0.4592,
+          "latency_ms_p50": 0.459,
+          "latency_ms_min": 0.4551
+        }
+      }
+    },
+    "e2e_structformer_manual_noshift": {
+      "hazard": "end-to-end control, depth 1 (no shifted block, no roll)",
+      "attn_impl": "manual",
+      "shift_impl": "n/a",
+      "parameters": 94326,
+      "output_shape": [
+        1,
+        3,
+        288,
+        512
+      ],
+      "onnx_export_ok": true,
+      "graph": {
+        "opset": 17,
+        "inputs": {
+          "structure": [
+            1,
+            7,
+            288,
+            512
+          ],
+          "style_token": [
+            1,
+            16
+          ]
+        },
+        "outputs": {
+          "out": [
+            1,
+            3,
+            288,
+            512
+          ]
+        },
+        "shapes_are_static": true,
+        "op_types": {
+          "Add": 31,
+          "Constant": 56,
+          "Conv": 6,
+          "Div": 4,
+          "Erf": 3,
+          "Gather": 10,
+          "Gemm": 1,
+          "Identity": 12,
+          "InstanceNormalization": 3,
+          "LayerNormalization": 6,
+          "MatMul": 18,
+          "Mul": 15,
+          "Relu": 3,
+          "Reshape": 24,
+          "Resize": 3,
+          "Shape": 4,
+          "Sigmoid": 1,
+          "Slice": 2,
+          "Softmax": 3,
+          "Transpose": 21,
+          "Unsqueeze": 4
+        },
+        "n_nodes": 230,
+        "n_gather_nodes": 10,
+        "gather_indices_all_constant": true,
+        "size_bytes": 442080
+      },
+      "new_ops_vs_m4": [
+        "Div",
+        "Erf",
+        "Gather",
+        "Gemm",
+        "Identity",
+        "LayerNormalization",
+        "MatMul",
+        "Slice",
+        "Softmax",
+        "Transpose",
+        "Unsqueeze"
+      ],
+      "onnxruntime": {
+        "available": true,
+        "max_abs_diff": 4.172325134277344e-07,
+        "version": "1.23.2"
+      },
+      "trt": {
+        "fp32": {
+          "build_ok": true,
+          "strongly_typed": false,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 374,
+          "engine_bytes": 1240244,
+          "run_ok": true,
+          "max_abs_diff": 2.980232238769531e-07,
+          "latency_ms_mean": 0.6589,
+          "latency_ms_p50": 0.6582,
+          "latency_ms_min": 0.6532
+        },
+        "fp16": {
+          "build_ok": true,
+          "strongly_typed": true,
+          "tf32": false,
+          "errors": [],
+          "n_layers": 374,
+          "engine_bytes": 1441476,
+          "run_ok": true,
+          "max_abs_diff": 0.0007773637771606445,
+          "latency_ms_mean": 0.3011,
+          "latency_ms_p50": 0.3005,
+          "latency_ms_min": 0.2984
+        }
+      }
+    }
+  },
+  "summary": {
+    "n_variants": 19,
+    "onnx_export_ok": 19,
+    "trt_fp32_build_ok": 19,
+    "trt_fp16_build_ok": 19,
+    "trt_fp16_run_ok": 19,
+    "trt_fp32_within_tolerance": 19,
+    "blocked": []
+  }
+}

@@ -36,6 +36,11 @@ finding; that is the honest outcome and I want to know."
   may not accept 0.5x.
 - Label metrics by what they actually are: `selection_set`, not `held_out`, when
   the checkpoint was chosen on that same split.
+- **A deployment/operator claim needs a built and executed engine behind it**,
+  not a successful export. "Exports fine" without a TensorRT engine that ran and
+  matched PyTorch is worse than no result, because it reads as coverage. Same
+  rule for the reverse: report a blocker with the workaround you *measured*,
+  never one you assume will work.
 - Corrections go **in place** in the KB Decision Log with a dated "Revised"
   header stating what was wrong — not appended as a new decision that leaves the
   wrong text standing. See [[milestone-status]] and [[feedback-validator-scope]].

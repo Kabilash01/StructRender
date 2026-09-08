@@ -2568,6 +2568,53 @@ Recorded from the second M4 spec-guardian pass, which was run because the first 
 
 - **Method note.** Of the eight deviations this pass found, five were stale or unattributed *numbers* in prose — the seventh through eleventh such defects in this project. Decision 42's structural rule ("cited by threshold and artifact, never by value") was stated in the same paragraph that then cited a drifting value. The rule is right and vigilance is again not the mechanism: the citations that survived this pass are the ones a test or a derivation produces. Where prose must carry a number, it now carries the marker saying which scene it describes.
 
+### Decision 45: M5 Export Probe — §12's Attention Risk Did Not Materialise; Four Written Rules Did Not Survive Contact (2026-09-08)
+
+The M5 skeleton export probe, run **before** the architecture was built, per §12's "perform TensorRT export in Week 5" and to keep an export blocker from surfacing after a trained model. Evidence: `eval/reports/m5_export_probe.json`, generated only by `scripts/probe_m5_export.py`. Every engine below was **built and executed**, not merely exported.
+
+- **The headline: §12's flagged risk — "custom attention/masking operation exports poorly" — did not materialise.** 19/19 variants export to ONNX opset 17, build and run under TensorRT in both FP32 and FP16, keep fully static shapes, and land inside M4's 1e-3 parity tolerance. Cited by threshold and artifact, per Decision 42; the per-variant figures are in the report. This closes §12's export risk for self-attention, window partitioning, relative-position bias and additive masking, and **opens** nothing new — the M7 entity-masked cross-attention probe passed on the same terms.
+
+- **Attention is manual `matmul → +bias → softmax → matmul`, not `F.scaled_dot_product_attention`.** At opset 17 the exporter emits **no fused attention op** for SDPA. It emits the same matmul/softmax/matmul plus a runtime scale read off the tensor shape (`Shape → Slice → Cast → Sqrt → Div`), which `do_constant_folding` cannot fold because the input is a `Shape` of a graph tensor. Measured on the end-to-end graph: `Cast ×12` and `Sqrt ×18` appear **only** in the SDPA graph, 574 vs 508 ONNX nodes, 1519 vs 1291 TensorRT layers, for numerics asserted bit-comparable. SDPA's entire justification is a fused kernel; it does not survive the export boundary, so it costs a per-block shape read and buys nothing. Kept behind an `attn_impl` flag so this is re-testable rather than folded away — if a later opset emits a real fused op, the comparison reruns.
+
+- **`torch.roll` is not the hazard §12 anticipated.** ONNX has no `Roll`, so the exporter lowers it to exactly the slice+concat pattern one would hand-write: roll and an explicit slice+concat build **identical TensorRT engines** (311 layers, both), differing only by 8 `Constant` nodes in the ONNX census. Shifted windows are therefore kept — §4 requires "broader object-level interaction than a shallow CNN", and without shifting the window boundaries are hard walls — and the workaround exists, is verified, and is not needed.
+
+- **The probe earned its keep on a defect nothing else would have caught.** The *fallback* slice+concat implementation computed `shift % x.shape[1]`, reading a shape at runtime and leaving the exported output dims **symbolic** — a violation of §12's "prefer fixed/bounded shapes" that TensorRT **still built successfully**, so it would have shipped silently and been discovered, if ever, as a runtime shape failure. `shapes_are_static` is now asserted per variant in the report and in the tests. A green engine build is not evidence of a static graph.
+
+**Four written rules that did not survive contact with the implementation. Each is a deviation from §4/§5 as written, recorded rather than done quietly.**
+
+1. **TensorRT 11 removed `BuilderFlag.FP16` / `INT8` / `BF16`.** §4 *TensorRT Builder* describes "primary precision: FP16" as a builder setting. On TensorRT 11.2 it is not: reduced precision comes **only** from a `NetworkDefinitionCreationFlag.STRONGLY_TYPED` network that inherits dtypes from the ONNX graph, so an FP16 engine requires exporting an **FP16 ONNX graph** (traced on CUDA — LayerNorm/GELU have no CPU fp16 kernels). This changes M10's export-module contract: it must be able to emit an FP16 graph, not merely ask the builder for one. 19/19 FP16 engines built and ran under this approach.
+
+2. **§4's `A_{p,i} = -\infty` for `p ∉ S_i` is literally unusable, in two independent ways — both verified, not argued.** A literal `-inf` makes softmax return **NaN** for any pixel belonging to no entity, which is most of a frame. And because softmax normalises to 1, a *finite* large-negative mask alone still makes a fully-masked background pixel emit a **blend of every entity's memory** (measured: attention row sums to 1.0 over illegal keys). The implementation uses a finite `MASK_NEG` **plus** an output gate `max_i S_i(p)`, which drives background pixels to exactly 0.0. This is read as the **intent** of §4's rule rather than a relaxation of it — "no legal key" must mean "no contribution", which `-inf` alone does not deliver — and it is asserted by tests: perturbing entity *i*'s token provably moves nothing outside `S_i`. Recorded because the formula in §4 stays as written and the code deliberately differs from it.
+
+3. **Style conditioning enters as a second graph input.** The end-to-end M5 graph is `(structure(1,7,288,512), style_token(1,16)) → rgb(1,3,288,512)`. §5's Runtime Tensor Contract already lists a style token, and M5's deliverables include style conditioning, so this is an interpretation rather than an addition — but it makes the exported graph **two-input**, where M4's was one, and M10's runtime must bind both.
+
+4. **Probe-scale substitutions, recorded so they are not mistaken for design.** `K_max = 8` in the probe against §5's recommended 32→64 (`k_max_probe` in the report — probe scaling only, not a change to Decision 21's ranking rule); and encoder downsampling uses a stride-2 `Conv` rather than Swin patch-merging, chosen for ONNX safety.
+
+- **Scope, stated so this entry is not over-read.** Nothing was trained. No M5 exit criterion is claimed. The probe ran at embed dim 32, 1 head, 1–2 blocks, so its latency figures rank variants **against each other** and are **not** evidence about §12's 15–20 ms StructFormer budget, which depends on trained width. The report carries this as `latency_note`. Width and depth are deliberately unanswered here.
+
+- **New operators versus M4's exported graph** (§12 wants a new op to be a visible diff): `Cast, ConstantOfShape, Div, Erf, Expand, Gather, Gemm, Identity, LayerNormalization, MatMul, ReduceMax, Slice, Softmax, Sqrt, Sub, Tile, Transpose, Unsqueeze`. All TensorRT-supported. `Erf` is GELU (opset 17 has no `Gelu`; it arrives at 20). `Cast`/`Sqrt`/`Div` are SDPA-only and disappear under the manual choice above. `ReduceMax`/`Sub` are entity-masking only. Enforced per-variant against the committed report.
+
+---
+
+### Decision 46: Training Run-to-Run Variance Measured — M4's Sharpness Gate Is Seed-Fragile (2026-09-08)
+
+Measured to pre-register M5's better/competitive margin **before** StructFormer trains, per the same discipline that fixed M4's overfit thresholds in advance. Evidence: `eval/reports/m4_seed_variance.json` — three Model A runs identical to `configs/training/m4_unet_baseline.json` except `train.seed` and `train.checkpoint_dir` (split, loss, data, overfit and style_acquisition blocks byte-identical).
+
+- **This replaces a deleted claim with a number.** Decisions 35 and 42 both asserted training was "seed-deterministic" and "reproduces the ladder numbers exactly"; Decision 44 removed both as unestablished. They were also **wrong**: training does not reproduce exactly. Per-metric spread over 3 seeds is in the artifact; the standard deviations are what the margin below is built from.
+
+- **A two-run estimate understated the noise by ~5× and would have shipped a margin inside it.** The first two seeds differed by 0.061 dB PSNR. The third took the sample sd to 0.165 dB — the margin derived from n=2 would have been narrower than the quantity it was meant to measure, and almost any StructFormer result could then have been called "better". **n=2 is one difference, not a variance.** Recorded because the cheap version of this measurement is actively misleading rather than merely weak.
+
+- **M4 exit criterion 3(c) is seed-fragile, and this is the substantive finding.** `sharpness_ratio` has the largest relative spread of any metric measured (sd ~0.014 against a **0.90** floor). The worst of the three seeds lands at **0.90842 — under 0.009 of headroom** — so the committed 0.9303 is one draw from a distribution whose gate margin is roughly 2.2 sd, and **a different seed could plausibly have failed the gate.**
+  **M4 is not retracted.** The committed run passed, its thresholds were fixed before it ran, and Decision 38 already treats M4 as superseded-but-historical. What changes is how firmly the result may be stated: "sharpness 0.9303 ≥ 0.90 ✅" reads as a property of the architecture and is a property of one run. This also sharpens Decision 41's caution — that entry warned "a busier style would likely cross it"; a different *seed* nearly does.
+
+- **Consequence for every ladder rung, M5 onward: a single run is not evidence against a gate whose margin is within ~2 sd of it.** Where a metric's gate margin is that tight, the verdict needs either repeated seeds or an explicit statement that it rests on one draw. This applies first to StructFormer's own sharpness, which must be reported against the 0.90 floor, the 0.9931 do-nothing anchor (Decision 41), **and** this variance.
+
+- **Pre-registered M5 margin**, fixed now and not revisable after seeing StructFormer's numbers. The reference is the **mean of the three Model A runs**, not the single committed run, because that run is now known to be one draw: **better = PSNR at least 2 sd above the mean; competitive = within ±2 sd; worse = below.** Guard metrics (SSIM, sharpness) may not regress by more than 1 sd. The values are in `m4_seed_variance.json` -> `m5_margin`; deliberately not retyped here, per Decision 42.
+
+- **Incidental, and it removes a confound rather than adding one:** seed 20260908 re-baselines Model A in the conda `dl` env (torch 2.13.0+cu132) against the committed run's `.venv` (torch 2.14.0+cu130). The environment change is therefore *inside* the measured spread rather than sitting alongside it untested, and both ladder rungs are now same-env.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
