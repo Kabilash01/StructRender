@@ -1,7 +1,7 @@
 """StructFormer assembly — shape flow and the runtime tensor contract.
 
 KB §5's Runtime Tensor Contract and Decision 35's export shapes are the same
-``(1, 7, 288, 512) -> (1, 3, 288, 512)`` M4 established, so Model A and Model B
+``(1, 7, 288, 512) -> (1, 3, 288, 512)`` M4 established, so Model A and Model C
 stay directly comparable on the §11 ladder.
 """
 

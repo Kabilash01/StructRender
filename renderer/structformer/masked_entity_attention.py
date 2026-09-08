@@ -1,6 +1,6 @@
 """Entity-masked cross-attention — KB §4 *Entity-Masked Cross-Attention Module*.
 
-**Status: M7 mechanism, probed at M5, NOT part of the M5 Model B graph.** It is
+**Status: M7 mechanism, probed at M5, NOT part of the M5 Model C graph.** It is
 written and exported now for one reason only: KB §12 flags "custom
 attention/masking operation exports poorly" as the project's operator risk, and
 this is the most custom masking operation StructRender will ever ship. Finding

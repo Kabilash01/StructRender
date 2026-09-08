@@ -27,7 +27,13 @@ import pytest
 
 from renderer.training.train_baseline import ROOT, objective_string
 
+# M5's reports are here too: Decision 44 recorded that an artifact nothing asserts
+# is unfalsifiable evidence, and leaving the M5 set uncovered would have repeated
+# that finding one milestone after writing it down. The objective cross-check below
+# is per-config, since M5 ships two deliberate attempts (KB Decision 49).
 REPORTS = ["m4_train.json", "m4_metrics.json", "m4_overfit.json", "m4_onnx_export.json"]
+M5_REPORTS = ["m5_train.json", "m5_metrics.json", "m5_overfit.json", "m5_onnx_export.json",
+              "m5_train_warmup.json", "m5_metrics_warmup.json"]
 REQUIRED = ("session_id", "style_id", "objective", "generated_utc")
 
 # Values that are technically "present" but carry no information. The sentinel
@@ -128,3 +134,45 @@ def test_committed_overfit_artifact_meets_the_mandated_gate(cfg):
     assert report["final_l1"] <= th["max_final_l1"]
     assert report["loss_drop_factor"] >= th["min_loss_drop_factor"]
     assert report["ssim"] >= th["min_ssim"]
+
+
+@pytest.mark.parametrize("name", M5_REPORTS)
+def test_m5_report_carries_non_placeholder_provenance(name):
+    """Same rule as M4's, applied to the milestone that generated six new
+    artifacts. KB Decision 42."""
+    report = _load(name)
+    if report is None:
+        pytest.skip(f"{name} not generated yet")
+    for field in REQUIRED:
+        assert field in report, f"{name} is missing '{field}' (KB Decision 42)"
+        value = report[field]
+        assert isinstance(value, str) and value.strip(), f"{name}: '{field}' is empty"
+        assert value.strip().lower() not in PLACEHOLDERS, f"{name}: '{field}' is a placeholder"
+
+
+def test_m5_reports_agree_on_session_style_and_objective():
+    """Both M5 attempts must describe the same data and the same objective —
+    Decision 41 mandates one objective for every ladder rung, so two attempts
+    disagreeing here would mean the comparison measured the loss, not warmup."""
+    seen = {"session_id": set(), "style_id": set(), "objective": set()}
+    for name in M5_REPORTS:
+        report = _load(name)
+        if report is None:
+            continue
+        for field in seen:
+            if field in report:
+                seen[field].add(report[field])
+    for field, values in seen.items():
+        assert len(values) <= 1, f"M5 reports disagree on '{field}': {sorted(values)}"
+
+
+def test_the_two_m5_attempts_did_not_overwrite_each_other():
+    """Decision 49 promises attempt 1's numbers stand regardless of attempt 2's
+    outcome. That promise is only real if both artifacts exist separately."""
+    a1, a2 = _load("m5_metrics.json"), _load("m5_metrics_warmup.json")
+    if a1 is None or a2 is None:
+        pytest.skip("both M5 attempts not present")
+    assert a1["checkpoint"] != a2["checkpoint"], "both attempts point at one checkpoint"
+    assert a1["selection_set"]["psnr_db"] != a2["selection_set"]["psnr_db"], (
+        "the two attempts report identical metrics — one has overwritten the other"
+    )

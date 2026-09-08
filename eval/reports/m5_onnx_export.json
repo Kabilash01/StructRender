@@ -1,0 +1,170 @@
+{
+  "milestone": 5,
+  "checkpoint": "/home/kabilash01/StructRender/checkpoints/m5_structformer/best.pt",
+  "parameters": 7775467,
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-08T14:44:50+00:00",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "opset": 17,
+  "input_shape": [
+    1,
+    7,
+    288,
+    512
+  ],
+  "stages": {
+    "onnx_fp32": {
+      "ok": true,
+      "seconds": 0.51,
+      "workaround": null,
+      "inputs": {
+        "structure": [
+          1,
+          7,
+          288,
+          512
+        ]
+      },
+      "outputs": {
+        "rgb": [
+          1,
+          3,
+          288,
+          512
+        ]
+      },
+      "shapes_are_static": true,
+      "n_nodes": 492,
+      "op_types": {
+        "Constant": 169,
+        "ConstantOfShape": 4,
+        "Mul": 25,
+        "Equal": 1,
+        "Where": 1,
+        "Expand": 4,
+        "Conv": 6,
+        "Reshape": 42,
+        "InstanceNormalization": 3,
+        "Shape": 4,
+        "Add": 58,
+        "Relu": 3,
+        "Gemm": 1,
+        "Gather": 19,
+        "Div": 7,
+        "Slice": 26,
+        "Unsqueeze": 4,
+        "Transpose": 36,
+        "LayerNormalization": 12,
+        "MatMul": 36,
+        "Softmax": 6,
+        "Erf": 6,
+        "Concat": 12,
+        "Tile": 3,
+        "Resize": 3,
+        "Sigmoid": 1
+      },
+      "size_mb": 33.89
+    },
+    "onnxruntime_parity": {
+      "ok": true,
+      "max_abs_diff": 0.00018280744552612305,
+      "tolerance": 0.001,
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "workaround": null
+    },
+    "trt_fp32": {
+      "ok": true,
+      "seconds": 8.57,
+      "workaround": "tf32 disabled so max_abs_diff measures operator correctness, not TF32 rounding",
+      "stage": "build",
+      "errors": [],
+      "strongly_typed": false,
+      "tf32": false,
+      "n_layers": 1308,
+      "engine_bytes": 49174204,
+      "max_abs_diff_vs_torch": 0.00018107891082763672,
+      "latency_ms_mean": 13.476147842407226,
+      "latency_ms_p50": 13.316927909851074,
+      "latency_ms_p95": null
+    },
+    "trt_fp16": {
+      "ok": true,
+      "seconds": 14.65,
+      "workaround": "TensorRT 11 removed BuilderFlag.FP16 (KB Decision 45): precision comes only from a STRONGLY_TYPED network inheriting dtypes from the ONNX graph, so the graph itself must be exported in fp16, traced on CUDA because LayerNorm/GELU have no CPU fp16 kernels",
+      "stage": "build",
+      "errors": [],
+      "strongly_typed": true,
+      "tf32": false,
+      "n_layers": 1308,
+      "engine_bytes": 25292956,
+      "max_abs_diff_vs_torch": 0.0015045106410980225,
+      "latency_ms_mean": 4.2247504091262815,
+      "latency_ms_p50": 4.191840171813965,
+      "latency_ms_p95": null,
+      "fp32_tolerance": 0.001,
+      "fp32_tolerance_exceeded": true,
+      "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48): half precision carries ~1e-3 relative precision and the reference is fp32 torch, so exceeding a tolerance written for FP32 is not a defect - but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is used as an acceptance criterion at M10, where FP16 is the deployment target."
+    }
+  },
+  "budget_ref": {
+    "kb_section": "12",
+    "structformer_tensorrt_target_ms": [
+      15,
+      20
+    ],
+    "frame_budget_ms": 33.3,
+    "note": "KB 12 calls these engineering targets, not guaranteed measured results."
+  },
+  "model_a_comparison": {
+    "attempted": true,
+    "onnx_export_ok": true,
+    "onnxruntime_parity": "passed at M4 (max_abs_diff 3.67e-06)",
+    "tensorrt_build_ok": false,
+    "error": "Error Code 10: Could not find any implementation for node ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid] - NVRTC compilation failure inside a Myelin fused region (nvrtc_compile.cpp:1122).",
+    "reproduced": "4/4 configurations: tf32 on/off x workspace 1024/256 MiB - all fail identically.",
+    "not_generic": "A minimal Conv->ReLU->Conv->Sigmoid graph at the same 1x7x288x512 shape builds successfully, and Model B also ends in sigmoid and builds, so this is not a generic Conv+Sigmoid or sigmoid-head problem. Model A's distinguishing operators are Resize (interpolate upsampling), MaxPool and InstanceNormalization.",
+    "diagnosis_status": "NOT fully diagnosed - cause narrowed, not identified. Recorded as open.",
+    "scope": "This does NOT retroactively fail M4. M4's exit criterion 4 was 'export works', verified as ONNX export + onnxruntime parity; KB 10 places the TensorRT benchmark at M5, and TensorRT was not installed at M4. What it means is that the ladder's CNN baseline has no working TensorRT path today, while the model KB 12 flagged as the export risk has one."
+  },
+  "operator_allow_list": [
+    "Add",
+    "Concat",
+    "Constant",
+    "ConstantOfShape",
+    "Conv",
+    "Div",
+    "Equal",
+    "Erf",
+    "Expand",
+    "Gather",
+    "Gemm",
+    "InstanceNormalization",
+    "LayerNormalization",
+    "MatMul",
+    "Mul",
+    "Relu",
+    "Reshape",
+    "Resize",
+    "Shape",
+    "Sigmoid",
+    "Slice",
+    "Softmax",
+    "Tile",
+    "Transpose",
+    "Unsqueeze",
+    "Where"
+  ],
+  "operator_allow_list_note": "The SHIPPED trained graph's operator census, pinned so a new op at M6 is a visible diff (KB 12). Equal/Where/ConstantOfShape/Expand come from `.expand(structure.shape[0], -1)` on the cached style token in StructFormerSingleStyle; they were absent from Decision 45's probe list because the probe exported the two-input StructFormer, which takes the token as a graph input instead. See Decision 50.",
+  "export_contract": {
+    "graph_inputs": 1,
+    "input_names": [
+      "structure"
+    ],
+    "note": "ONE input, not the two Decision 45 item 3 pinned. What was exported is StructFormerSingleStyle, which folds M5's single cached style token into a learned parameter, so it never crosses the graph boundary. The two-input contract belongs to the multi-style StructFormer class and returns when style-B arrives at M8. See Decision 50."
+  }
+}

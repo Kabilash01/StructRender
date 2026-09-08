@@ -1,0 +1,107 @@
+{
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "arch": "structformer",
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-08T14:08:37+00:00",
+  "frame_ids": [
+    0,
+    21,
+    41,
+    62,
+    83,
+    104,
+    124,
+    145,
+    166,
+    187,
+    207,
+    228,
+    249,
+    270,
+    290,
+    311,
+    332,
+    353,
+    373,
+    394,
+    415,
+    639,
+    659,
+    680,
+    701,
+    722,
+    742,
+    763,
+    784,
+    805,
+    825,
+    846
+  ],
+  "n_frames": 32,
+  "max_steps": 2000,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "seed": 20260905,
+  "step0_loss": 0.45273154973983765,
+  "objective_note": "step0_loss / history[].loss are the TOTAL objective (KB Decision 42); final_l1 / psnr_db / ssim are measured quantities. loss_drop_factor is therefore objective-over-L1 \u2014 a MIXED-UNIT ratio, and a sanity check only.",
+  "final_l1": 0.009852216579020023,
+  "loss_drop_factor": 45.95225309032638,
+  "psnr_db": 34.22900390625,
+  "ssim": 0.9641906023025513,
+  "thresholds": {
+    "min_psnr_db": 30.0,
+    "max_final_l1": 0.02,
+    "min_loss_drop_factor": 10.0,
+    "min_ssim": 0.95
+  },
+  "history": [
+    {
+      "step": 200,
+      "loss": 0.07150294631719589
+    },
+    {
+      "step": 400,
+      "loss": 0.053089942783117294
+    },
+    {
+      "step": 600,
+      "loss": 0.034538425505161285
+    },
+    {
+      "step": 800,
+      "loss": 0.05166030675172806
+    },
+    {
+      "step": 1000,
+      "loss": 0.03045220673084259
+    },
+    {
+      "step": 1200,
+      "loss": 0.04198087751865387
+    },
+    {
+      "step": 1400,
+      "loss": 0.02506481483578682
+    },
+    {
+      "step": 1600,
+      "loss": 0.02007857896387577
+    },
+    {
+      "step": 1800,
+      "loss": 0.025241587311029434
+    },
+    {
+      "step": 2000,
+      "loss": 0.032264526933431625
+    }
+  ],
+  "checks": {
+    "psnr_ge_min": true,
+    "final_l1_le_max": true,
+    "loss_drop_ge_factor": true,
+    "ssim_ge_min": true
+  },
+  "passed": true
+}

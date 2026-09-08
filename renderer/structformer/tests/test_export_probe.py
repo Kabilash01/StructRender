@@ -171,7 +171,7 @@ def test_committed_probe_engines_built_and_matched_pytorch(report):
 
 
 def test_the_end_to_end_graph_keeps_the_m4_tensor_contract(report):
-    """Model B must consume and produce exactly what Model A did, or the §11
+    """Model C must consume and produce exactly what Model A did, or the §11
     ladder compares two different problems."""
     g = report["variants"]["e2e_structformer_manual_shift"]["graph"]
     assert g["inputs"]["structure"] == [1, 7, 288, 512]

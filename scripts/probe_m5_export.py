@@ -136,7 +136,7 @@ class RelPosBiasOnly(nn.Module):
 
 
 class EntityCrossAttentionProbe(nn.Module):
-    """Hazard 6: M7's entity-masked cross-attention. Probe only, not in Model B."""
+    """Hazard 6: M7's entity-masked cross-attention. Probe only, not in Model C."""
 
     def __init__(self, attn_impl: str) -> None:
         super().__init__()

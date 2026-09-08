@@ -1,0 +1,87 @@
+{
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "checkpoint": "/home/kabilash01/StructRender/checkpoints/m5_structformer/best.pt",
+  "arch": "structformer",
+  "parameters": 7775467,
+  "split": {
+    "policy": "contiguous_sequence_holdout",
+    "val_sequences": [
+      "reap_camera_away_8s",
+      "reap_entity_away_8s"
+    ],
+    "guard_frames": 60,
+    "n_train": 644,
+    "n_val": 166,
+    "n_dropped_guard": 180,
+    "val_frame_ranges": [
+      [
+        492,
+        574
+      ],
+      [
+        907,
+        989
+      ]
+    ],
+    "train_frame_ranges": [
+      [
+        0,
+        431
+      ],
+      [
+        635,
+        846
+      ]
+    ]
+  },
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-08T14:40:01+00:00",
+  "lpips_implementation": "lpips-alex-v0.1",
+  "selection_set_note": "'selection_set' is the held-out split, but train_baseline.py checkpoints on its lowest val_l1, so these numbers are best-of-N-epochs on the same frames \u2014 the selection criterion's own minimum, not an unbiased generalisation estimate. Measured selection gain on this run: best epoch 47 val_l1 0.010523 vs final epoch 59 0.010613, 0.9% in L1. KB Decision 35.",
+  "selection_set": {
+    "n_frames": 166,
+    "l1": 0.010522959753870964,
+    "psnr_db": 32.8073844909668,
+    "ssim": 0.9633306264877319,
+    "lpips_alex": 0.05865377560257912
+  },
+  "train_split_reference": {
+    "n_frames": 644,
+    "l1": 0.006221703253686428,
+    "psnr_db": 36.56044387817383,
+    "ssim": 0.9728832244873047,
+    "lpips_alex": 0.016079148277640343
+  },
+  "style_acquisition_selection_set": {
+    "psnr_pred_vs_target_db": 32.8073844909668,
+    "psnr_native_vs_target_db": 29.94843292236328,
+    "ssim_pred_vs_target": 0.9633346199989319,
+    "ssim_native_vs_target": 0.9640238881111145,
+    "hist_pred_vs_native": 0.5072353487299893,
+    "hist_target_vs_native": 0.6007446125648427,
+    "grad_energy_pred": 0.01737622730433941,
+    "grad_energy_target": 0.020866671577095985,
+    "grad_energy_native": 0.020721780136227608,
+    "sharpness_ratio": 0.8327263521707116,
+    "sharpness_ratio_native": 0.9930563223591722,
+    "lpips_pred_vs_target": 0.05865377560257912,
+    "lpips_native_vs_target": 0.10103161633014679
+  },
+  "qualitative": [
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00492_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00525_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00558_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00923_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00956_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/frame_00989_native_pred_target.png"
+  ],
+  "qualitative_train_moving_camera": [
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00172_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00225_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00308_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00427_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00700_native_pred_target.png",
+    "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00843_native_pred_target.png"
+  ]
+}
