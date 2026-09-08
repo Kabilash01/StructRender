@@ -180,9 +180,52 @@ LEGACY_REPORTS = {
 }
 
 
+#: The ONE config allowed to inherit the unprefixed M4 report names. Every other
+#: config must declare its own, because the fallback used to apply to all of them:
+#: `--mode train` on either seed-variant config resolved to `eval/reports/m4_train.json`
+#: and would have overwritten Model A's committed evidence. Seven of nine
+#: mode/config combinations collided. KB Decision 52.
+LEGACY_REPORT_CONFIG_VERSION = "m4-unet-1"
+
+SUPPORTED_REPORT_KEYS = frozenset(LEGACY_REPORTS)
+
+
 def report_path(cfg: dict, key: str) -> Path:
-    """Absolute path for one of this config's reports."""
-    return ROOT / cfg.get("reports", {}).get(key, LEGACY_REPORTS[key])
+    """Absolute path for one of this config's reports.
+
+    Raises rather than silently falling back, except for the original M4
+    baseline config, whose committed artifacts *are* the unprefixed names.
+    """
+    if key not in SUPPORTED_REPORT_KEYS:
+        raise KeyError(
+            f"unsupported report key {key!r}; expected one of {sorted(SUPPORTED_REPORT_KEYS)}"
+        )
+    declared = (cfg.get("reports") or {}).get(key)
+    if declared is not None:
+        return ROOT / declared
+    if cfg.get("config_version") == LEGACY_REPORT_CONFIG_VERSION:
+        return ROOT / LEGACY_REPORTS[key]
+    raise KeyError(
+        f"config {cfg.get('config_version')!r} does not declare reports[{key!r}], and only "
+        f"{LEGACY_REPORT_CONFIG_VERSION!r} may inherit the unprefixed M4 names. Without this "
+        f"guard the run would write to {LEGACY_REPORTS[key]} and overwrite committed Model A "
+        "evidence (KB Decision 52). Add a reports block to the config."
+    )
+
+
+def assert_reports_resolvable(cfg: dict, mode: str) -> None:
+    """Fail before expensive work, not after it.
+
+    Each mode is checked against the report keys it will actually write, so an
+    unsupported mode or an undeclared destination aborts at startup rather than
+    after a 40-minute training run.
+    """
+    needed = {"train": ("train",), "overfit": ("overfit",),
+              "eval": ("metrics", "qualitative_dir")}
+    if mode not in needed:
+        raise SystemExit(f"unsupported --mode {mode!r}; expected one of {sorted(needed)}")
+    for key in needed[mode]:
+        report_path(cfg, key)
 
 
 def _selection_note(cfg: dict) -> str:
@@ -686,6 +729,10 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = load_config(args.config)
+    # Pre-flight: resolve every destination this mode will write BEFORE building a
+    # model or touching the dataset (KB Decision 52).
+    if args.report is None:
+        assert_reports_resolvable(cfg, args.mode)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tag = f"m{cfg.get('milestone', 4)}"
     print(f"[{tag}] device={device} config={cfg['config_version']}", flush=True)

@@ -102,5 +102,12 @@
     "notes": "KB \u00a712 ONNX/TensorRT Operator Compatibility mitigation: fixed/bounded shapes, ONNX-safe primitives only. M4's architecture is low risk; the point of proving the path now is that M5+ ships much higher-risk custom attention/masking down this same path.",
     "operator_finding": "nn.GroupNorm is never exported as the native GroupNormalization op \u2014 the TorchScript exporter lowers it to Shape -> Reshape -> InstanceNormalization -> Reshape -> Mul -> Add at opset 17, 18 and 20 alike. All TensorRT-supported, so nothing needed working around, but it puts one Shape node per norm layer in the graph."
   },
-  "purpose": "Third Model A seed, run 2026-09-08 to take the run-to-run estimate from n=2 to n=3 (KB Decision 46). Identical to m4_unet_baseline.json except train.seed and train.checkpoint_dir. Preserved from the session scratchpad at review time (KB Decision 51) so the run that contributes the widest sharpness value has committed provenance rather than only a row in a summary file."
+  "purpose": "Third Model A seed, run 2026-09-08 to take the run-to-run estimate from n=2 to n=3 (KB Decision 46). Identical to m4_unet_baseline.json except train.seed and train.checkpoint_dir. Preserved from the session scratchpad at review time (KB Decision 51) so the run that contributes the widest sharpness value has committed provenance rather than only a row in a summary file.",
+  "reports": {
+    "train": "eval/reports/m4_train_seed3.json",
+    "overfit": "eval/reports/m4_overfit_seed3.json",
+    "metrics": "eval/reports/m4_metrics_seed3.json",
+    "qualitative_dir": "eval/reports/m4_qualitative_seed3"
+  },
+  "reports_note": "Declared, not inherited. Only config_version 'm4-unet-1' may fall back to the unprefixed m4_* names; without this block `--mode train` here resolved to eval/reports/m4_train.json and would have overwritten Model A's committed evidence (KB Decision 52). The overfit and qualitative paths are declared for completeness - neither has been run for this seed."
 }

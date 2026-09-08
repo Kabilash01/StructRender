@@ -2715,6 +2715,25 @@ Cleanup pass over M5's evidence, run before starting another milestone. No train
 
 ---
 
+### Decision 52: Five Review Findings — A Report Path That Overwrote Committed Evidence, and a Mask That Only Discouraged (2026-09-08)
+
+Second cleanup pass, continuing Decision 51. No training, no third attempt, no threshold change; both M5 attempts and Decision 49's verdict are unchanged, and no committed report was rewritten. Two of the five are material behaviour changes and are recorded as such.
+
+- **`report_path()` silently inherited M4's destinations, and 7 of 9 config/mode combinations collided with committed evidence.** Verified by resolving them: `--mode train` on either seed-variant config resolved to `eval/reports/m4_train.json`, and `--mode overfit` on the M5 warmup config to `m4_overfit.json`. Model A's committed train/metrics/overfit artifacts were one un-flagged CLI invocation from being overwritten — the seed runs survived only because `--report` was passed explicitly each time. **Only `config_version: "m4-unet-1"` may now inherit the unprefixed names**; every other config must declare `reports`, and `assert_reports_resolvable()` resolves every destination a mode will write **before** a model is built or data is touched, so an undeclared path or an unsupported `--mode` aborts at startup rather than after a 40-minute run. The two seed configs now declare their own paths. The warmup config deliberately declares no `overfit` destination, so that combination is now **rejected** rather than silently redirected.
+
+- **Entity masking discouraged illegal keys; it did not exclude them. (Material behaviour change.)** The additive `MASK_NEG = -100` is a *penalty*: once legal logits fall below it, illegal keys dominate the softmax and one entity's memory reaches another entity's pixels — a direct violation of §4's `p ∉ S_i` rule and of M8's whole premise. Replaced with masking to `-inf` on both the manual and SDPA paths, so an illegal weight is exactly zero for any finite logits. Fully-masked rows are given a uniform row before softmax and gated to exactly `0.0` after projection, which keeps them finite without reintroducing the NaN that Decision 45 item 2 records. Tests drive the real module at logit scales 1/50/500 and perturb a **single token component** or scale it — adding a constant to every component is removed by the module's LayerNorm and would pass regardless of the masking. Verified by re-injecting the additive form: **6 tests fail**, precisely at large logits and padded slots.
+  **The module stays probe-only and is not wired into M5** (asserted). Its ONNX graph changed (`Where`/`masked_fill` in place of an `Add`), so CPU ONNX parity is now covered; **TensorRT behaviour after this change is UNVERIFIED** and needs a GPU measurement. `eval/reports/m5_export_probe.json` describes the **old** additive form and is preserved unchanged as the historical record.
+
+- **`execute_async_v3` returns `False` on failure; both loops ignored it.** A failed enqueue therefore produced a published latency and `run_ok: True` for an engine that never ran. `execute_or_raise()` now raises with the phase and iteration, in warmup and timed loops alike.
+
+- **Engine input shapes were never checked.** Binding is by raw device pointer, so TensorRT cannot detect a mismatch: an undersized buffer reads out of bounds, and an equal-element-count reshape — `(1,7,512,288)` for `(1,7,288,512)` — is silently misread as valid data. `validate_input_shape()` runs before any pointer is bound.
+
+- **The export probe's gate omitted required outcomes and always exited 0.** `blocked` counted only ONNX export and FP32 run, so an FP16 build or run failure, or an FP32 parity failure, left it empty and the probe reported success. `_blocked()` now covers FP32 build/run/parity and FP16 build/run, rejects non-finite parity values, and `main()` returns **1** when any variant is blocked while still printing full diagnostics. `--no-trt` is explicitly scoped in the artifact and on stdout: an empty `blocked` list from an ONNX-only run does **not** assert that TensorRT passed. No FP16 tolerance was introduced or relaxed.
+
+- **Tests exercise the production helpers**, not copies of them: `_blocked` / `_finite` are imported from the probe script, `execute_or_raise` / `validate_input_shape` from the runner, and the masking tests instantiate the real module. 307 CPU tests pass; no GPU work was run and no historical artifact was regenerated.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

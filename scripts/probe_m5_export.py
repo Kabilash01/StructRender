@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -402,6 +403,36 @@ def build_variants() -> list[tuple[str, dict, nn.Module, dict]]:
     return v
 
 
+
+def _finite(x) -> bool:
+    """A NaN parity value must not slip through a `<= tolerance` comparison."""
+    return isinstance(x, (int, float)) and math.isfinite(x)
+
+
+def _blocked(variants: dict, trt: bool) -> list:
+    """Variants that failed a REQUIRED outcome.
+
+    The first version counted only ONNX export and FP32 run. An FP16 build or run
+    failure, and an FP32 parity failure, both left `blocked` empty — so the probe
+    reported success for a variant that did not meet its own criteria.
+    KB Decision 52.
+    """
+    bad = []
+    for name, v in variants.items():
+        if not v.get("onnx_export_ok"):
+            bad.append(name); continue
+        if not trt:
+            continue
+        fp32 = v.get("trt", {}).get("fp32", {})
+        fp16 = v.get("trt", {}).get("fp16", {})
+        d32 = fp32.get("max_abs_diff")
+        if (not fp32.get("build_ok") or not fp32.get("run_ok")
+                or not _finite(d32) or d32 > TOLERANCE_MAX_ABS
+                or not fp16.get("build_ok") or not fp16.get("run_ok")):
+            bad.append(name)
+    return bad
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=str(ROOT / "eval" / "reports" / "m5_export_probe.json"))
@@ -491,15 +522,29 @@ def main() -> int:
         "trt_fp32_within_tolerance": sum(
             v.get("trt", {}).get("fp32", {}).get("max_abs_diff", 1e9) <= TOLERANCE_MAX_ABS
             for v in variants.values()),
-        "blocked": sorted(n for n, v in variants.items()
-                          if not v["onnx_export_ok"]
-                          or (trt and not v.get("trt", {}).get("fp32", {}).get("run_ok"))),
+        "blocked": sorted(_blocked(variants, trt)),
+        "trt_checked": bool(trt),
+        "gate_scope": (
+            "ONNX export only — TensorRT was NOT exercised (--no-trt, or no GPU/tensorrt "
+            "present). An empty `blocked` list here does NOT mean TensorRT passed."
+            if not trt else
+            "ONNX export + TensorRT FP32 build/run/parity + FP16 build/run."),
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"[probe] wrote {out}")
     print(json.dumps(report["summary"], indent=2))
+
+    # Diagnostics are printed above regardless; the exit status reflects whether
+    # the REQUIRED outcomes held, so CI cannot read a failed probe as a pass.
+    blocked = report["summary"]["blocked"]
+    if blocked:
+        print(f"[probe] FAIL — required checks did not hold for: {', '.join(blocked)}")
+        return 1
+    if not trt:
+        print("[probe] ONNX-only run (--no-trt): TensorRT was not exercised and is NOT "
+              "asserted to pass. Re-run without --no-trt on a GPU machine to gate it.")
     return 0
 
 

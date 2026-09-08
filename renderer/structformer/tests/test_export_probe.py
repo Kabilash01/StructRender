@@ -167,7 +167,11 @@ def test_committed_probe_engines_built_and_matched_pytorch(report):
         fp32 = v["trt"]["fp32"]
         assert fp32["build_ok"] and fp32["run_ok"], f"{name}: {fp32['errors']}"
         assert fp32["max_abs_diff"] <= tol, f"{name}: {fp32['max_abs_diff']} > {tol}"
-        assert v["trt"]["fp16"]["build_ok"], f"{name} fp16: {v['trt']['fp16']['errors']}"
+        fp16 = v["trt"]["fp16"]
+        # run_ok, not just build_ok: an engine that builds and then fails to
+        # execute is not a passing FP16 result (KB Decision 52).
+        assert fp16["build_ok"], f"{name} fp16 build: {fp16['errors']}"
+        assert fp16["run_ok"], f"{name} fp16 built but did not run: {fp16['errors']}"
 
 
 def test_the_end_to_end_graph_keeps_the_m4_tensor_contract(report):
