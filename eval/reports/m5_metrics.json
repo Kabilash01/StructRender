@@ -83,5 +83,6 @@
     "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00427_native_pred_target.png",
     "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00700_native_pred_target.png",
     "/home/kabilash01/StructRender/eval/reports/m5_qualitative/trainmove_00843_native_pred_target.png"
-  ]
+  ],
+  "comparison_scope": "Comparable to Model A only under the ladder's shared split, objective and selection rule. Optimiser exposure was NOT identical: the CNN made 80 updates/epoch over 640 samples, this model 81 over 644, and the trailing accumulation group was scaled by accum rather than its real size. That difference is unmeasured (KB Decision 51)."
 }

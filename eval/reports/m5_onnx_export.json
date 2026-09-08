@@ -90,7 +90,7 @@
       "max_abs_diff_vs_torch": 0.00018107891082763672,
       "latency_ms_mean": 13.476147842407226,
       "latency_ms_p50": 13.316927909851074,
-      "latency_ms_p95": null
+      "latency_ms_p95_status": "not measured \u2014 run_engine does not compute p95"
     },
     "trt_fp16": {
       "ok": true,
@@ -105,10 +105,10 @@
       "max_abs_diff_vs_torch": 0.0015045106410980225,
       "latency_ms_mean": 4.2247504091262815,
       "latency_ms_p50": 4.191840171813965,
-      "latency_ms_p95": null,
       "fp32_tolerance": 0.001,
       "fp32_tolerance_exceeded": true,
-      "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48): half precision carries ~1e-3 relative precision and the reference is fp32 torch, so exceeding a tolerance written for FP32 is not a defect - but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is used as an acceptance criterion at M10, where FP16 is the deployment target."
+      "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48): half precision carries ~1e-3 relative precision and the reference is fp32 torch, so exceeding a tolerance written for FP32 is not a defect - but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is used as an acceptance criterion at M10, where FP16 is the deployment target.",
+      "latency_ms_p95_status": "not measured \u2014 run_engine does not compute p95"
     }
   },
   "budget_ref": {
@@ -120,19 +120,9 @@
     "frame_budget_ms": 33.3,
     "note": "KB 12 calls these engineering targets, not guaranteed measured results."
   },
-  "model_a_comparison": {
-    "attempted": true,
-    "onnx_export_ok": true,
-    "onnxruntime_parity": "passed at M4 (max_abs_diff 3.67e-06)",
-    "tensorrt_build_ok": false,
-    "error": "Error Code 10: Could not find any implementation for node ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid] - NVRTC compilation failure inside a Myelin fused region (nvrtc_compile.cpp:1122).",
-    "reproduced": "4/4 configurations: tf32 on/off x workspace 1024/256 MiB - all fail identically.",
-    "not_generic": "A minimal Conv->ReLU->Conv->Sigmoid graph at the same 1x7x288x512 shape builds successfully, and Model B also ends in sigmoid and builds, so this is not a generic Conv+Sigmoid or sigmoid-head problem. Model A's distinguishing operators are Resize (interpolate upsampling), MaxPool and InstanceNormalization.",
-    "diagnosis_status": "NOT fully diagnosed - cause narrowed, not identified. Recorded as open.",
-    "scope": "This does NOT retroactively fail M4. M4's exit criterion 4 was 'export works', verified as ONNX export + onnxruntime parity; KB 10 places the TensorRT benchmark at M5, and TensorRT was not installed at M4. What it means is that the ladder's CNN baseline has no working TensorRT path today, while the model KB 12 flagged as the export risk has one."
-  },
   "operator_allow_list": [
     "Add",
+    "Cast",
     "Concat",
     "Constant",
     "ConstantOfShape",
@@ -143,10 +133,13 @@
     "Expand",
     "Gather",
     "Gemm",
+    "Identity",
     "InstanceNormalization",
     "LayerNormalization",
     "MatMul",
+    "MaxPool",
     "Mul",
+    "ReduceMax",
     "Relu",
     "Reshape",
     "Resize",
@@ -154,17 +147,25 @@
     "Sigmoid",
     "Slice",
     "Softmax",
+    "Sqrt",
+    "Sub",
     "Tile",
     "Transpose",
     "Unsqueeze",
     "Where"
   ],
-  "operator_allow_list_note": "The SHIPPED trained graph's operator census, pinned so a new op at M6 is a visible diff (KB 12). Equal/Where/ConstantOfShape/Expand come from `.expand(structure.shape[0], -1)` on the cached style token in StructFormerSingleStyle; they were absent from Decision 45's probe list because the probe exported the two-input StructFormer, which takes the token as a graph input instead. See Decision 50.",
   "export_contract": {
     "graph_inputs": 1,
     "input_names": [
       "structure"
     ],
     "note": "ONE input, not the two Decision 45 item 3 pinned. What was exported is StructFormerSingleStyle, which folds M5's single cached style token into a learned parameter, so it never crosses the graph boundary. The two-input contract belongs to the multi-style StructFormer class and returns when style-B arrives at M8. See Decision 50."
-  }
+  },
+  "operator_allow_list_source": "Declared in scripts/export_benchmark_m5.py::ALLOWED_OPS, NOT derived from the exported graph. Deriving it from the graph it validates would make it vacuous. A new operator must fail and be added deliberately (KB 12, Decision 51).",
+  "model_a_comparison_ref": {
+    "artifact": "eval/reports/m4_tensorrt_build_failure.json",
+    "note": "Model A's TensorRT build failure is a SEPARATE dated diagnostic, not re-measured by this generator. Embedding its numbers here would present an old measurement as new."
+  },
+  "latency_note": "Attempt-1 checkpoint, batch 1, 512x288, TensorRT engine timing only: CUDA events around execute_async_v3. EXCLUDES host<->device transfers, Godot's own frame cost, structural-buffer export and any game-pipeline overhead. Not an end-to-end FPS figure.",
+  "provenance_note": "MEASUREMENTS are from the generator run at generated_utc and are unchanged. The fields operator_allow_list / operator_allow_list_source / export_contract / model_a_comparison_ref / latency_note / budget_ref and the FP16 tolerance flags were added at review time (KB Decision 51) because the generator did not then produce them. The generator now does, and validates against REQUIRED_TOP_LEVEL before writing. THIS FILE IS NOT YET FULLY GENERATOR-PRODUCED: a regeneration on a CUDA+TensorRT machine is pending and is the point at which that claim becomes true."
 }

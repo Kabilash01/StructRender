@@ -1,0 +1,19 @@
+{
+  "diagnostic": "Model A (U-Net, M4 ladder rung) TensorRT engine build",
+  "measured_utc": "2026-09-08T14:44:50+00:00",
+  "measured_by": "ad-hoc diagnostic during the M5 export session; NOT reproduced by any committed generator",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "environment": "conda `dl`, RTX 5060 Laptop 7.5 GB, CUDA 13.2",
+  "reproduction_status": "UNREPRODUCED. No committed script regenerates this. It is kept as a dated observation rather than embedded in the M5 export report, so a regenerated M5 report cannot silently re-present this older measurement as new (KB Decision 51).",
+  "attempted": true,
+  "onnx_export_ok": true,
+  "onnxruntime_parity": "passed at M4 (max_abs_diff 3.67e-06)",
+  "tensorrt_build_ok": false,
+  "error": "Error Code 10: Could not find any implementation for node ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid] - NVRTC compilation failure inside a Myelin fused region (nvrtc_compile.cpp:1122).",
+  "reproduced": "4/4 configurations: tf32 on/off x workspace 1024/256 MiB - all fail identically.",
+  "not_generic": "A minimal Conv->ReLU->Conv->Sigmoid graph at the same 1x7x288x512 shape builds successfully, and Model B also ends in sigmoid and builds, so this is not a generic Conv+Sigmoid or sigmoid-head problem. Model A's distinguishing operators are Resize (interpolate upsampling), MaxPool and InstanceNormalization.",
+  "diagnosis_status": "NOT fully diagnosed - cause narrowed, not identified. Recorded as open.",
+  "scope": "This does NOT retroactively fail M4. M4's exit criterion 4 was 'export works', verified as ONNX export + onnxruntime parity; KB 10 places the TensorRT benchmark at M5, and TensorRT was not installed at M4. What it means is that the ladder's CNN baseline has no working TensorRT path today, while the model KB 12 flagged as the export risk has one.",
+  "scope_correction": "Describes an UNRESOLVED build failure in THIS environment (TensorRT 11.2.1.2 / CUDA 13.2 / RTX 5060 Laptop), not an absence of any deployment path for the CNN. The cause was narrowed and not identified; a different TensorRT version, a graph rewrite of the Resize/InstanceNormalization path, or an ONNX simplifier pass are all untested. 'No deployment path' overstates it."
+}

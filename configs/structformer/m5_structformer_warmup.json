@@ -142,7 +142,7 @@
     ],
     "dynamic_axes": false,
     "parity_tolerance_max_abs": 0.001,
-    "notes": "Same opset, static shapes and tolerance as M4. The graph is TWO-input where M4's was one (Decision 45 item 3); M10's runtime must bind both. Export and the TensorRT benchmark are a later M5 step \u2014 this block records the contract, no export code reads it yet."
+    "notes": "Same opset, static shapes and tolerance as M4. The SHIPPED M5 graph is ONE input (`structure`): training and export use StructFormerSingleStyle, which folds the single cached style token into a learned parameter so it never crosses the graph boundary. An earlier version of this note said TWO-input per Decision 45 item 3; that contract belongs to the multi-style StructFormer class and returns at M8 when style-B makes the token genuinely variable (KB Decision 50). M10's runtime binds what the shipped graph declares - see eval/reports/m5_onnx_export.json -> export_contract."
   },
   "attempt": {
     "number": 2,

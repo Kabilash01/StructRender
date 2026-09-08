@@ -588,17 +588,24 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         # optimiser sees the same 8 samples per update that Model A saw.
         # `accum_steps: 1` is the default and is exactly the old code path.
         accum = int(t.get("accum_steps", 1))
+        n_batches = len(loader)
         opt.zero_grad(set_to_none=True)
         for step, (x, y, _) in enumerate(loader):
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
             with torch.autocast("cuda", dtype=amp, enabled=use_amp):
                 loss, _parts = criterion(model(x), y)
             value = assert_finite_loss(loss, step=step, epoch=epoch)
-            # Scale so the accumulated gradient is the MEAN over the effective
-            # batch, not the sum — without this the effective learning rate is
-            # multiplied by `accum` and the rungs differ in optimisation too.
-            (loss / accum).backward()
-            if (step + 1) % accum == 0 or (step + 1) == len(loader):
+            # Divide by the microbatches actually IN THIS GROUP, not by `accum`.
+            # The last group of an epoch can be short (161 batches at accum 2 gives
+            # 80 full groups and one group of one), and dividing a short group by
+            # `accum` applies a fractional-magnitude update — a half-weight step in
+            # the M5 case. The committed M5 runs were trained with the old
+            # `/accum` form; its effect on those numbers is UNMEASURED (KB
+            # Decision 51). This is the corrected behaviour for future runs.
+            group_start = (step // accum) * accum
+            group_size = min(accum, n_batches - group_start)
+            (loss / group_size).backward()
+            if (step + 1) % accum == 0 or (step + 1) == n_batches:
                 opt.step()
                 sched.step()
                 opt.zero_grad(set_to_none=True)
