@@ -1,4 +1,9 @@
 {
+  "checkpoint": "/home/kabilash01/StructRender/checkpoints/m4_unet_baseline/best.pt",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-06T16:27:05+00:00",
   "parameters": 7853763,
   "trained_weights": true,
   "graph": {
@@ -51,8 +56,8 @@
       512
     ],
     "n_samples": 3,
-    "max_abs_diff": 6.467103958129883e-06,
-    "mean_abs_diff": 1.099120140679588e-06,
+    "max_abs_diff": 3.6656856536865234e-06,
+    "mean_abs_diff": 7.525314913436887e-07,
     "onnxruntime_version": "1.29.0",
     "providers": [
       "CPUExecutionProvider"

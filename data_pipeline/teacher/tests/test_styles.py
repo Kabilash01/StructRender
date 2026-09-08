@@ -88,9 +88,9 @@ def test_style_id_must_match_the_file_name(tmp_path):
 
 
 def test_diffusion_style_without_pinned_model_is_rejected():
-    cfg = json.loads((REPO_CONFIGS / "gouache.json").read_text())
+    cfg = json.loads((REPO_CONFIGS / "oil_impasto.json").read_text())
     cfg["teacher"].pop("controlnet_revision")
-    errs = validate_style_body(cfg, expect_style_id="gouache")
+    errs = validate_style_body(cfg, expect_style_id="oil_impasto")
     assert any("controlnet_revision" in e for e in errs), errs
 
 

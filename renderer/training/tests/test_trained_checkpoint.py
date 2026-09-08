@@ -48,7 +48,13 @@ def test_training_report_shows_a_decreasing_loss(cfg):
     if not report.is_file():
         pytest.skip("no training report yet")
     hist = json.loads(report.read_text(encoding="utf-8"))["history"]
-    assert hist[-1]["train_l1"] < 0.5 * hist[0]["train_l1"]
+    # `train_loss` since KB Decision 42 — the series is the TOTAL objective
+    # (L1 + w*LPIPS), not an L1, and was previously published under a name that
+    # claimed otherwise. NO `train_l1` fallback on purpose: reports are rewritten
+    # wholesale per run, so the only way the old key appears is a stale artifact,
+    # and letting one satisfy an exit criterion is the defect Decision 42 closes.
+    assert "train_loss" in hist[0], "stale pre-Decision-42 training report (no train_loss)"
+    assert hist[-1]["train_loss"] < 0.5 * hist[0]["train_loss"]
     vals = [h["val_l1"] for h in hist if "val_l1" in h]
     assert len(vals) >= 2 and min(vals) < vals[0]
 

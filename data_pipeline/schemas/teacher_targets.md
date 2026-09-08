@@ -50,7 +50,7 @@ style. Instead:
 
 ```
 <target_root>/
-  <style_id>/                            e.g. gouache/
+  <style_id>/                            e.g. oil_impasto/
     <session_id>/                        e.g. ds_1788430292_4c77250c/
       manifest.json                      target-set header (§3)
       manifest.jsonl                     one TargetFrame per line (§2), frame_id order
@@ -77,7 +77,7 @@ style. Instead:
   "schema_version":   "t1.0",
   "session_id":       "ds_1788430292_4c77250c",   // the structural session, verbatim
   "frame_id":         0,                          // must exist in that session
-  "style_id":         "gouache",
+  "style_id":         "oil_impasto",
   "target_rgb_path":  "frames/frame_00000_target.png",
   "native_rgb_path":  "frames/frame_00000_rgb.png", // relative to the STRUCTURAL session
   "cache_key":        "9f0f4a…",                  // §4
@@ -106,8 +106,8 @@ mixed-teacher target set is not a valid supervision source and is rejected.
 ```jsonc
 {
   "schema_version": "t1.0",
-  "style_id":       "gouache",
-  "style_ids":      ["gouache"],          // mirrors the structural header's style_ids field
+  "style_id":       "oil_impasto",
+  "style_ids":      ["oil_impasto"],          // mirrors the structural header's style_ids field
   "session_id":     "ds_1788430292_4c77250c",
   "frame_count":    990,
   "resolution":     [512, 288],
@@ -125,7 +125,7 @@ mixed-teacher target set is not a valid supervision source and is rejected.
     "teacher_version":     "sd15-controlnet-depth-1/225dfe3577fa",
     "backend":             "sd15_controlnet_depth",
     "seed":                20260905,
-    "style_config":        "gouache.json",
+    "style_config":        "oil_impasto.json",
     "style_config_digest": "225dfe…",     // sha256 of the config body (excluding "notes")
     "prompt":              "…",
     "negative_prompt":     "…",
@@ -262,11 +262,15 @@ of frames are ungated on entity silhouette.
 
 **Two measurement limits a consumer must know about:**
 
-- **Detection floor on translation.** A small *purely horizontal* target shift is
-  not caught by this scene: measured floors are 3 px diagonal but **8 px x-only**
-  (at 5 px x-only the worst frame still scores `F = 0.717`, `spurious = 0.294`,
-  `silhouette = 0.630` — inside every gate). A systematic sub-5 px horizontal
-  misalignment would pass all four gates and reach training as supervision.
+- **Detection floor on translation.** Measured floors: **2 px diagonal, 5 px
+  x-only** (KB Decision 41 — improved from 3 px / 8 px on the retired scene,
+  once the enriched scene added vertical structure). Shifts *at or above* those
+  values are rejected; a systematic misalignment **below** 5 px horizontally
+  still passes all four gates and would reach training as supervision. The
+  x-only floor is the weaker one because a long horizontal ground/sky boundary
+  is near-invariant under horizontal translation. Both floors are asserted by
+  `test_alignment_rejects.py` (`DIAGONAL_FLOOR_PX` / `X_ONLY_FLOOR_PX`), so a
+  regression is caught rather than merely documented.
 - **Partial circularity.** The teacher is conditioned on the exported depth
   buffer, and gate 1's recall is measured against a reference map derived from
   that same buffer. The `support` map adds normal and albedo discontinuities,

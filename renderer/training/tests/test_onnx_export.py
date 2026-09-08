@@ -12,6 +12,7 @@ refresh the committed ``eval/reports/m4_onnx_export.json`` instead.
 
 from __future__ import annotations
 
+import datetime as _dt
 import json
 from pathlib import Path
 
@@ -21,7 +22,7 @@ import torch
 from inference.export.export_onnx import export_onnx
 from inference.export.validate_onnx import check_parity, graph_summary, onnxruntime_available
 from renderer.baselines.unet import UNetBaseline, parameter_count
-from renderer.training.train_baseline import ROOT
+from renderer.training.train_baseline import objective_string, ROOT
 
 pytestmark = pytest.mark.skipif(
     not onnxruntime_available(), reason="onnxruntime not installed (pip install '.[export]')"
@@ -29,7 +30,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def exported(cfg, tmp_path_factory, report_sink):
+def exported(cfg, session, tmp_path_factory, report_sink):
     e = cfg["export"]
     torch.manual_seed(cfg["train"]["seed"])
     model = UNetBaseline(
@@ -45,6 +46,18 @@ def exported(cfg, tmp_path_factory, report_sink):
     summary = graph_summary(path)
     parity = check_parity(model, path, tuple(e["input_shape"]))
     report = {
+        # KB Decision 42 self-identification. `trained_weights: true` is
+        # meaningless without naming WHICH checkpoint, and an export report that
+        # cannot say what it exported is exactly how a stale artifact survives.
+        "checkpoint": str(ckpt) if ckpt.is_file() else None,
+        # Resolve the ACTUAL session, never a sentinel: "discovered-newest"
+        # records that the report did not look, which cannot distinguish a
+        # current-session export from a retired-scene one — the exact failure
+        # KB Decision 42 exists to close.
+        "session_id": session.session_id,
+        "style_id": cfg["data"]["style_id"],
+        "objective": objective_string(cfg),
+        "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "parameters": parameter_count(model),
         "trained_weights": ckpt.is_file(),
         "graph": summary,

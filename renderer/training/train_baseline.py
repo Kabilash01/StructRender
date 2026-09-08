@@ -11,6 +11,7 @@ no temporal state, no entity state and no EPAM (M6/M7/M8).
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import math
 import time
@@ -30,6 +31,7 @@ from eval.metrics.image_quality import (
     ssim,
 )
 from renderer.baselines.unet import UNetBaseline, parameter_count
+from renderer.losses.perceptual import PerceptualReconstructionLoss
 from renderer.training.dataset import (
     Split,
     StyledFrameDataset,
@@ -131,6 +133,58 @@ def assert_finite_loss(loss: torch.Tensor, *, step: int, epoch: int | None = Non
 # --------------------------------------------------------------------------- #
 # evaluation
 # --------------------------------------------------------------------------- #
+def objective_string(cfg: dict) -> str:
+    """Names the training objective for a report, from the config's numbers.
+
+    Not the only implementation: the training and overfit loops write
+    `PerceptualReconstructionLoss.describe()` instead, which formats the *live*
+    criterion. The two are kept identical on purpose — reports derived from the
+    config must match reports derived from the object that actually ran — and
+    `test_reports_agree_on_the_objective` compares every committed report
+    against this function, so a drift between them fails the suite rather than
+    reaching an artifact.
+
+    KB Decision 42 requires every committed report to name its objective. A
+    clever one-liner here produced `"L_rec = L1 + 0"` — it split the config's
+    prose note on "." and cut at the decimal point of `0.5*LPIPS` — so the
+    metrics artifact claimed an L1-only run, which is the configuration
+    Decision 41 records as FAILING the sharpness gate. A confidently wrong
+    field is worse than a missing one: a missing field prompts a question, a
+    wrong one closes it. Derived from the config's numbers, never from prose,
+    and shared so the three reports cannot drift into three formats.
+    """
+    l = cfg["loss"]
+    w = float(l.get("perceptual", 0.0))
+    if w <= 0.0:
+        return f"{float(l.get('l1', 1.0)):g}*L1"
+    return f"{float(l.get('l1', 1.0)):g}*L1 + {w:g}*LPIPS({l.get('perceptual_net', 'alex')})"
+
+
+def _selection_note() -> str:
+    """Describe the checkpoint-selection bias using THIS run's own history.
+
+    KB Decision 35 requires the bias to be stated inline with the metrics. It
+    must be *derived*: a hardcoded figure published a retired scene's number into
+    a new session's report, understating the real bias by ~2.5x (3.2 / 1.3).
+    """
+    base = ("'selection_set' is the held-out split, but train_baseline.py checkpoints on its "
+            "lowest val_l1, so these numbers are best-of-N-epochs on the same frames — the "
+            "selection criterion's own minimum, not an unbiased generalisation estimate. ")
+    try:
+        hist = json.loads((ROOT / "eval" / "reports" / "m4_train.json").read_text())
+        vals = [(e["epoch"], e["val_l1"]) for e in hist["history"] if "val_l1" in e]
+        if not vals:
+            raise ValueError("no validated epochs")
+        best_e, best_v = min(vals, key=lambda p: p[1])
+        last_e, last_v = vals[-1]
+        pct = 100.0 * (last_v - best_v) / best_v if best_v else float("nan")
+        return base + (f"Measured selection gain on this run: best epoch {best_e} val_l1 "
+                       f"{best_v:.6f} vs final epoch {last_e} {last_v:.6f}, {pct:.1f}% in L1. "
+                       "KB Decision 35.")
+    except Exception as exc:  # noqa: BLE001 — never block a report on the note
+        return base + f"(selection gain unavailable: {exc}). KB Decision 35."
+
+
 @torch.no_grad()
 def evaluate(
     model: torch.nn.Module,
@@ -280,15 +334,38 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
     torch.manual_seed(o["seed"])
     np.random.seed(o["seed"])
 
+    # Release whatever earlier tests left resident. The overfit gate now trains
+    # under the configured objective (KB Decision 42), which puts LPIPS's AlexNet
+    # on the GPU as well as the model — enough extra that, on the 8 GB card, this
+    # OOM'd inside the full suite while passing standalone. The gate must not be
+    # decided by what ran before it.
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+
     session, target_dir, split = resolve_data(cfg)
     frame_ids = overfit_frame_ids(split, int(o["n_frames"]))
     ds = StyledFrameDataset(session, target_dir, frame_ids)
-    xs = torch.stack([ds[i][0] for i in range(len(ds))]).to(device)
-    ys = torch.stack([ds[i][1] for i in range(len(ds))]).to(device)
+    # Held on CPU and moved per batch. Pinning all N frames to the GPU cost
+    # ~190 MB of headroom for no speed gain at this size.
+    xs = torch.stack([ds[i][0] for i in range(len(ds))])
+    ys = torch.stack([ds[i][1] for i in range(len(ds))])
 
     model = UNetBaseline(**_model_kwargs(cfg)).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=float(o["lr"]), weight_decay=0.0)
     gen = torch.Generator(device="cpu").manual_seed(o["seed"])
+
+    # The overfit gate trains under the CONFIGURED objective, not a hardcoded
+    # L1 (KB Decision 42). It is a capacity check on the setup we actually ship;
+    # running it under a different loss than the ladder would tell us the model
+    # can memorise something it is never asked to memorise.
+    lcfg = cfg["loss"]
+    criterion = PerceptualReconstructionLoss(
+        w_l1=float(lcfg.get("l1", 1.0)),
+        w_perceptual=float(lcfg.get("perceptual", 0.0)),
+        net=str(lcfg.get("perceptual_net", "alex")),
+    ).to(device)
+    if float(lcfg.get("perceptual", 0.0)) > 0.0 and not criterion.used_perceptual:
+        raise RuntimeError("config requests a perceptual loss but `lpips` is unavailable")
 
     model.train()
     bs, max_steps = int(o["batch_size"]), int(o["max_steps"])
@@ -296,7 +373,8 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
     history = []
     for step in range(max_steps):
         idx = torch.randint(0, len(ds), (bs,), generator=gen)
-        loss = F.l1_loss(model(xs[idx]), ys[idx])
+        xb, yb = xs[idx].to(device, non_blocking=True), ys[idx].to(device, non_blocking=True)
+        loss, _parts = criterion(model(xb), yb)
         value = assert_finite_loss(loss, step=step)
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -304,24 +382,50 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
         if step0_loss is None:
             step0_loss = value
         if (step + 1) % log_every == 0:
-            history.append({"step": step + 1, "l1": value})
+            history.append({"step": step + 1, "loss": value})
 
     model.eval()
+    # Chunked: forwarding all N frames in one batch was the actual OOM site
+    # (a single 576 MiB activation on an 8 GB card already holding the model,
+    # LPIPS and whatever the preceding tests left behind). Metrics are averaged
+    # per frame, so chunking changes nothing but peak memory.
     with torch.no_grad():
-        pred = model(xs).float()
-        final_l1 = float((pred - ys).abs().mean())
-        final_psnr = float(psnr(pred, ys).mean())
-        final_ssim = float(ssim(pred, ys).mean())
+        l1s, psnrs, ssims = [], [], []
+        for i in range(0, len(ds), 4):
+            xb = xs[i:i + 4].to(device)
+            yb = ys[i:i + 4].to(device)
+            pb = model(xb).float()
+            l1s.append((pb - yb).abs().flatten(1).mean(dim=1).cpu())
+            psnrs.append(psnr(pb, yb).cpu())
+            ssims.append(ssim(pb, yb).cpu())
+        final_l1 = float(torch.cat(l1s).mean())
+        final_psnr = float(torch.cat(psnrs).mean())
+        final_ssim = float(torch.cat(ssims).mean())
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
 
     th = o["thresholds"]
     result = {
+        # Self-identification (KB Decision 42): a report that does not name the
+        # data and objective it came from cannot be told apart from a stale one.
+        # An overfit artifact from a retired scene survived undetected precisely
+        # because these four fields were absent.
+        "session_id": session.session_id,
+        "style_id": cfg["data"]["style_id"],
+        "objective": criterion.describe(),
+        "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "frame_ids": frame_ids,
         "n_frames": len(frame_ids),
         "max_steps": max_steps,
         "batch_size": bs,
         "lr": float(o["lr"]),
         "seed": o["seed"],
-        "step0_l1": step0_loss,
+        "step0_loss": step0_loss,
+        "objective_note": (
+            "step0_loss / history[].loss are the TOTAL objective (KB Decision 42); "
+            "final_l1 / psnr_db / ssim are measured quantities. loss_drop_factor is "
+            "therefore objective-over-L1 — a MIXED-UNIT ratio, and a sanity check only."
+        ),
         "final_l1": final_l1,
         "loss_drop_factor": step0_loss / max(final_l1, 1e-12),
         "psnr_db": final_psnr,
@@ -370,6 +474,20 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
     model = UNetBaseline(**_model_kwargs(cfg)).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs * len(loader))
+
+    lcfg = cfg["loss"]
+    criterion = PerceptualReconstructionLoss(
+        w_l1=float(lcfg.get("l1", 1.0)),
+        w_perceptual=float(lcfg.get("perceptual", 0.0)),
+        net=str(lcfg.get("perceptual_net", "alex")),
+    ).to(device)
+    if float(lcfg.get("perceptual", 0.0)) > 0.0 and not criterion.used_perceptual:
+        # Refuse to train a ladder model under a silently different objective —
+        # KB Decision 35: the comparison must measure the architecture, not the loss.
+        raise RuntimeError(
+            "config requests a perceptual loss but the `lpips` package is unavailable; "
+            "install the `train` extra rather than training under a different objective"
+        )
     amp = _amp_dtype(t["amp_dtype"])
     use_amp = device.type == "cuda" and amp != torch.float32
 
@@ -385,7 +503,7 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         for step, (x, y, _) in enumerate(loader):
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
             with torch.autocast("cuda", dtype=amp, enabled=use_amp):
-                loss = F.l1_loss(model(x), y)
+                loss, _parts = criterion(model(x), y)
             value = assert_finite_loss(loss, step=step, epoch=epoch)
             opt.zero_grad(set_to_none=True)
             loss.backward()
@@ -393,7 +511,13 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
             sched.step()
             run_loss += value * x.shape[0]
             n += x.shape[0]
-        entry = {"epoch": epoch, "train_l1": run_loss / max(n, 1)}
+        # NAME THE OBJECTIVE, NOT A METRIC. `run_loss` accumulates the total
+        # training loss, which is L1 + w*LPIPS whenever a perceptual term is
+        # configured (KB Decision 41). Publishing it as "train_l1" made the
+        # report claim an L1 it never measured, and a ladder comparison against
+        # M5's curve would have compared different quantities.
+        entry = {"epoch": epoch, "train_loss": run_loss / max(n, 1),
+                 "train_objective": criterion.describe()}
         if (epoch + 1) % int(t["eval_every_epochs"]) == 0 or epoch == epochs - 1:
             val = evaluate(model, val_ds, device, lpips_metric=lp)
             entry.update({f"val_{k}": v for k, v in val.items()})
@@ -422,6 +546,12 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         "split": split.as_report(),
         "session_id": session.session_id,
         "style_id": cfg["data"]["style_id"],
+        # KB Decision 42: every committed report names the data AND the objective
+        # it was produced under. Without this a metrics file from an L1-only run
+        # is indistinguishable from a perceptual one — which is the whole finding
+        # of Decision 41.
+        "objective": criterion.describe(),
+        "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "history": history,
         "best": best,
         "checkpoint": str(ckpt_dir / "best.pt"),
@@ -473,14 +603,18 @@ def main() -> int:
             "checkpoint": str(ckpt),
             "parameters": parameter_count(model),
             "split": split.as_report(),
+            # KB Decision 42 self-identification. `objective` matters most here:
+            # Decision 41's finding is that the objective drove the sharpness/SSIM
+            # trade, so a metrics file without it cannot be distinguished from an
+            # L1-only run.
+            "objective": objective_string(cfg),
+            "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
             "lpips_implementation": "lpips-alex-v0.1" if lp else "unavailable (lpips package not installed)",
-            "selection_set_note": (
-                "'selection_set' is the held-out split, but train_baseline.py checkpoints on its "
-                "lowest val_l1, so these numbers are best-of-N-epochs on the same frames — the "
-                "selection criterion's own minimum, not an unbiased generalisation estimate. "
-                "Measured selection gain: best epoch 45 val_l1 0.004440 vs final epoch 59 0.004499, "
-                "1.3% in L1 (~0.1 dB). KB Decision 35."
-            ),
+            # Computed from THIS run's history, never quoted. A hardcoded figure
+            # here published a retired scene's 1.3% selection gain into a new
+            # session's report (KB Decision 42) — the third stale-citation defect
+            # in this project, and the only durable fix is to derive it.
+            "selection_set_note": _selection_note(),
             "selection_set": evaluate(model, val_ds, device, lpips_metric=lp),
             "train_split_reference": evaluate(model, train_ds, device, lpips_metric=lp),
             "style_acquisition_selection_set": style_acquisition(model, val_ds, device, lpips_metric=lp),

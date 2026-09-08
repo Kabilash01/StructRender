@@ -51,6 +51,25 @@ static func make_world(tree: SceneTree) -> Node3D:
 	return w
 
 
+## Author BOTH the structural-albedo meta and a real material from one linear
+## colour, so the structural buffer and the NATIVE RGB describe the same scene.
+##
+## They used to disagree for every mesh (KB Decision 38): only the meta was set,
+## so the structural albedo pass reported the authored colour while the native
+## render — the sole image the teacher consumes, captured before any
+## `material_override` swap — showed Godot's default grey. A cube authored
+## (0.90, 0.65, 0.20) measured (0.66, 0.66, 0.66) in the recorded native RGB.
+##
+## The meta stays LINEAR and still wins for the structural pass
+## (`frame_structure.md` §2.3 precedence); the material takes the sRGB form
+## because `albedo_color` is interpreted as sRGB.
+static func _apply_albedo(mi: MeshInstance3D, albedo: Color) -> void:
+	mi.set_meta("structrender_albedo", albedo)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = albedo.linear_to_srgb()
+	mi.material_override = mat
+
+
 ## An entity: a Node3D in the structrender_entity group with a box MeshInstance
 ## child. `size` in metres, `albedo` interpreted linear.
 static func add_entity(parent: Node3D, ename: String, pos: Vector3,
@@ -64,21 +83,26 @@ static func add_entity(parent: Node3D, ename: String, pos: Vector3,
 	var bm := BoxMesh.new()
 	bm.size = Vector3(size, size, size)
 	mi.mesh = bm
-	mi.set_meta("structrender_albedo", albedo)
+	_apply_albedo(mi, albedo)
 	e.add_child(mi)
 	return e
 
 
 ## Non-entity static geometry (id 0), e.g. a backdrop wall.
+## `rot_deg` lets a prop be tilted so it contributes a normal discontinuity as
+## well as a depth jump (KB Decision 38 change 3).
 static func add_prop(parent: Node3D, pos: Vector3, size: Vector3,
-		albedo: Color = Color(0.5, 0.5, 0.5)) -> MeshInstance3D:
+		albedo: Color = Color(0.5, 0.5, 0.5),
+		rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = size
 	mi.mesh = bm
-	mi.set_meta("structrender_albedo", albedo)
+	_apply_albedo(mi, albedo)
 	parent.add_child(mi)
 	mi.global_position = pos
+	if rot_deg != Vector3.ZERO:
+		mi.rotation_degrees = rot_deg
 	return mi
 
 

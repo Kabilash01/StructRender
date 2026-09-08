@@ -70,6 +70,73 @@ static func add_light_env(world: Node3D) -> void:
 	var sun := DirectionalLight3D.new()
 	world.add_child(sun)
 	sun.rotation_degrees = Vector3(-45, -30, 0)
+	# Load-bearing, not tidiness (KB Decision 38, "Explicitly cut"): the structural
+	# passes are unlit, so a shadow edge is a strong native-RGB edge with NO
+	# counterpart in `R` or `S` — gate 2 would score it as hallucinated geometry.
+	# False is the engine default; set explicitly so enabling it is a visible edit.
+	sun.shadow_enabled = false
+
+
+## Static, non-entity set dressing (all `entity_id == 0`) — KB Decision 38.
+##
+## The scene was previously one flat floor plus one flat backdrop. When the
+## target entity leaves the frame, that left the depth buffer as two constant
+## planes: nothing for ControlNet-depth to anchor on, almost no reference edges,
+## and so any prompt strong enough to restyle also invented geometry (Decision
+## 37). Every piece below earns its place by adding a depth discontinuity, a
+## silhouette, or an albedo boundary in exactly those sparse frames.
+##
+## Three placement rules, all load-bearing:
+##
+## 1. BOTH camera poses are covered. `_camera_aimed_away` yaws 165° about
+##    world-up, so props sitting only in front of the home pose would leave the
+##    `camera_away` gaps — half the observed failure cluster — as empty as
+##    before. The `+Z` group exists solely for that pose.
+## 2. NOTHING blocks the camera→target sightline. Visibility is
+##    `pixel_count > 0`, so a prop that *fully* occludes the target for even one
+##    frame inside a margin creates a second hidden→visible transition. This
+##    used to add "and the M2 validator rejects the session (Decision 29's
+##    single contiguous gap)" — it does not; the validator only checks the FIRST
+##    hidden stretch is clean. The guard is `_check_one_hidden_run` in
+##    `d1_recorder.gd` (KB Decision 44).
+##    The target drifts within x ∈ [-2.1, -0.9], z ≈ -6.4..-5.6; the camera
+##    drifts x ∈ [-0.35, 0.35] at z ≈ 0.5. Everything here is therefore kept
+##    off the central corridor (|x| ≥ 3.2 for anything nearer than z = -12) or
+##    placed behind the target plane.
+## 3. DEPTH STAYS IN USABLE RANGE. M4 feeds `1/(1+d)`, so 40 m maps to 0.024
+##    against a background sentinel of exactly 0 — beyond that "varied depth" is
+##    numerically indistinguishable from sky. Everything sits ~4-32 m out.
+static func _build_static_set(world: Node3D) -> void:
+	# --- floor, broken into three sections at different heights/tilts so the
+	# ground plane itself carries depth jumps AND normal creases (both R and S)
+	H.add_prop(world, Vector3(0, -1.0, -8), Vector3(26, 0.5, 26), Color(0.26, 0.24, 0.22))
+	H.add_prop(world, Vector3(-11, -0.55, -13), Vector3(12, 0.5, 22), Color(0.32, 0.30, 0.25),
+		Vector3(0, 0, -4.0))
+	H.add_prop(world, Vector3(11, -0.72, -14), Vector3(12, 0.5, 24), Color(0.20, 0.22, 0.26),
+		Vector3(3.0, 0, 0))
+
+	# --- backdrop, stepped rather than one flat wall
+	H.add_prop(world, Vector3(-6, 3.5, -19), Vector3(26, 18, 0.5), Color(0.18, 0.20, 0.28))
+	H.add_prop(world, Vector3(13, 5.0, -23), Vector3(26, 22, 0.5), Color(0.23, 0.21, 0.19))
+
+	# --- mid-depth blocks flanking the corridor: silhouettes + depth steps that
+	# survive when the entities are gone. Kept to |x| >= 3.2 so the target's
+	# drift envelope is never fully occluded.
+	H.add_prop(world, Vector3(-4.6, 0.1, -10.5), Vector3(2.2, 3.4, 2.2), Color(0.55, 0.30, 0.18))
+	H.add_prop(world, Vector3(5.2, -0.2, -9.0), Vector3(1.8, 2.2, 1.8), Color(0.22, 0.42, 0.38),
+		Vector3(0, 22.0, 0))
+	H.add_prop(world, Vector3(-7.8, 0.9, -15.0), Vector3(3.0, 5.0, 2.4), Color(0.42, 0.44, 0.50))
+	H.add_prop(world, Vector3(8.0, 0.6, -16.5), Vector3(2.6, 4.4, 2.6), Color(0.60, 0.52, 0.28),
+		Vector3(0, -15.0, 0))
+
+	# --- the +Z group: only these are in frame during a `camera_away` gap.
+	# Without them that half of the failure cluster stays as empty as before.
+	H.add_prop(world, Vector3(0, 4.0, 14), Vector3(30, 20, 0.5), Color(0.21, 0.19, 0.24))
+	H.add_prop(world, Vector3(-5.0, 0.2, 8.0), Vector3(2.4, 3.6, 2.4), Color(0.48, 0.34, 0.26))
+	H.add_prop(world, Vector3(4.4, -0.1, 6.5), Vector3(2.0, 2.6, 2.0), Color(0.30, 0.36, 0.46),
+		Vector3(0, 18.0, 0))
+	H.add_prop(world, Vector3(0.5, -0.8, 5.0), Vector3(14, 0.5, 16), Color(0.28, 0.26, 0.23),
+		Vector3(-2.5, 0, 0))
 
 
 ## Build the standard reappearance/temporal scene: floor + backdrop + up to two
@@ -78,8 +145,7 @@ static func build_scene(tree: SceneTree, two_entities: bool) -> Dictionary:
 	var world := H.make_world(tree)
 	await tree.process_frame
 	add_light_env(world)
-	H.add_prop(world, Vector3(0, -1, -8), Vector3(40, 0.5, 40), Color(0.25, 0.25, 0.25))
-	H.add_prop(world, Vector3(0, 4, -16), Vector3(60, 20, 0.5), Color(0.20, 0.22, 0.30))
+	_build_static_set(world)
 	var e0 := H.add_entity(world, "Target_0", Vector3(-1.5, 0.0, -6.0), 1.4, Color(0.90, 0.65, 0.20))
 	var e1: Node3D = null
 	if two_entities:

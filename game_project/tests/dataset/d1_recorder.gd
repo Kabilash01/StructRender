@@ -145,6 +145,10 @@ func _test_fixture_and_manifest() -> void:
 			"rung %.1fs: instance_id / generation unchanged across the gap" % s)
 		H.check(absf(seq.unseen_seconds - float(gap) / RATE) <= 1.5 / RATE,
 			"rung %.1fs: unseen_seconds %.4f == %d ticks / %d (±1 frame)" % [s, seq.unseen_seconds, gap, RATE])
+		# Catches any stray occlusion that MOVES a gap boundary (one inside the
+		# pre-margin ends the visible run early; one inside the gap ends it late).
+		# It cannot see a second hidden run *after* reappearance — that is what
+		# `_check_one_hidden_run` below covers, once manifest.jsonl exists.
 		H.check(absi(int(seq.unseen_frames) - gap) <= 1,
 			"rung %.1fs: unseen_frames %d == configured %d (±1)" % [s, seq.unseen_frames, gap])
 
@@ -183,6 +187,11 @@ func _test_fixture_and_manifest() -> void:
 	# temporal window frame_ids are a gapless run
 	H.check(prev_fid == rec.frame_count() - 1, "last frame_id == frame_count - 1 (no gaps anywhere)")
 
+	# Occlusion guard (KB Decision 38): needs the whole per-frame visibility
+	# timeline, so it runs here rather than inside the rung loop.
+	for seq in rung_seqs:
+		_check_one_hidden_run(lines, seq)
+
 	# ---- every structure path resolves + declared shape/dtype ----
 	var f0: Dictionary = JSON.parse_string(lines[0])
 	_check_member(sdir, f0.structure.depth_path, [HH, W, 1], "<f2")
@@ -190,6 +199,7 @@ func _test_fixture_and_manifest() -> void:
 	_check_member(sdir, f0.structure.albedo_or_material_path, [HH, W, 3], "<f2")
 	_check_member(sdir, f0.structure.motion_path, [HH, W, 2], "<f2")
 	_check_member(sdir, f0.structure.entity_id_map_path, [HH, W], "<i4")
+	_check_props_are_not_entities(sdir, f0, 1 if sc.e1 == null else 2)
 	var rgb := Image.new()
 	H.check(rgb.load("%s/%s" % [sdir, f0.native_rgb_path]) == OK and rgb.get_size() == Vector2i(W, HH),
 		"native_rgb_path loads to %dx%d" % [W, HH])
@@ -242,6 +252,119 @@ func _test_fixture_and_manifest() -> void:
 
 
 # -------------------------------------------------------------------------
+## Exactly ONE hidden run per rung — the occlusion guard KB Decision 38 asked for.
+##
+## Decision 38 requires the placement rule it guards ("nothing on the
+## camera->target sightline across the whole drift envelope") be asserted rather
+## than eyeballed, and said a stray full occlusion would be caught because it
+## "creates a second hidden->visible transition and the M2 validator rejects the
+## session". **That was wrong** (Decision 44). `_check_sequences` in the M2
+## validator locates the FIRST hidden stretch and checks only that one is clean
+## (`reap.dirty_gap`); a second hidden run after reappearance is not an error
+## there. Nor did the earlier assertion here cover it — it compared the derived
+## gap against the configured gap, which is the same comparison already made in
+## the rung loop, and both only fire when an occlusion MOVES a gap boundary. One
+## sitting entirely inside the POST margin moves nothing.
+##
+## So this is the check that closes it: walk the target's visibility across the
+## rung's own frame_range and require exactly one visible->hidden transition.
+##
+## NOTE ON UNITS, because the obvious check is wrong and this is why the earlier
+## attempt reached for the configured gap at all: `unseen_frames` is a **tick**
+## delta (Decision 29 derives it as `tick[first_seen_again] - tick[last_seen]`),
+## NOT a frame_id delta. Whenever the gap is recorded at a reduced rate — always,
+## in this fixture, which sets `full_rate_max = 0` — frame_ids advance once per
+## recorded frame while ticks advance by the stride, so the two differ by that
+## factor (measured here: 30 ticks across 4 frames). Comparing them is a unit
+## error, not a fault in the data. This function counts transitions and so is
+## unit-free.
+func _check_one_hidden_run(lines: PackedStringArray, seq: Dictionary) -> void:
+	var iid: int = int(seq.target_instance_id)
+	var lo: int = int(seq.frame_range[0])
+	var hi: int = int(seq.frame_range[1])
+	var runs := 0
+	var was_visible := true
+	var found := 0
+	var first_hidden := -1
+	for ln in lines:
+		var fr: Dictionary = JSON.parse_string(ln)
+		var fid: int = int(fr.frame_id)
+		if fid < lo or fid > hi:
+			continue
+		var vis := false
+		var present := false
+		for ent in fr.entities:
+			if int(ent.instance_id) == iid:
+				vis = bool(ent.visible)
+				present = true
+				break
+		if present:
+			found += 1
+		if was_visible and not vis:
+			runs += 1
+			if first_hidden < 0:
+				first_hidden = fid
+		was_visible = vis
+
+	# Without this the check passes vacuously: if the target were never found in
+	# entities[] (a renamed field, a wrong iid), `vis` would be false for every
+	# frame, giving exactly one transition out of the initial state — runs == 1,
+	# green, and measuring nothing.
+	H.check(found == hi - lo + 1,
+		"%s: target iid %d present in entities[] for all %d frames (found %d)"
+			% [seq.sequence_id, iid, hi - lo + 1, found])
+	H.check(first_hidden == int(seq.last_seen_frame) + 1,
+		"%s: derived first hidden frame %d == last_seen_frame + 1 (%d)"
+			% [seq.sequence_id, first_hidden, int(seq.last_seen_frame) + 1])
+	H.check(runs == 1,
+		"%s: exactly one hidden run in frames %d-%d (got %d) — a second one means a prop "
+			% [seq.sequence_id, lo, hi, runs]
+		+ "fully occluded the camera->target sightline (KB Decision 38)")
+
+
+## The static set added at KB Decision 38 must stay NON-ENTITY (`entity_id == 0`).
+##
+## That property is what keeps 13 props out of the lifecycle adapter, out of
+## EPAM, and out of M7's `K_max` ranking (Decision 21) — and it is otherwise only
+## implicit in `add_prop` not calling `add_to_group(ENTITY_GROUP)`. One future
+## edit adding a prop via `add_entity` would silently put set dressing into the
+## entity budget. Decision 38 made the occlusion rule asserted rather than
+## eyeballed; this closes the same hole for the id-0 rule.
+##
+## Checked two ways: the id map must contain no id beyond those the manifest
+## declares as entities, and the declared entity count must match the scene's
+## real entity count — which the caller derives from the fixture (1 here, since
+## the CI scene builds a single entity), never the entity+prop count.
+func _check_props_are_not_entities(sdir: String, frame: Dictionary, expected_entities: int) -> void:
+	var declared := {}
+	for ent in frame.entities:
+		declared[int(ent.instance_id)] = true
+	H.check(declared.size() == expected_entities,
+		"only the scene's %d real entities are declared, not the 13 static props (got %d)"
+			% [expected_entities, declared.size()])
+
+	var parts := String(frame.structure.entity_id_map_path).split("#", false)
+	var zr := ZIPReader.new()
+	if zr.open("%s/%s" % [sdir, parts[0]]) != OK:
+		H.check(false, "entity_id npz opens"); return
+	var raw := zr.read_file("%s.npy" % parts[1])
+	zr.close()
+	var hlen := raw.decode_u16(8)
+	# to_int32_array() in one call: decoding 147,456 values with a per-element
+	# decode_s32() loop is slow enough in GDScript to blow the scene's timeout.
+	var vals := raw.slice(10 + hlen).to_int32_array()
+	var seen := {}
+	for v in vals:
+		if v != 0:
+			seen[v] = true
+	var stray: Array = []
+	for id in seen:
+		if not declared.has(id):
+			stray.append(id)
+	H.check(stray.is_empty(),
+		"entity_id map holds only declared entity ids — static props stay id 0 (stray: %s)" % str(stray))
+
+
 func root_glog() -> Node:
 	return root.get_node_or_null("GameLog")
 

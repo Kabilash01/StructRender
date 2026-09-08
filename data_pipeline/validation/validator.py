@@ -1050,6 +1050,15 @@ def write_validated_marker(session_dir: str | os.PathLike, report: ValidationRep
         "frame_count": report.frame_count,
         "checks_run": list(report.checks_run),
         "dropout_tolerance": report.dropout_tolerance,
+        # Frame diversity is a first-class acceptance property (KB Decision 33),
+        # so the marker must carry the evidence, not just the absence of a
+        # warning. These lived in report.stats only, which meant "990/990
+        # distinct" existed nowhere on disk and Decision 34's description of this
+        # payload was false.
+        "distinct_frames": report.stats.get("distinct_frames"),
+        "distinct_frac": report.stats.get("distinct_frac"),
+        "most_repeated_frame": report.stats.get("most_repeated_frame"),
+        "frames_with_dropout": report.stats.get("frames_with_dropout"),
         "warnings": [str(w) for w in report.warnings],
         "result": "PASS",
     }

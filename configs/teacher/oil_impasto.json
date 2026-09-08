@@ -1,0 +1,22 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "oil_impasto",
+  "backend": "sd15_controlnet_depth",
+  "prompt": "thick oil painting with heavy impasto brush strokes, rich saturated pigment, warm ochre and deep blue palette, visible canvas texture, painterly edges",
+  "negative_prompt": "photograph, photorealistic, text, watermark, signature, blurry, extra objects, cluttered background, distorted geometry, duplicated shapes, fisheye",
+  "reference_image": null,
+  "teacher": {
+    "model_id": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet_model_id": "lllyasviel/sd-controlnet-depth",
+    "controlnet_revision": "35e42a3ea49845b3c76f202f145f257b9fb1b7d4"
+  },
+  "seed": 20260906,
+  "params": {
+    "num_inference_steps": 24,
+    "guidance_scale": 7.5,
+    "strength": 0.5,
+    "controlnet_conditioning_scale": 1.6
+  },
+  "notes": "The committed reference style (KB Decision 40), replacing the retired `gouache`. VALIDATED: 990/990 frames pass all four alignment gates on session ds_1788687350_337657ea, 0 failures - boundary_f min 0.848, spurious max 0.150 against a 0.35 gate (gouache's worst was 0.337 on the old scene, but the two are NOT ratioed: gate 2's denominator is the target's strong-edge count, which the enriched scene raises 200-700 -> ~1800 per frame, so part of any apparent margin gain is dilution - KB Decision 43), silhouette min 0.781 (n=695 of 990 \u2014 gate 3 is undefined on frames with no entity >= min_entity_px), stylisation_hist min 0.287. Cross-scene ratios are NOT quoted from those two columns - they change scene and style together (KB Decision 40); the controlled measurement is Decision 39's, where gouache held identical in prompt, parameters and seed rose 0.0512 to 0.0907 on the enriched scene. Chosen over the higher-intensity cel_bold (s0.55/g9.0/c1.5), which passed a stratified 81-frame probe 0/81 and then failed 36 of 990: a stronger style emits 2500-2900 strong edges per frame instead of 200-700, so a fraction land unsupported across the whole session rather than clustering. This config was instead selected on those 36 empirically-hard frames (0/36, worst spurious 0.063). Denoise strength is held at 0.50 deliberately: raising it is what reintroduces the hallucinated geometry Decision 32 lowered it to stop. No controlled run isolates prompt contrast from the controlnet 1.3->1.6 change or from strength 0.45->0.50, so no causal split between them is claimed here. Licences: SD 1.5 CreativeML OpenRAIL-M, ControlNet Apache-2.0."
+}

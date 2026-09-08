@@ -64,12 +64,14 @@ def test_overfit_final_l1_at_most_0_02(result):
 
 def test_overfit_loss_dropped_at_least_10x(result):
     """Sanity check, NOT an independent gate. The head is sigmoid-initialised
-    (output ~0.5) against dark targets, so step-0 L1 is large by construction and
+    (output ~0.5) against dark targets, so step-0 loss is large by construction and
     a 10x drop is close to vacuous. PSNR / final L1 / SSIM carry the verdict."""
     th = result["thresholds"]["min_loss_drop_factor"]
     assert result["loss_drop_factor"] >= th, (
-        f"L1 fell only {result['loss_drop_factor']:.2f}x "
-        f"(step0 {result['step0_l1']:.4f} -> final {result['final_l1']:.4f}), need {th}x"
+        # NOT "L1 fell": the numerator is the total objective and the denominator
+        # is pure L1, so this is a mixed-unit ratio (KB Decision 44).
+        f"objective/L1 drop was only {result['loss_drop_factor']:.2f}x "
+        f"(step0 objective {result['step0_loss']:.4f} -> final L1 {result['final_l1']:.4f}), need {th}x"
     )
 
 

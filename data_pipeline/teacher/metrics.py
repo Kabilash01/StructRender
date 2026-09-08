@@ -44,33 +44,58 @@ _NBRS = ((0, 1), (1, 0), (0, -1), (-1, 0))
 class Thresholds:
     """Every number the alignment verdict depends on, in one place.
 
-    Calibrated over the full 990-frame validated seed session with the real
-    teacher (SD 1.5 + ControlNet-depth, ``gouache`` at strength 0.45 /
-    controlnet 1.3) and pinned in **KB Decision 32**. Observed, 0 frames
-    failing — min / p05 / median / max:
+    The four thresholds were **fixed before any data was seen** (KB Decision 32)
+    and have never been re-tuned. They are style- and scene-independent; only
+    the observed distributions below move.
 
-        boundary_f              0.709 / 0.878 / 0.980 / 1.000   (gate >= 0.60)
-        spurious_edge_ratio     0.000 / 0.000 / 0.000 / 0.337   (gate <= 0.35)
-        min_silhouette_support  0.661 / 0.818 / 0.993 / 1.000   (gate >= 0.60)
-        stylisation_hist        0.232 / 0.310 / 0.509 / 0.955   (gate >= 0.15)
+    CURRENT — session ``ds_1788687350_337657ea`` (enriched scene, KB Decision
+    38), style ``oil_impasto`` at strength 0.50 / guidance 7.5 / controlnet 1.6.
+    990 frames, **0 failing** — min / p05 / median / max. NOTE the silhouette
+    row is n=695, not 990: gate 3 is undefined on a frame carrying no entity
+    of at least `min_entity_px`, so ~30 % of frames are ungated on it
+    (KB Decision 34 recorded this correction once already):
 
-    Every threshold was fixed before this data was seen, so the pass is genuine
-    rather than fitted. **Gate 2's margin is thin** — the worst frame is 0.337
-    against a 0.35 limit. If a busier scene crosses it, re-examine whether those
-    edges are genuinely unsupported (the reference/support split above exists
-    because scoring painterly strokes along texture boundaries as hallucinated
-    geometry produced false positives); do not simply raise the number.
+        boundary_f              0.848 / 0.916 / 0.960 / 1.000   (gate >= 0.60)
+        spurious_edge_ratio     0.000 / 0.001 / 0.030 / 0.150   (gate <= 0.35)
+        min_silhouette_support  0.781 / 0.947 / 1.000 / 1.000   (gate >= 0.60, n=695)
+        stylisation_hist        0.287 / 0.338 / 0.604 / 1.094   (gate >= 0.15)
+
+    HISTORICAL — the retired scene ``ds_1788624547_cf0ceeda`` with the retired
+    ``gouache`` style, kept because Decision 32's calibration was performed
+    against it: 0.709 / 0.337 / 0.661 / 0.232 for the same four rows' worst
+    values. Gate 2's headroom there was **0.013** (worst frame 0.337 against
+    0.35); on the enriched scene the worst frame is 0.150. **No ratio is computed
+    between those two numbers** (KB Decision 40): the columns differ in scene AND
+    style, and gate 2's denominator `n_Es` is the target image's strong-edge
+    count, which the enrichment raises directly (200-700 -> ~1800 per frame, KB
+    Decision 43) — so a smaller worst-case ratio is partly dilution, not headroom.
+    Decision 43 records that same mechanism as a regression in localised-
+    hallucination sensitivity. Nor is it claimed that the signal-vs-margin
+    tension is gone on the new scene: `cel_bold` carried the sweep's highest
+    signal and still failed 36 of 990 there (KB Decision 40). What identified the
+    scene as the limiting factor was the opposition observed on the OLD scene
+    (Decision 37); the controlled measurement is Decision 39's, where `gouache`
+    held identical in prompt, parameters and seed rose 0.0512 -> 0.0907 with the
+    scene as the only variable.
+
+    If a future scene or style pushes gate 2 back toward the limit, re-examine
+    whether those edges are genuinely unsupported (the reference/support split
+    above exists because scoring painterly strokes along texture boundaries as
+    hallucinated geometry produced false positives); do not simply raise the
+    number. Any change to a threshold needs its own dated Decision entry.
 
     Gate 4 is not optional: an untouched native frame scores boundary_f 0.976
     with spurious 0.000, so gates 1-3 alone are all satisfied by a teacher that
     does nothing.
 
-    **Translation detection floor.** Measured on this scene: 3 px for a diagonal
-    shift, but **8 px for an x-only shift** — at 5 px x-only the worst frame
-    still scores F=0.717 / spurious=0.294 / silhouette=0.630, inside every gate.
-    A systematic sub-5 px horizontal misalignment therefore passes all four gates
-    and would reach training as supervision. See ``test_alignment_rejects.py``,
-    which pins both floors.
+    **Translation detection floor.** Re-measured on the enriched scene (KB
+    Decision 41): **2 px diagonal, 5 px x-only** — improved from 3 px / 8 px on
+    the retired scene. The x-only floor was the weak one because that scene's
+    dominant structure was a long horizontal horizon, near-invariant under
+    horizontal translation; the enriched scene's vertical structure (props,
+    stepped backdrop, tilted floor sections) is what closed the gap. A
+    systematic sub-5 px horizontal misalignment still passes every gate, so the
+    limitation is reduced, not eliminated. See ``test_alignment_rejects.py``.
 
     **Partial circularity.** The teacher is conditioned on the exported depth
     buffer and gate 1's recall is measured against a reference map derived from

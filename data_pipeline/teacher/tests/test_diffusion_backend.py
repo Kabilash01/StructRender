@@ -106,7 +106,7 @@ def _teacher_available(style) -> str | None:
 
 
 def test_diffusion_teacher_produces_an_aligned_frame(mini_session):
-    style = load_style("gouache", CONFIG_DIR)
+    style = load_style("oil_impasto", CONFIG_DIR)
     reason = _teacher_available(style)
     if reason:
         pytest.skip(reason)

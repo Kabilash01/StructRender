@@ -1,4 +1,8 @@
 {
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "objective": "1*L1 + 0.5*LPIPS(alex)",
+  "generated_utc": "2026-09-06T16:10:14+00:00",
   "frame_ids": [
     0,
     21,
@@ -38,11 +42,12 @@
   "batch_size": 2,
   "lr": 0.0002,
   "seed": 20260905,
-  "step0_l1": 0.33821558952331543,
-  "final_l1": 0.004306963179260492,
-  "loss_drop_factor": 78.52762502171825,
-  "psnr_db": 39.57836151123047,
-  "ssim": 0.9929405450820923,
+  "step0_loss": 0.4738704562187195,
+  "objective_note": "step0_loss / history[].loss are the TOTAL objective (KB Decision 42); final_l1 / psnr_db / ssim are measured quantities. loss_drop_factor is therefore objective-over-L1 \u2014 a MIXED-UNIT ratio, and a sanity check only.",
+  "final_l1": 0.008357803337275982,
+  "loss_drop_factor": 56.69796680968157,
+  "psnr_db": 34.69456481933594,
+  "ssim": 0.97015380859375,
   "thresholds": {
     "min_psnr_db": 30.0,
     "max_final_l1": 0.02,
@@ -52,43 +57,43 @@
   "history": [
     {
       "step": 200,
-      "l1": 0.003423028625547886
+      "loss": 0.05056139826774597
     },
     {
       "step": 400,
-      "l1": 0.0036330476868897676
+      "loss": 0.04400540515780449
     },
     {
       "step": 600,
-      "l1": 0.007948420010507107
+      "loss": 0.028958817943930626
     },
     {
       "step": 800,
-      "l1": 0.008683789521455765
+      "loss": 0.0479053296148777
     },
     {
       "step": 1000,
-      "l1": 0.0021849635522812605
+      "loss": 0.027307625859975815
     },
     {
       "step": 1200,
-      "l1": 0.007000533398240805
+      "loss": 0.03451617434620857
     },
     {
       "step": 1400,
-      "l1": 0.004486193414777517
+      "loss": 0.022121522575616837
     },
     {
       "step": 1600,
-      "l1": 0.004212911706417799
+      "loss": 0.01717226952314377
     },
     {
       "step": 1800,
-      "l1": 0.002970623318105936
+      "loss": 0.023125384002923965
     },
     {
       "step": 2000,
-      "l1": 0.005728892516344786
+      "loss": 0.03348560631275177
     }
   ],
   "checks": {

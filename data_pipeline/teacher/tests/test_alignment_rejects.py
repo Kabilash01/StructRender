@@ -34,10 +34,27 @@ def _run(targets, mini_session, **kw):
 # --------------------------------------------------------------------------- #
 # geometric misalignment — the point of the milestone
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("k", [3, 5, 8])
+# Translation-detection floors, re-measured on the enriched scene (KB Decision
+# 41): 2 px diagonal, 5 px x-only — improved from 3 px / 8 px on the retired
+# scene, whose dominant structure was a long horizontal horizon and therefore
+# near-invariant under horizontal translation.
+#
+# These are ASSERTED here, not merely documented. Decision 34 claimed the floors
+# were "pinned by test_purely_horizontal_shift_is_rejected"; they were not — the
+# parametrisation sat well above the floor, so a regression back to 3 px / 8 px
+# would have gone unnoticed. Each floor is tested at exactly its value.
+DIAGONAL_FLOOR_PX = 2
+X_ONLY_FLOOR_PX = 5
+
+
+@pytest.mark.parametrize("k", [DIAGONAL_FLOOR_PX, 3, 5, 8])
 def test_target_shifted_by_k_px_is_rejected(targets, mini_session, k):
     """A whole-frame translation keeps every pixel value and destroys alignment.
-    Beyond the 2 px matching tolerance it must fail."""
+
+    Includes `k == DIAGONAL_FLOOR_PX`, so the measured floor is a regression
+    test rather than a note: if the scene or the gates ever stop catching a 2 px
+    diagonal shift, this fails.
+    """
     for fid in range(6):
         img = load_target(targets, fid)
         save_target(targets, fid, np.roll(np.roll(img, k, axis=1), k, axis=0))
@@ -45,18 +62,21 @@ def test_target_shifted_by_k_px_is_rejected(targets, mini_session, k):
     assert codes & {"align.boundary_f", "align.spurious_edges", "align.entity_silhouette"}
 
 
-@pytest.mark.parametrize("k", [8, 12])
+@pytest.mark.parametrize("k", [X_ONLY_FLOOR_PX, 8, 12])
 def test_purely_horizontal_shift_is_rejected(targets, mini_session, k):
-    """Documented worst case for a boundary metric on this scene: the dominant
-    structure (the ground/sky horizon) is a long horizontal line and therefore
-    invariant under a purely horizontal translation, so recall barely moves.
+    """The hardest translation for a boundary metric on this scene.
 
-    Measured detection floor on the seed scene (recorded in KB Decision 34):
-    **3 px** for a diagonal shift, **8 px** for an x-only shift (at 5 px x-only
-    the worst frame reaches F=0.717 / spurious=0.294 / silhouette=0.630 — inside
-    every gate).
-    Smaller x-only shifts are deliberately not asserted here rather than
-    weakening the gates until they happen to pass."""
+    A long horizontal ground/sky boundary is near-invariant under horizontal
+    translation, so recall barely moves and the x-only floor is the weakest
+    number in the whole guard. Measured floors (KB Decision 41): **2 px
+    diagonal, 5 px x-only**, improved from 3 px / 8 px once the enriched scene
+    added vertical structure.
+
+    `k == X_ONLY_FLOOR_PX` pins the floor. Shifts BELOW it are deliberately not
+    asserted — a systematic sub-5 px horizontal misalignment still passes every
+    gate, and that limitation is recorded rather than papered over by weakening
+    a gate until it happens to catch one.
+    """
     for fid in range(6):
         img = load_target(targets, fid)
         save_target(targets, fid, np.roll(img, k, axis=1))
@@ -85,16 +105,58 @@ def test_two_frames_targets_swapped_is_rejected(targets, mini_session):
     assert codes & {"align.boundary_f", "align.entity_silhouette", "align.spurious_edges"}
 
 
+# Smallest pasted object gate 2 reliably rejects, measured (KB Decision 43).
+#
+# The floor is **style-dependent**, because gate 2 is a RATIO: unsupported strong
+# edges over TOTAL strong edges. A busier target style raises the denominator, so
+# the same hallucination becomes a smaller fraction. Measured on the enriched
+# scene, both caught 6/6 at the floor and unreliable below it:
+#
+#     oil_impasto  (real teacher, ~1800 strong edges/frame)  ->  6.5% of frame
+#     ci_posterize (CI teacher,   ~3234 strong edges/frame)  -> 11.0% of frame
+#
+# These fixtures generate `ci_posterize` targets (no model download), so the
+# value here is ITS floor, not the real teacher's. Sizing this from the
+# oil_impasto measurement is exactly the mistake that made this test fail: the
+# floor must come from the target set the test actually runs against.
+HALLUCINATION_FLOOR_HW = (90, 180)
+
+
 def test_hallucinated_object_is_rejected(targets, mini_session):
     """KB §12 *Teacher Structural Distortion*: the teacher invents geometry that
-    the engine never had. Gate 2 is the guard."""
+    the engine never had. Gate 2 is the guard.
+
+    Two things this test had to learn the hard way:
+
+    1. The region is located from the **depth buffer**, not hardcoded. It used
+       fixed coordinates assuming empty sky; the enriched scene (KB Decision 38)
+       put real geometry there, so the "hallucinated" object landed on a
+       supported surface and the test correctly stopped firing. A
+       structural-distortion test must define "unsupported" from the structure.
+    2. The object is sized at the **measured** detection floor. Scene enrichment
+       diluted gate 2's sensitivity to localised hallucination (see
+       ``HALLUCINATION_FLOOR_HW``) — a smaller object silently evades it.
+    """
+    from data_pipeline.teacher.structural import StructuralSession
+
+    session = StructuralSession(mini_session)
+    painted = 0
     for fid in range(6):
+        structure = session.load_structure(fid)
+        bg = ~np.isfinite(structure.depth)          # +inf background: no geometry at all
+        ys, xs = np.where(bg)
+        if ys.size < 4000:                          # need room for an object with a margin
+            continue
+        h, w = HALLUCINATION_FLOOR_HW
+        y0 = max(0, min(int(np.median(ys)) - h // 2, structure.depth.shape[0] - h))
+        x0 = max(0, min(int(np.median(xs)) - w // 2, structure.depth.shape[1] - w))
         img = load_target(targets, fid).copy()
-        # a high-contrast object pasted into empty sky, with no structural support
-        img[8:60, 300:420] = 20
-        img[14:54, 306:414] = 235
-        img[20:48, 312:408] = 40
+        img[y0:y0 + h, x0:x0 + w] = 20
+        img[y0 + 6:y0 + h - 6, x0 + 6:x0 + w - 6] = 235
+        img[y0 + 12:y0 + h - 12, x0 + 12:x0 + w - 12] = 40
         save_target(targets, fid, img)
+        painted += 1
+    assert painted, "no frame had a large enough background region to paste into"
     codes = error_codes(_run(targets, mini_session))
     assert "align.spurious_edges" in codes
 
