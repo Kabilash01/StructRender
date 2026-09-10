@@ -1,0 +1,174 @@
+{
+  "config_version": "m6-temporal-1",
+  "milestone": 6,
+  "ladder_model": "D",
+  "notes": "KB \u00a710 Milestone 6 \u2014 temporal StructFormer. Model D of the \u00a711 ladder (Temporal: YES, Structured Entity Use: No, EPAM: No). It differs from Model C (configs/structformer/m5_structformer.json) in ONE thing: the previous frame's ENCODER FEATURES are reprojected by the engine motion field and fused under the \u00a74 confidence mask at the encoder/decoder junction \u00a73's Runtime Neural Topology puts them at. The input, data, split and style_acquisition blocks are byte-identical to Model C's; `loss` adds the temporal term and changes nothing else; `train` differs only in checkpoint_dir and init_from. Asserted by renderer/temporal/tests/test_m6_config.py. Deliberately absent, each at its own milestone: entity masks / tokens / entity-masked cross-attention (M7), EPAM (M8), adversarial loss (optional, Decision 4).",
+  "model": {
+    "arch": "temporal_structformer",
+    "in_channels": 7,
+    "out_channels": 3,
+    "image_size": [
+      288,
+      512
+    ],
+    "embed_dim": 240,
+    "depths": [
+      2,
+      2,
+      2
+    ],
+    "depths_note": "Blocks per (encoder stage 1, encoder stage 2, decoder stage). The specified architecture gives the ENCODER pair [2, 2]; the decoder stage is not specified by it and is set to 2, mirroring stage 1. Depth must be >= 2 per stage or the alternation rule in encoder.py never emits a SHIFTED block and every window boundary becomes a hard wall \u2014 pinned by test_depth_adds_shifted_blocks.",
+    "num_heads": [
+      3,
+      6
+    ],
+    "num_heads_note": "Heads at (stage 1, stage 2). Head dim is 96/3 = 32 at stage 1 and 192/6 = 32 at stage 2. The decoder runs at stage-1 width and resolution and therefore uses 3 heads.",
+    "window_sizes": [
+      8,
+      4
+    ],
+    "window_sizes_note": "DEVIATION from the specified single window size 8, forced by the resolution and flagged for the Decision Log. The stem downsamples 4x, so stage 1 is 72x128 (72 % 8 == 0, 128 % 8 == 0, window 8 fits) and stage 2 is 36x64 \u2014 and 36 % 8 == 4, so window 8 does NOT fit at stage 2. window_attention.window_partition has deliberately no runtime padding branch (KB \u00a712: a Pad plus a data-dependent If in the exported graph), so the choices were window 4 at stage 2 or padding the graph. Window 4 is taken; it keeps every shape static and is what the M5 export probe measured. Stage-2 window 4 still covers 8x8 stage-1 pixels = 32x32 input pixels.",
+    "mlp_ratio_note": "mlp_ratio is fixed at 2.0 inside WindowTransformerBlock (not configurable) and was not changed for M5. It is the largest single lever on Model C's parameter count after embed_dim.",
+    "attn_impl": "manual",
+    "attn_impl_rationale": "KB Decision 45: at opset 17 the exporter emits NO fused attention op for F.scaled_dot_product_attention \u2014 it emits the same matmul/softmax/matmul plus an unfoldable runtime scale read (Shape -> Slice -> Cast -> Sqrt -> Div), measured at 574 vs 508 ONNX nodes and 1519 vs 1291 TensorRT layers for bit-comparable numerics. Manual is not a preference; it is what the probe selected on measured export evidence. Re-testable via the attn_impl flag.",
+    "shift_impl": "roll",
+    "shift_impl_rationale": "KB Decision 45: torch.roll is not the hazard \u00a712 anticipated \u2014 roll and an explicit slice+concat build IDENTICAL TensorRT engines (311 layers both). Shifted windows are kept because \u00a74 requires 'broader object-level interaction than a shallow CNN'.",
+    "style_dim": 16,
+    "style_note": "\u00a74 Style Conditioning Module. StructFormer itself is two-input by design ((structure, style_token) -> rgb, Decision 45 item 3). M5 trains ONE style, so training uses StructFormerSingleStyle, which holds the cached token as a single learned [1, 16] parameter and exposes the M4-compatible model(x) -> rgb signature. The style ENCODER (prompt/reference -> token) is deferred to the multi-style milestone; at one style its entire output is this one cached vector. Style-conditioned entity memory (M_{i,s}) stays deferred (Decision 12).",
+    "excluded_channels_note": "Input is M4's 7 channels exactly (Decision 35): depth_inv(1) + normal(3) + albedo(3). Motion is out until M6 (Decision 8, \u00a74 CNN Stem: 'motion is not treated as an unexplained appearance channel'); entity IDs are addresses and never numeric input channels (Decision 9) \u2014 putting them in Model C would destroy \u00a711's Model N control just as it would in Model A. Asserted for Model C by test_entity_id_is_not_an_input_channel_for_model_c / test_motion_is_not_an_input_channel_for_model_c.",
+    "temporal_fusion": "encoder_output_residual",
+    "temporal_fusion_note": "KB \u00a73's Runtime Neural Topology puts 'Temporal warped features' on the branch BETWEEN the encoder and the decoder, so the fused tensor is Model C's stage-2 output \u2014 (B, 2*embed_dim, H/8, W/8) = (B, 480, 36, 64) at 288x512. \u00a74 specifies the warp on FEATURES, not on output pixels; nothing here warps RGB. Fusion is F_t' = F_t + M_t * conv1x1([F_t, W(F_{t-1},V_t)*M_t]): a RESIDUAL, so \u00a74's boundary 'temporal fusion never overrides current engine structure' holds by construction, and DOUBLE-GATED by M_t, so 'invalid warped history is discarded' / 'newly disoccluded pixels are not filled from stale history' are exact for any weights the conv could learn (KB Decision 52's lesson: a mask must exclude, not discourage). conv1x1 is ZERO-INITIALISED, so an untrained Model D is numerically identical to Model C and an untrained Model D is numerically identical to Model C. That was the reason init_from was believed to be a true continuation; KB Decision 56 DISPROVED it \u2014 the perturbation comes from AdamW's first bias-corrected step, not from the fusion conv, so init_from is now null.",
+    "parameter_parity_note": "MEASURED: 8,236,747 parameters = 1.0593x Model C's 7,775,467 and 1.0488x Model A's 7,853,763 \u2014 inside the two-sided 0.9-1.1x band Decision 47 fixed, but the +461,280 (the 960->480 1x1 fusion conv) is a REAL if small capacity difference between rungs C and D and must be stated whenever the M6 gate result is. Pinned by test_model_d_capacity_against_model_c.",
+    "prev_feature_note": "The history fed to the fusion is encode(S_{t-1}) \u2014 the encoder run on the previous frame's STRUCTURAL BUFFERS, never on a rendered or teacher image. The engine supplies S_{t-1} at inference exactly as the dataset does at training, so this is NOT teacher forcing with an exposure gap: training and inference compute the identical function. Consequence: Model D is depth-1 temporal (a 2-frame reprojection), not an unbounded-recurrence IIR filter. See renderer/training/train_temporal.py."
+  },
+  "input": {
+    "channels": [
+      "depth_inv",
+      "normal_x",
+      "normal_y",
+      "normal_z",
+      "albedo_r",
+      "albedo_g",
+      "albedo_b"
+    ],
+    "depth_normalization": "inverse_depth",
+    "depth_normalization_formula": "d_inv = 1 / (1 + d), with d in linear eye-space metres and background (+inf) mapping exactly to 0. Bounded in [0, 1], monotone increasing in nearness, and it gives the background sentinel a finite value without a magic constant. See data_pipeline/schemas/frame_structure.md \u00a72.1.",
+    "normal_normalization": "none \u2014 stored raw world-space unit vectors in [-1, 1]; background is (0,0,0) (frame_structure.md \u00a72.2)",
+    "albedo_normalization": "none \u2014 stored linear base colour, already in [0,1]; background is (0,0,0) (frame_structure.md \u00a72.3)",
+    "excluded_motion": "KB \u00a74 StructFormer CNN Stem, Explicit Boundaries: 'motion is not treated as an unexplained appearance channel'. Motion has an explicit warp operation (Decision 8) and enters at M6, not as a stem channel.",
+    "excluded_entity_id": "KB Decision 9: entity IDs are addresses (masks / memory keys), never continuous input channels. \u00a711's Model N (naive raw-ID input) is the control that demonstrates raw-ID exposure is NOT structured entity use \u2014 putting IDs in Model A would destroy that control."
+  },
+  "data": {
+    "style_id": "oil_impasto",
+    "session_dir": null,
+    "target_root": null,
+    "require_validated": true,
+    "require_aligned": true
+  },
+  "split": {
+    "policy": "contiguous_sequence_holdout",
+    "val_sequences": [
+      "reap_camera_away_8s",
+      "reap_entity_away_8s"
+    ],
+    "guard_frames": 60,
+    "rationale": "All 990 frames come from ONE continuous session at 60 fps with smooth camera/entity drift, so consecutive frames are near-duplicates. A random frame split leaks: a val frame's immediate neighbours would be in train and val metrics would be meaningless (same class of defect as KB Decision 33). Whole contiguous sequences are held out instead. guard_frames drops 60 train frames (1.0 s of drift) on each side of every held-out span so train and val are not merely disjoint but non-adjacent."
+  },
+  "loss": {
+    "l1": 1.0,
+    "perceptual": 0.5,
+    "perceptual_net": "alex",
+    "temporal": 0.5,
+    "temporal_note": "M6's ADDITION to the mandated objective, never a replacement: Decision 41 fixes 1.0*L1 + 0.5*LPIPS(alex) for EVERY \u00a711 ladder rung and that is unchanged above. L_temp = M_t-weighted mean |pred_t - W(pred_{t-1}, V_t)| (renderer/losses/temporal.py), using the SAME confidence_mask() the M6 gate uses, so loss and gate agree about which pixels are trustworthy. \u00a74 writes the term with the TEACHER frames on both sides, which has no gradient; substituting the prediction is a deviation flagged for the Decision Log.",
+    "temporal_weight_note": "**NOT TUNED AGAINST THE M6 GATE.** Tuning a training hyper-parameter against a pre-registered exit criterion converts it into a fitted one (eval/reports/m6_temporal_baseline.json -> m6_gate.pre_registered_threshold is fixed and must not be revisited). 0.5 is set equal to the mandated perceptual weight so the new term is demonstrably not the dominant one; L_temp and L1 are the same units (mean absolute RGB difference), so it is literally half the weight of reconstruction. No sweep was run and none of the reported numbers depend on this value being good.",
+    "notes": "L_rec = L1 + 0.5*LPIPS(alex). KB \u00a74 Training Loss Module and Decision 4 list reconstruction AND perceptual as CORE losses (only adversarial is optional). M4 originally shipped L1-only, which was adequate against the near-untextured retired gouache target and became inadequate against a genuinely textured style: the L1-only model retained just 0.751 of the target's high-frequency energy against the 0.9 sharpness floor. See KB Decision 41. Decision 35's obligation stands - every \u00a711 ladder model must train under this same loss or the comparison measures the objective rather than the architecture."
+  },
+  "train": {
+    "seed": 20260905,
+    "epochs": 60,
+    "batch_size": 4,
+    "lr": 0.0002,
+    "weight_decay": 0.0001,
+    "amp_dtype": "bfloat16",
+    "num_workers": 6,
+    "eval_every_epochs": 2,
+    "checkpoint_dir": "checkpoints/m6_temporal",
+    "accum_steps": 2,
+    "init_from": null,
+    "init_from_note": "SET TO null, deviating from KB Decision 19's staged-training rule \u2014 recorded as KB Decision 56, not applied quietly. Two reasons. (1) LADDER INTEGRITY: Model C trained from scratch for 60 epochs. If D resumes from C and trains 60 more, D has had 120 epochs of optimisation against C's 60, and the M6 gate cannot separate that budget difference from the architecture it is supposed to measure. (2) IT DOES NOT WORK ANYWAY: measured, resuming from C starts at C's converged L1 (~0.005-0.007) and is an order of magnitude worse (~0.07) after TWO optimiser steps, because AdamW's first bias-corrected step has magnitude ~lr regardless of gradient scale and lr is 2e-4 with no warmup. It is a warm RESTART, not a fine-tune, so Decision 19's efficiency rationale does not apply here. The three ways to keep it (warmup, a lower fine-tune lr, or a longer schedule) each add a SECOND difference against Model C; warmup in particular was tested at M5 attempt 2 and came out worse on every metric (Decision 49). Model D therefore trains from scratch on Model C's exact seed, lr, schedule, epochs, split and selection rule, so the only differences are the temporal fusion and the temporal loss term.",
+    "batch_note": "MEASURED on the 7.54 GiB RTX 5060 at 288x512 with LPIPS resident: batch 4 peaks at 4.88 GiB allocated / 5.78 GiB reserved, ~312 ms/step. batch_size 4 x accum_steps 2 gives 160 batches -> 80 optimiser steps and 640 samples per epoch, which matches Model A's 80 and 640 EXACTLY and Model C's 81 / 644 to within 1.25% \u2014 the samples-and-updates parity KB Decision 51 defined as the protocol for future ladder comparisons. The 640 training triples come from 644 train frames (two frames per contiguous range have no t-2)."
+  },
+  "overfit": {
+    "notes": "\u00a711's mandatory local pre-cloud gate. Thresholds are M4's, IMPORTED UNCHANGED and NOT relaxed for the temporal rung.",
+    "n_frames": 32,
+    "run_length": 4,
+    "n_frames_rationale": "N = 32 is \u00a711's mandated floor (32-128), same as Models A and C. **The SELECTION differs and that is a weakening, stated plainly.** M4 picks 32 frames spread evenly across the training span; evenly-spread frames are never adjacent, so they yield ZERO consecutive triples and a temporal model cannot be trained on them at all. Model D instead takes 8 evenly-spread CONTIGUOUS RUNS of 4 (32 frames, 16 triples), which keeps the 'not one contiguous block' property that made M4's choice non-vacuous. Frames inside a run are near-duplicates at 60 fps, so this set is EASIER to memorise than M4's. No threshold was moved to compensate.",
+    "max_steps": 2000,
+    "batch_size": 2,
+    "num_workers": 0,
+    "lr": 0.0002,
+    "lr_rationale": "Pinned here rather than borrowed from train.lr so that retuning the main training LR cannot silently move the overfit exit criterion. Value is the one the criterion was fixed against.",
+    "seed": 20260905,
+    "thresholds": {
+      "min_psnr_db": 30.0,
+      "max_final_l1": 0.02,
+      "min_loss_drop_factor": 10.0,
+      "min_ssim": 0.95
+    },
+    "threshold_notes": "min_loss_drop_factor is a SANITY CHECK, not an independent gate, and it is a MIXED-UNIT ratio (step0_loss is the total objective L1+w*LPIPS; final_l1 is pure L1) - KB Decision 44: the network is sigmoid-initialised (output ~0.5) against dark targets, so step-0 loss is large by construction and a 10x drop is close to vacuous (measured ~53-57x across runs; the loop is not seed-deterministic, so see eval/reports/m4_overfit.json rather than any quoted value). PSNR / final L1 / SSIM are the criteria that carry the verdict.",
+    "num_workers_note": "0, not 2. The overfit set is 16 triples; DataLoader workers fork the parent AFTER torch/CUDA and LPIPS are resident, and that per-worker overhead is what pushed the first attempt into the system OOM killer on a 30 GB machine. Loading is not the bottleneck at this size."
+  },
+  "style_acquisition": {
+    "notes": "Exit-criterion 3 ('recognizable styled output') thresholds. UNLIKE the overfit block these were fixed AFTER the model existed, so they are stated as calibrated-against-a-failure-mode rather than pre-registered \u2014 see min_sharpness_ratio_rationale.",
+    "min_hist_travel_fraction_of_target": 0.8,
+    "min_hist_travel_rationale": "'Comparable colour-histogram travel away from the native palette' \u2014 the M3 gate-4 quantity (Decision 32, Finding 1) that rejects a passthrough. The floor is one-sided on purpose: a model that restyles HARDER than the teacher is not the failure mode this criterion guards against. 0.8 makes 'comparable' mean comparable; the earlier 0.5 admitted a prediction that travelled half as far, which the prose did not say.",
+    "min_sharpness_ratio": 0.9,
+    "min_sharpness_ratio_rationale": "grad_energy(pred) / grad_energy(target), high-pass (squared Sobel) energy. The histogram term CANNOT distinguish restyling from smoothing \u2014 a blurred frame keeps its shifted palette and scores higher on histogram travel, not lower. M3's gate 4 was calibrated against a teacher whose failure mode was doing nothing; a trained regressor's failure mode is blur. Threshold calibrated against the failure mode, not against the model's score: Gaussian-blurring the teacher targets gives ratios 0.977 / 0.897 / 0.761 / 0.654 at sigma 0.5 / 1.0 / 1.5 / 2.0, so 0.9 means 'no softer than a ~1 px blur of the target'."
+  },
+  "reports": {
+    "train": "eval/reports/m6_temporal_train.json",
+    "overfit": "eval/reports/m6_temporal_overfit.json",
+    "metrics": "eval/reports/m6_temporal_metrics.json",
+    "qualitative_dir": "eval/reports/m6_temporal_qualitative",
+    "notes": "KB Decision 52: only config_version 'm4-unet-1' may inherit the unprefixed M4 report names, and assert_reports_resolvable() raises on an undeclared destination before any model is built. M6 writes nothing under an m4_* or m5_* path, and in particular nothing under eval/reports/m6_temporal_baseline.json, which is the PRE-REGISTERED gate and is committed evidence."
+  },
+  "export": {
+    "status": "NOT YET EXERCISED \u2014 export is a later M6 step, not this one.",
+    "opset": 17,
+    "input_shapes": {
+      "structure": [
+        1,
+        7,
+        288,
+        512
+      ],
+      "prev_features": [
+        1,
+        480,
+        36,
+        64
+      ],
+      "motion": [
+        1,
+        2,
+        288,
+        512
+      ],
+      "confidence": [
+        1,
+        1,
+        288,
+        512
+      ]
+    },
+    "output_shape": [
+      1,
+      3,
+      288,
+      512
+    ],
+    "dynamic_axes": false,
+    "parity_tolerance_max_abs": 0.001,
+    "notes": "Shapes are the forward contract, declared so the later export step has a target; NO ONNX export or TensorRT engine has been built for Model D and nothing here is evidence that one will. The one operator M6 adds, GridSample, HAS been built and executed under TensorRT at ~0.017 ms \u2014 eval/reports/m6_gridsample_probe.json, KB Decision 55 \u2014 but that was measured on the warp alone, not on this graph. The runtime must carry the previous frame's encoder features (1, 480, 36, 64) across frames; that is state the M5 runtime did not have."
+  }
+}

@@ -45,6 +45,11 @@ from renderer.training.train_baseline import ROOT, load_checkpoint, load_config
 
 #: Every trained rung that exists. The three CNN seeds are what the margin is
 #: built from, so they are not optional rows.
+#: Model D is rendered through `_temporal_model_loader`, not `_model_loader`:
+#: scoring a temporal rung frame-independently would measure a model that does
+#: not exist. KB Decision 56.
+TEMPORAL_MODELS = {"m6_temporal_model_d": "configs/temporal/m6_temporal.json"}
+
 MODELS = {
     "m4_unet_baseline": "configs/training/m4_unet_baseline.json",
     "m4_unet_seed_repeat": "configs/training/m4_unet_seed_repeat.json",
@@ -97,6 +102,43 @@ def _stats_list(vals) -> dict:
     v = [float(x) for x in vals]
     return {"n": len(v), "mean": _st.mean(v) if v else float("nan"),
             "sd": _st.stdev(v) if len(v) > 1 else None}
+
+
+def _temporal_model_loader(model, session, device):
+    """Render Model D the way it actually runs: one step of engine-guided history.
+
+    Frame ``t`` is rendered from ``(S_t, encode(S_{t-1}), V_t, M_t)``. Because the
+    history is the ENCODER features of the previous frame's structural G-buffer —
+    a function of that frame's own buffers, not of any earlier render — each frame
+    is deterministic and independent of where a rollout began. That is what lets
+    the pre-registered gate score pairs without specifying a rollout start
+    (KB Decision 55/56).
+
+    A frame with no usable previous buffer (frame 0, or `motion_valid == false`)
+    cold-starts, which reduces Model D exactly to Model C — the same fallback the
+    runtime takes.
+    """
+    from eval.metrics.temporal import engine_confidence
+    from renderer.temporal.pairs import FramePair
+
+    def load(fid: int) -> np.ndarray:
+        prev = fid - 1
+        cur = torch.from_numpy(build_input(session.load_structure(fid)))[None].to(device)
+        with torch.no_grad():
+            if prev in session.frame_ids() and session.motion_valid(fid):
+                pf = torch.from_numpy(build_input(session.load_structure(prev)))[None].to(device)
+                feats, _skip = model.encode(pf)
+                c = engine_confidence(session, FramePair(prev_id=prev, curr_id=fid, tick_delta=1))
+                # engine_confidence already returns batched tensors:
+                # motion (1,2,H,W), mask (1,1,H,W). Do NOT add another axis.
+                motion = c["motion"].to(device)
+                mask = c["mask"].to(device)
+                y = model(cur, feats, motion, mask)
+            else:
+                y = model(cur)  # cold start == Model C
+        return np.transpose(y[0].float().clamp(0, 1).cpu().numpy(), (1, 2, 0))
+
+    return load
 
 
 def _spread(values: dict) -> dict:
@@ -276,6 +318,27 @@ def main() -> int:
         gb[name] = g
         del model
         torch.cuda.empty_cache() if device.type == "cuda" else None
+    for name, cfg_path in TEMPORAL_MODELS.items():
+        mcfg = load_config(ROOT / cfg_path)
+        ck = ROOT / mcfg["train"]["checkpoint_dir"] / "best.pt"
+        if not ck.is_file():
+            gb[name] = {"skipped": f"no checkpoint at {ck}"}
+            continue
+        model = load_checkpoint(ck, device).eval()
+        loader = _temporal_model_loader(model, session, device)
+        g = summarise(evaluate_source(session, loader, guard_pairs, target_load, guard_masks))
+        g["checkpoint"] = str(ck.relative_to(ROOT))
+        g["ladder_model"] = mcfg.get("ladder_model")
+        g["render_note"] = ("Rendered with one step of engine-guided history, as it runs. "
+                            "Cold-starts to Model C where no previous buffer exists.")
+        gb[name] = g
+        s_val = summarise(evaluate_source(session, loader, pairs, target_load, masks))
+        s_val["checkpoint"] = str(ck.relative_to(ROOT))
+        s_val["ladder_model"] = mcfg.get("ladder_model")
+        report["sources"][name] = s_val
+        del model
+        torch.cuda.empty_cache() if device.type == "cuda" else None
+
     present_g = [k for k in CNN_SEEDS if "dt_eq_1" in gb.get(k, {})]
     report["guard_band_gate"] = {
         "role": ("THE M6 EXIT GATE (KB Decision 55). The validation rungs park the camera, so TE "

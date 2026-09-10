@@ -216,3 +216,77 @@ def test_the_motion_response_diagnostic_excludes_every_trained_model(baseline):
 
 def test_the_baseline_records_that_nothing_was_trained(baseline):
     assert "No model was trained" in baseline["no_training_note"]
+
+
+# --------------------------------------------------------------------------- #
+# StructFormer across-seed variance — KB Decisions 57, 58
+# --------------------------------------------------------------------------- #
+def _variance():
+    p = Path(ROOT) / "eval" / "reports" / "m6_structformer_variance.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
+
+
+def test_variance_artifact_self_identifies_and_is_generator_produced():
+    """Decision 57's verdict change rests on this file. Decision 51's rule is that
+    such an artifact needs a generator and a test; it had neither."""
+    v = _variance()
+    if v is None:
+        pytest.skip("variance artifact not generated yet")
+    for f in ("purpose", "pre_commitment", "generated_utc", "torch_version",
+              "session_id", "style_id", "spread", "recomputed_gate"):
+        assert f in v, f"missing {f!r}"
+    assert (Path(ROOT) / "scripts" / "measure_structformer_variance.py").is_file()
+
+
+def test_the_three_seeds_are_model_c_and_differ_only_by_seed():
+    v = _variance()
+    if v is None:
+        pytest.skip("not generated")
+    seeds = {k: r["seed"] for k, r in v["runs"].items() if "seed" in r}
+    assert len(set(seeds.values())) == len(seeds) == 3, f"expected 3 distinct seeds, got {seeds}"
+
+
+def test_the_corrected_margin_is_wider_not_narrower():
+    """The pre-commitment was that the recomputed margin binds in either
+    direction. It came out HARDER; a narrower bar would be threshold-shopping and
+    must be visible if it ever happens."""
+    v = _variance()
+    if v is None:
+        pytest.skip("not generated")
+    c = v["comparison_to_cnn"]
+    assert c["structformer_relative_sd"] > c["cnn_relative_sd"], (
+        "the corrected margin is narrower than the CNN stand-in it replaced — that needs "
+        "an explicit Decision entry, not a silent pass"
+    )
+
+
+def test_model_d_figure_is_read_from_the_gate_not_recomputed():
+    """Two independent computations of one headline number is how two committed
+    artifacts come to disagree (they did, by 0.025%). The variance artifact now
+    reads Model D's figure from the gate artifact."""
+    v = _variance()
+    if v is None:
+        pytest.skip("not generated")
+    rg = v["recomputed_gate"]
+    assert "read from" in rg["model_d_te_source"]
+    gate = json.loads((Path(ROOT) / "eval" / "reports" / "m6_temporal_baseline.json")
+                      .read_text(encoding="utf-8"))
+    assert rg["model_d_te"] == gate["m6_gate"]["sources"]["m6_temporal_model_d"]["temporal_error"]["mean"]
+
+
+def test_the_frozen_pre_registration_excludes_model_d():
+    """Decision 57 claims the threshold was byte-identical before and after Model D
+    was scored. That is only checkable if the pre-Model-D artifact is committed —
+    it was not, and lived in a temp file (KB Decision 58)."""
+    p = Path(ROOT) / "eval" / "reports" / "m6_temporal_gate_prereg.json"
+    if not p.is_file():
+        pytest.skip("frozen pre-registration not present")
+    pre = json.loads(p.read_text(encoding="utf-8"))
+    assert "m6_temporal_model_d" not in pre["m6_gate"]["sources"], (
+        "the frozen pre-registration contains the model it pre-registers against"
+    )
+    live = json.loads((Path(ROOT) / "eval" / "reports" / "m6_temporal_baseline.json")
+                      .read_text(encoding="utf-8"))
+    assert pre["m6_gate"]["pre_registered_threshold"] == live["m6_gate"]["pre_registered_threshold"], (
+        "the gate threshold changed after Model D was scored"
+    )

@@ -516,10 +516,26 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
 #: ``arch`` -> (class, constructor keys read from ``cfg["model"]``). Adding a rung
 #: means adding a row here, never a second training loop (KB Decision 35: the
 #: ladder must measure the architecture, so split/selection/objective are shared).
+def _temporal_structformer_cls(**kwargs):
+    """Late import: `renderer.temporal.temporal_model` is not needed to train or
+    load Models A and C, and importing it eagerly would pull the warp and mask
+    into every M4/M5 code path."""
+    from renderer.temporal.temporal_model import TemporalStructFormer
+    return TemporalStructFormer(**kwargs)
+
+
 ARCHITECTURES: dict[str, tuple[type, tuple[str, ...]]] = {
     "unet_baseline": (UNetBaseline, ("in_channels", "out_channels", "base_channels")),
     "structformer": (
         StructFormerSingleStyle,
+        ("in_channels", "out_channels", "image_size", "embed_dim", "depths",
+         "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl"),
+    ),
+    # Model D (M6). Registered here so `load_checkpoint` can read a temporal
+    # checkpoint — the evaluator could not score Model D at all otherwise. The
+    # import is local to avoid a cycle: `train_temporal` imports this module.
+    "temporal_structformer": (
+        _temporal_structformer_cls,
         ("in_channels", "out_channels", "image_size", "embed_dim", "depths",
          "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl"),
     ),
@@ -729,6 +745,18 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = load_config(args.config)
+    # A temporal rung must never be trained or scored through this entry point:
+    # `TemporalStructFormer.forward` accepts `model(x)` (cold start needs it), so
+    # every mode here would silently run Model D WITHOUT history — measuring a
+    # model that does not exist, and publishing it to a destination the M6 config
+    # legitimately declares. `load_checkpoint` still handles the arch, because the
+    # M6 evaluator needs to load it; only this CLI refuses. KB Decision 58.
+    if cfg.get("model", {}).get("arch") == "temporal_structformer":
+        raise SystemExit(
+            "configs with model.arch == 'temporal_structformer' must use "
+            "`python -m renderer.training.train_temporal`, which supplies the previous-frame "
+            "history. Running them here would evaluate Model D frame-independently (KB Decision 58)."
+        )
     # Pre-flight: resolve every destination this mode will write BEFORE building a
     # model or touching the dataset (KB Decision 52).
     if args.report is None:

@@ -20,14 +20,21 @@ KB §10 in order.
   contiguous-sequence holdout split with a guard band, pre-fixed overfit
   thresholds, ONNX opset 17 / fixed shapes) as amended by Decisions 41-42.
 
-**M5 is in progress** (StructFormer baseline: CNN stem + window transformer
-encoder + decoder + RGB head + style conditioning), whose exit criteria include a
-**TensorRT benchmark at M5, not at the end**. Step 2 — the pre-architecture
-ONNX/TensorRT attention probe — is complete; see [[m5-export-probe]]. Step 3 built
-Model B itself (untrained); see [[m5-model-b]] for the capacity question it left
-open. Still open at M5: the overfit gate, training, "better or competitive output
-against the CNN baseline", ONNX export and the TensorRT benchmark.
-Then M6 temporal, M7 entity, M8 EPAM.
+**M5 is CLOSED with a NEGATIVE RESULT** (2026-09-08): StructFormer — ladder
+**Model C**, relabelled from "B" by Decision 50 — meets three of four exit
+criteria (overfit gate, ONNX export, a built-and-executed TensorRT engine) and
+**fails "better or competitive against the CNN baseline"** on both attempts at
+parameter parity. Decisions 49/51 scope that failure hard: one implementation,
+one recipe, one scene, one style, with unmeasured optimiser-exposure differences
+and unmeasured StructFormer variance — *not* a general result about window
+attention. Background: [[m5-export-probe]], [[m5-model-b]].
+
+**M6 is in progress.** Steps 0-3 (warp, calibrated confidence mask,
+pre-registered temporal gate) landed as Decision 55; step 4 built **Model D**,
+untrained — see [[m6-model-d]]. §11's headline RCS metric was also implemented
+and measured out of band (Decisions 53/54) and found **no degradation with time
+unseen**, which removes the slope EPAM was expected to beat and makes M6 the only
+rung that could produce one. Then M7 entity, M8 EPAM.
 
 **Why:** an earlier version of this memory named the retired style, the retired
 objective and the retired scene's anchors — every one of which would have sent

@@ -1,0 +1,58 @@
+{
+  "purpose": "StructFormer's OWN across-seed temporal-error variance on the M6 gate. The original margin used CNN spread as a stand-in because this had never been measured (KB Decisions 51, 55).",
+  "pre_commitment": "Recorded BEFORE these runs: the recomputed margin is accepted in EITHER direction, including a harder bar. A transformer being less stable than a CNN was the stated expectation. It is, and M6 fails by more.",
+  "generated_utc": "2026-09-10T15:38:18+00:00",
+  "torch_version": "2.13.0+cu132",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "gate": "guard-band pairs with >= 1.0 px median displacement \u2014 identical to m6_gate",
+  "n_pairs": 28,
+  "runs": {
+    "attempt1": {
+      "seed": 20260905,
+      "n": 28,
+      "checkpoint": "checkpoints/m5_structformer/best.pt",
+      "num_workers": 6,
+      "te": 0.003518710835903351,
+      "sharp": 1.0142267593350565
+    },
+    "seedB": {
+      "seed": 20260908,
+      "n": 28,
+      "checkpoint": "checkpoints/m5_structformer_seedB/best.pt",
+      "num_workers": 2,
+      "te": 0.003084164478683046,
+      "sharp": 1.0069395130861134
+    },
+    "seedC": {
+      "seed": 20260909,
+      "n": 28,
+      "checkpoint": "checkpoints/m5_structformer_seedC/best.pt",
+      "num_workers": 2,
+      "te": 0.0036870024300047328,
+      "sharp": 1.0319704593481005
+    }
+  },
+  "spread": {
+    "mean": 0.003429959248197043,
+    "sd": 0.0003110643536773781,
+    "rel_sd": 0.0906903934327759
+  },
+  "comparison_to_cnn": {
+    "cnn_relative_sd": 0.077,
+    "structformer_relative_sd": 0.0906903934327759,
+    "note": "StructFormer is LESS stable across seeds than the CNN; the corrected margin is wider."
+  },
+  "recomputed_gate": {
+    "reference": "mean of the three Model C seeds, not attempt1's single draw (Decision 46)",
+    "reference_te": 0.003429959248197043,
+    "margin": 0.1813807868655518,
+    "model_d_must_be_at_most": 0.0028078305408422866,
+    "model_d_te": 0.0032416321004607846,
+    "model_d_te_source": "read from m6_temporal_baseline.json -> m6_gate, not recomputed",
+    "model_d_vs_mean_pct": -5.490652631959184,
+    "verdict": "FAIL"
+  },
+  "decisive_observation": "Model D lies INSIDE Model C's own seed range, and one Model C seed is BETTER than Model D. The improvement is not separable from StructFormer run-to-run noise. The earlier figure was measured against attempt1, a comparatively unlucky single draw.",
+  "known_difference_between_pooled_runs": "attempt1 trained with train.num_workers=6; seedB/seedC with 2, reduced after a system OOM kill. Worker count does not enter the computation, so this should not affect results \u2014 but it is a difference between runs pooled into one sd, and is stated."
+}

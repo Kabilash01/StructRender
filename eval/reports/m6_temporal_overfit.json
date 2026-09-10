@@ -1,0 +1,112 @@
+{
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "arch": "temporal_structformer",
+  "ladder_model": "D",
+  "objective": "1*L1 + 0.5*LPIPS(alex) + 0.5*L_temp(M_t-weighted)",
+  "generated_utc": "2026-09-10T09:44:05+00:00",
+  "frame_ids": [
+    0,
+    1,
+    2,
+    3,
+    91,
+    92,
+    93,
+    94,
+    183,
+    184,
+    185,
+    186,
+    274,
+    275,
+    276,
+    277,
+    366,
+    367,
+    368,
+    369,
+    660,
+    661,
+    662,
+    663,
+    752,
+    753,
+    754,
+    755,
+    843,
+    844,
+    845,
+    846
+  ],
+  "n_frames": 32,
+  "n_triples": 16,
+  "run_length": 4,
+  "frame_selection_note": "``n`` train frames as ``n // run_length`` evenly spread CONTIGUOUS runs.",
+  "max_steps": 2000,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "seed": 20260905,
+  "init": null,
+  "step0_loss": 0.4939519166946411,
+  "objective_note": "step0_loss / history[].loss are the TOTAL objective including the temporal term; final_l1 / psnr_db / ssim are measured quantities. loss_drop_factor is therefore objective-over-L1 \u2014 a MIXED-UNIT ratio, and a sanity check only (KB Decision 44).",
+  "final_l1": 0.00864925142377615,
+  "loss_drop_factor": 57.1092100915004,
+  "psnr_db": 35.41094207763672,
+  "ssim": 0.9713056087493896,
+  "thresholds": {
+    "min_psnr_db": 30.0,
+    "max_final_l1": 0.02,
+    "min_loss_drop_factor": 10.0,
+    "min_ssim": 0.95
+  },
+  "history": [
+    {
+      "step": 200,
+      "loss": 0.0676586851477623
+    },
+    {
+      "step": 400,
+      "loss": 0.054747823625802994
+    },
+    {
+      "step": 600,
+      "loss": 0.03675398603081703
+    },
+    {
+      "step": 800,
+      "loss": 0.025296423584222794
+    },
+    {
+      "step": 1000,
+      "loss": 0.03268050774931908
+    },
+    {
+      "step": 1200,
+      "loss": 0.023850183933973312
+    },
+    {
+      "step": 1400,
+      "loss": 0.023550765588879585
+    },
+    {
+      "step": 1600,
+      "loss": 0.01766457036137581
+    },
+    {
+      "step": 1800,
+      "loss": 0.014143601059913635
+    },
+    {
+      "step": 2000,
+      "loss": 0.021959129720926285
+    }
+  ],
+  "checks": {
+    "psnr_ge_min": true,
+    "final_l1_le_max": true,
+    "loss_drop_ge_factor": true,
+    "ssim_ge_min": true
+  },
+  "passed": true
+}
