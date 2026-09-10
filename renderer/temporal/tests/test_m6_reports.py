@@ -290,3 +290,76 @@ def test_the_frozen_pre_registration_excludes_model_d():
     assert pre["m6_gate"]["pre_registered_threshold"] == live["m6_gate"]["pre_registered_threshold"], (
         "the gate threshold changed after Model D was scored"
     )
+
+
+# --------------------------------------------------------------------------- #
+# M6 export + TensorRT — KB Decision 59
+# --------------------------------------------------------------------------- #
+def _export():
+    p = Path(ROOT) / "eval" / "reports" / "m6_onnx_export.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
+
+
+def test_export_artifact_matches_its_generator_schema():
+    e = _export()
+    if e is None:
+        pytest.skip("m6 export artifact not generated yet")
+    gen = Path(ROOT) / "scripts" / "export_benchmark_m6.py"
+    head = gen.read_text(encoding="utf-8").split("class _Encoder")[0]
+    ns: dict = {}
+    exec(compile(head, str(gen), "exec"), {"__name__": "gen"}, ns)
+    missing = [k for k in ns["REQUIRED_TOP_LEVEL"] if k not in e]
+    assert not missing, f"generator declares keys the artifact lacks: {missing}"
+    assert set(e["operator_allow_list"]) == set(ns["ALLOWED_OPS"])
+    for name, st in e["stages"].items():
+        unlisted = set(st["op_types"]) - set(ns["ALLOWED_OPS"])
+        assert not unlisted, f"{name}: unlisted operators {sorted(unlisted)}"
+
+
+def test_both_graphs_export_build_and_run_with_static_shapes():
+    e = _export()
+    if e is None:
+        pytest.skip("not generated")
+    for name in ("encoder", "renderer"):
+        st = e["stages"][name]
+        assert st["onnx_export_ok"] and st["shapes_are_static"], name
+        t = st["trt_fp32"]
+        assert t["build_ok"] and t["run_ok"] and t["output_finite"], name
+        assert t["latency_ms_mean"] > 0
+
+
+def test_a_tolerance_exceedance_is_visible_not_waived():
+    """KB Decision 59: the encoder stage exceeds the 1e-3 FP32 tolerance. The
+    artifact must say so — a reader of the JSON alone must not see a green stage."""
+    e = _export()
+    if e is None:
+        pytest.skip("not generated")
+    for name, st in e["stages"].items():
+        t = st["trt_fp32"]
+        if not t.get("within_tolerance", True):
+            assert "tolerance_note" in t, f"{name} exceeds tolerance with no note"
+            assert "not waived" in t["tolerance_note"].lower()
+
+
+def test_the_cross_frame_runtime_contract_is_recorded():
+    """Model D needs state between frames; the M5 runtime was stateless. That is
+    an M10 consequence and must be in the artifact, not only in prose."""
+    e = _export()
+    if e is None:
+        pytest.skip("not generated")
+    rc = e["runtime_contract"]
+    assert rc["graphs"] == 2
+    assert "prev_features" in rc["cross_frame_state"]
+    assert "prev_features" in e["stages"]["renderer"]["inputs"]
+
+
+def test_the_latency_cost_is_recorded_against_model_c():
+    """Model D costs ~47% more per frame than Model C and sits at the top of
+    §12's allocation. A rung that failed its criterion should not have that cost
+    left unstated."""
+    e = _export()
+    if e is None:
+        pytest.skip("not generated")
+    lf = e["latency_finding"]
+    assert lf["m6_per_frame_fp32_ms"] > lf["m5_single_graph_fp32_ms"]
+    assert "NO FP16 ENGINE" in lf["note"], "the absent FP16 comparison must be stated"

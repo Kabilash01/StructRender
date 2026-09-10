@@ -2854,6 +2854,24 @@ From the M6 spec-guardian pass. The negative result of Decision 57 survived revi
 
 ---
 
+### Decision 59: M6 Export Evidence — Model D Deploys, at 47 % More Latency and With Cross-Frame State (2026-09-10)
+
+Model D shipped with its export block marked `NOT YET EXERCISED`. §10 does not list export among M6's deliverables, but §12 requires the path proven, M10 depends on it, and every other ladder rung has it — so the milestone was incomplete regardless of its verdict. Evidence: `eval/reports/m6_onnx_export.json`, written by `scripts/export_benchmark_m6.py` and asserted by `test_m6_reports.py` (Decisions 51/58's rule, applied from the start this time rather than retrofitted).
+
+- **Both graphs export, build and run.** Opset 17, fully static shapes, TensorRT engines built **and executed**, outputs finite. The warp reaches TensorRT inside a real trained model, not just in the standalone probe of Decision 55.
+
+- **Model D is a TWO-graph runtime, and that is new.** The `encoder` produces `prev_features (1, 480, 36, 64)` and must run **once per frame** to supply the *next* frame's history; the `renderer` is four-input — `(structure, prev_features, motion, confidence)`. **The runtime must therefore carry a 1.11 MiB feature tensor across frames, and the M5 runtime was completely stateless.** That is an M10 architectural consequence, recorded here rather than discovered during integration. Cold start passes no history and reduces Model D exactly to Model C.
+
+- **The latency cost is real and is stated against a rung that failed its criterion.** Per frame in FP32: **19.80 ms** (encoder 6.20 + renderer 13.60) against Model C's single-graph **13.48 ms** — **+47 %**, and at the very **top** of §12's 15-20 ms StructFormer allocation. The cost is structural rather than incidental: a temporal rung pays two graph executions where a frame-independent one pays one. **No FP16 engine was built for Model D**, so the comparison against M5's 4.22 ms FP16 does not exist and must not be inferred — M5's FP16 required a separately exported fp16 graph (Decisions 45/48).
+
+- **The encoder stage exceeds the FP32 parity tolerance, and is recorded as exceeding it.** 1.346e-03 against 1e-3. Context that is *not* a defence: the 1e-3 figure was written at M4 for a **sigmoid-bounded [0,1] RGB output**, and this stage emits **unbounded encoder features** (mean |x| 0.495, p99 1.623, max 3.111), so an absolute bound is the wrong instrument — the deviation is 8.3e-04 of the p99 magnitude. The `renderer` stage, which does emit [0,1] RGB, passes at 1.65e-04. **An intermediate-tensor stage needs its own relative tolerance before it can be gated; none is invented here**, and no M6 conclusion depends on this stage passing. A test asserts any exceedance carries its note, so a reader of the JSON alone cannot see a green stage.
+
+- **The allow-list guard fired, and was obeyed rather than widened.** The first run was rejected for an unlisted `AveragePool` — the mask's area-pooling to feature resolution (Decision 55 chose area over bilinear because a feature cell covers 8x8 pixels and bilinear would report full confidence for a mostly-disoccluded cell). It was added deliberately, with that reason, which is exactly the "a new operator must be a visible diff" behaviour §12 asks for and Decision 51 rebuilt the list to provide.
+
+- **What this does and does not change.** M6 still **fails** its exit criterion (Decision 57) — export evidence completes the milestone's record, it does not alter the verdict. What it adds to the ladder is a cost side to set against the quality side: Model D is not separable from Model C on temporal error, and is 47 % more expensive per frame with a stateful runtime. For M7/M8 that is the more useful half of the result.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

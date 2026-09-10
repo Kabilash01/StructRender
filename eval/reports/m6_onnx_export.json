@@ -1,0 +1,224 @@
+{
+  "milestone": 6,
+  "checkpoint": "checkpoints/m6_temporal/best.pt",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "generated_utc": "2026-09-10T15:53:14+00:00",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "opset": 17,
+  "operator_allow_list": [
+    "Add",
+    "AveragePool",
+    "Cast",
+    "Concat",
+    "Constant",
+    "ConstantOfShape",
+    "Conv",
+    "Div",
+    "Equal",
+    "Erf",
+    "Expand",
+    "Gather",
+    "Gemm",
+    "Greater",
+    "GridSample",
+    "Identity",
+    "InstanceNormalization",
+    "IsNaN",
+    "LayerNormalization",
+    "MatMul",
+    "MaxPool",
+    "Mul",
+    "Not",
+    "Or",
+    "ReduceMax",
+    "ReduceSum",
+    "Relu",
+    "Reshape",
+    "Resize",
+    "Shape",
+    "Sigmoid",
+    "Slice",
+    "Softmax",
+    "Sqrt",
+    "Sub",
+    "Tile",
+    "Transpose",
+    "Unsqueeze",
+    "Where"
+  ],
+  "operator_allow_list_source": "Declared in scripts/export_benchmark_m6.py::ALLOWED_OPS, NOT derived from the graph it validates (KB Decision 51). GridSample and the mask's boolean ops are M6's additions over M5's census.",
+  "runtime_contract": {
+    "graphs": 2,
+    "encoder": "structure(1,7,288,512) -> prev_features(1,480,36,64); run ONCE per frame",
+    "renderer": "structure(1,7,288,512), prev_features(1,480,36,64), motion(1,2,288,512), confidence(1,1,288,512) -> rgb(1,3,288,512)",
+    "cross_frame_state": "prev_features (1,480,36,64) float \u2014 1.11 MiB at fp32, 0.55 at fp16",
+    "note": "M10 CONSEQUENCE, recorded because no earlier rung needed it: the runtime must hold one feature tensor from the previous frame. The M5 runtime was stateless. Cold start (frame 0, or motion_valid false) passes no history and reduces Model D exactly to Model C."
+  },
+  "latency_note": "Batch 1, 288x512, TensorRT engine time only \u2014 CUDA events around execute_async_v3. EXCLUDES host<->device transfers, the structural export, Godot's frame cost and the cross-frame copy. Not an end-to-end FPS figure. The per-frame runtime cost is encoder + renderer, since the encoder runs once per frame to produce the NEXT frame's history.",
+  "stages": {
+    "encoder": {
+      "onnx_export_ok": true,
+      "inputs": {
+        "structure": [
+          1,
+          7,
+          288,
+          512
+        ]
+      },
+      "outputs": {
+        "out": [
+          1,
+          480,
+          36,
+          64
+        ]
+      },
+      "n_nodes": 335,
+      "op_types": {
+        "Constant": 117,
+        "Conv": 3,
+        "Reshape": 28,
+        "InstanceNormalization": 2,
+        "Shape": 3,
+        "Mul": 18,
+        "Add": 39,
+        "Relu": 2,
+        "ConstantOfShape": 3,
+        "Equal": 1,
+        "Where": 1,
+        "Expand": 3,
+        "Gemm": 1,
+        "Gather": 13,
+        "Div": 5,
+        "Slice": 18,
+        "Unsqueeze": 4,
+        "Transpose": 24,
+        "LayerNormalization": 8,
+        "MatMul": 24,
+        "Softmax": 4,
+        "Erf": 4,
+        "Concat": 8,
+        "Tile": 2
+      },
+      "shapes_are_static": true,
+      "size_mb": 27.49,
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 902,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.0013462305068969727,
+        "tolerance": 0.001,
+        "within_tolerance": false,
+        "output_finite": true,
+        "latency_ms_mean": 6.202815356254578,
+        "latency_ms_p50": 6.216512203216553,
+        "tolerance_note": "EXCEEDS the 1e-3 tolerance (1.346e-03) and is recorded as exceeding it, not waived. Context, which is not a defence: the 1e-3 figure was written at M4 for a SIGMOID-BOUNDED [0,1] RGB output, and this stage emits UNBOUNDED encoder features (mean |x| 0.495, p99 1.623, max 3.111), so an absolute bound is the wrong instrument here - the deviation is 8.3e-04 of the p99 magnitude. The renderer stage, which does emit [0,1] RGB, passes at 1.65e-04. An intermediate-tensor stage needs its own RELATIVE tolerance before it can be gated; none is invented here, and none of M6's conclusions depend on this stage passing. KB Decision 59."
+      }
+    },
+    "renderer": {
+      "onnx_export_ok": true,
+      "inputs": {
+        "structure": [
+          1,
+          7,
+          288,
+          512
+        ],
+        "prev_features": [
+          1,
+          480,
+          36,
+          64
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ],
+        "confidence": [
+          1,
+          1,
+          288,
+          512
+        ]
+      },
+      "outputs": {
+        "out": [
+          1,
+          3,
+          288,
+          512
+        ]
+      },
+      "n_nodes": 515,
+      "op_types": {
+        "Constant": 176,
+        "Conv": 7,
+        "Reshape": 42,
+        "InstanceNormalization": 3,
+        "Shape": 5,
+        "Mul": 28,
+        "Add": 60,
+        "Relu": 3,
+        "ConstantOfShape": 4,
+        "Equal": 1,
+        "Where": 1,
+        "Expand": 4,
+        "Gemm": 1,
+        "Gather": 19,
+        "Div": 7,
+        "Slice": 27,
+        "Unsqueeze": 4,
+        "Transpose": 37,
+        "LayerNormalization": 12,
+        "MatMul": 36,
+        "Softmax": 6,
+        "Erf": 6,
+        "Concat": 14,
+        "Tile": 3,
+        "AveragePool": 1,
+        "Resize": 4,
+        "Sub": 1,
+        "Cast": 1,
+        "GridSample": 1,
+        "Sigmoid": 1
+      },
+      "shapes_are_static": true,
+      "size_mb": 35.75,
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 1357,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.00016519427299499512,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 13.600904941558838,
+        "latency_ms_p50": 13.459168434143066
+      }
+    }
+  },
+  "per_frame_ms_fp32": 19.803720297813417,
+  "m5_comparison": {
+    "m5_structformer_fp32_ms": 13.48,
+    "m5_structformer_fp16_ms": 4.22,
+    "m6_per_frame_fp32_ms": 19.803720297813417,
+    "note": "M5's figure is a single one-input graph; M6's is encoder + renderer, because the history must be produced each frame. Compare FP32 to FP32 only \u2014 M6 has no FP16 engine here."
+  },
+  "latency_finding": {
+    "m6_per_frame_fp32_ms": 19.803720297813417,
+    "m5_single_graph_fp32_ms": 13.48,
+    "increase_pct": 46.91187164550012,
+    "kb_allocation_ms": [
+      15,
+      20
+    ],
+    "note": "Model D costs 19.80 ms per frame in FP32 against Model C's 13.48 ms - a 47% increase, and at the TOP of \u00a712's 15-20 ms StructFormer allocation. The cost is structural, not incidental: the encoder must run once per frame to produce the NEXT frame's history, so a temporal rung pays two graph executions where a frame-independent one pays one. NO FP16 ENGINE WAS BUILT for Model D, so the FP16 comparison against M5's 4.22 ms does not exist and must not be inferred - M5's FP16 needed a separately exported fp16 graph (Decision 45/48). This is a real deployment cost for a rung that did not pass its exit criterion."
+  }
+}
