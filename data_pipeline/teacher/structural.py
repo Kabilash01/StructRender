@@ -75,6 +75,24 @@ class StructuralSession:
         with Image.open(self.dir / rel) as im:
             return np.asarray(im.convert("RGB"), dtype=np.uint8)
 
+    def load_motion(self, frame_id: int) -> np.ndarray:
+        """``(H, W, 2)`` float32 backward screen-UV motion (KB Decision 25).
+
+        Kept out of :class:`FrameStructure` on purpose: that dataclass is the
+        *appearance* input the renderer sees, and KB §4's CNN Stem boundary says
+        "motion is not treated as an unexplained appearance channel". Motion has
+        an explicit warp operation (Decision 8), so it is loaded by the M6
+        temporal path and by nothing else.
+        """
+        rec = self.record(frame_id)
+        rel = rec["structure"]["motion_path"].split("#", 1)[0]
+        with np.load(self.dir / rel) as npz:
+            return np.asarray(npz["motion"], dtype=np.float32)
+
+    def motion_valid(self, frame_id: int) -> bool:
+        """Whole-frame flag: is there a previous frame at all? False on frame 0."""
+        return bool(self.record(frame_id)["motion_valid"])
+
     def load_structure(self, frame_id: int) -> FrameStructure:
         rec = self.record(frame_id)
         rel = rec["structure"]["depth_path"].split("#", 1)[0]

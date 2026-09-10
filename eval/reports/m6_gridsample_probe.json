@@ -1,0 +1,558 @@
+{
+  "milestone": 6,
+  "purpose": "M6 step 0. Answer whether ONNX GridSample (opset >= 16) reaches a BUILT AND EXECUTED TensorRT engine, before renderer/temporal/ exists \u2014 the same sequencing as the M5 attention probe (KB Decision 45). A blocker here changes the M6 design.",
+  "question": "Does F.grid_sample export to opset 17, build under TensorRT, run, and match PyTorch?",
+  "generated_utc": "2026-09-10T04:16:11+00:00",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "opset": 17,
+  "tolerance_max_abs": 0.001,
+  "seed": 20260910,
+  "motion_convention": "Backward, screen-UV in [0,1], Y-down, analytic from engine transforms (KB Decision 25, data_pipeline/schemas/frame_structure.md \u00a74). UV is resolution-independent, so the field needs NO rescaling at feature resolution; the sampling grid is 2*(uv_curr + motion) - 1 with no Y flip.",
+  "m5_allow_list_source": "Read at run time from eval/reports/m5_onnx_export.json -> operator_allow_list, which scripts/export_benchmark_m5.py::ALLOWED_OPS declares. Read, not copied: a second copy would drift and make 'new operator vs M5' a comparison against a stale list (KB Decisions 50/51, \u00a712 'a new operator must be a visible diff').",
+  "m5_allowed_ops": [
+    "Add",
+    "Cast",
+    "Concat",
+    "Constant",
+    "ConstantOfShape",
+    "Conv",
+    "Div",
+    "Equal",
+    "Erf",
+    "Expand",
+    "Gather",
+    "Gemm",
+    "Identity",
+    "InstanceNormalization",
+    "LayerNormalization",
+    "MatMul",
+    "MaxPool",
+    "Mul",
+    "ReduceMax",
+    "Relu",
+    "Reshape",
+    "Resize",
+    "Shape",
+    "Sigmoid",
+    "Slice",
+    "Softmax",
+    "Sqrt",
+    "Sub",
+    "Tile",
+    "Transpose",
+    "Unsqueeze",
+    "Where"
+  ],
+  "variant_groups": {
+    "minimal": "Standalone F.grid_sample forms. Answers 'does GridSample reach TensorRT, and under which sampling options' with no dependency on renderer/temporal. Run FIRST, before that package existed.",
+    "fp32_grid_workaround": "The measured fix for the FP16 finding below: half-precision sampled tensor, fp32 grid arithmetic and fp32 sample.",
+    "shipped": "The real renderer/temporal modules \u2014 the backward warp and KB \u00a74's full confidence mask \u2014 at the shipped 288x512 resolution. This is what prices the warp+mask against \u00a712's 15-20 ms StructFormer budget. Added after the modules existed; it does not carry the design-time ordering claim."
+  },
+  "trt_scope": "TensorRT engines were built and executed for every variant.",
+  "latency_note": "Batch 1, TensorRT engine time only: CUDA events around execute_async_v3. EXCLUDES host<->device transfers, the renderer itself, Godot's frame cost and structural export. This is the marginal cost of the WARP OPERATOR alone, to be read against the M5 StructFormer engine time, not an end-to-end FPS figure.",
+  "variants": {
+    "image_bilinear_zeros_ac0": {
+      "gate": "minimal",
+      "mode": "bilinear",
+      "padding_mode": "zeros",
+      "align_corners": false,
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ]
+      },
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "GridSample": 1
+      },
+      "n_nodes": 8,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 1.3366341590881348e-05,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 5.960464477539063e-08,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.01663615994155407,
+        "latency_ms_p50": 0.016575999557971954
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.1740342378616333,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.020342079941183328,
+        "latency_ms_p50": 0.01571200042963028,
+        "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48). The reference is fp32 torch and half carries ~1e-3 relative precision, so exceeding an FP32 tolerance is not a defect \u2014 but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is an acceptance criterion."
+      }
+    },
+    "image_bilinear_border_ac0": {
+      "gate": "minimal",
+      "mode": "bilinear",
+      "padding_mode": "border",
+      "align_corners": false,
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ]
+      },
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "GridSample": 1
+      },
+      "n_nodes": 8,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 1.3366341590881348e-05,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 5.960464477539063e-08,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.016642239950597285,
+        "latency_ms_p50": 0.016416000202298164
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.1740342378616333,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.016712640058249236,
+        "latency_ms_p50": 0.015936000272631645,
+        "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48). The reference is fp32 torch and half carries ~1e-3 relative precision, so exceeding an FP32 tolerance is not a defect \u2014 but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is an acceptance criterion."
+      }
+    },
+    "image_bilinear_zeros_ac1": {
+      "gate": "minimal",
+      "mode": "bilinear",
+      "padding_mode": "zeros",
+      "align_corners": true,
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ]
+      },
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "GridSample": 1
+      },
+      "n_nodes": 8,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 1.7881393432617188e-07,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 5.960464477539063e-08,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.016490239994600416,
+        "latency_ms_p50": 0.016127999871969223
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.1649741530418396,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.01526464001275599,
+        "latency_ms_p50": 0.014720000326633453,
+        "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48). The reference is fp32 torch and half carries ~1e-3 relative precision, so exceeding an FP32 tolerance is not a defect \u2014 but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is an acceptance criterion."
+      }
+    },
+    "image_nearest_zeros_ac0": {
+      "gate": "minimal",
+      "mode": "nearest",
+      "padding_mode": "zeros",
+      "align_corners": false,
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ]
+      },
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "GridSample": 1
+      },
+      "n_nodes": 8,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 0.0,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.0,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.01478112006559968,
+        "latency_ms_p50": 0.014368000440299511
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.9961026310920715,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.016071679955348372,
+        "latency_ms_p50": 0.015744000673294067,
+        "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48). The reference is fp32 torch and half carries ~1e-3 relative precision, so exceeding an FP32 tolerance is not a defect \u2014 but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is an acceptance criterion."
+      }
+    },
+    "feature_bilinear_zeros_ac0": {
+      "gate": "minimal",
+      "mode": "bilinear",
+      "padding_mode": "zeros",
+      "align_corners": false,
+      "shapes": {
+        "prev": [
+          1,
+          240,
+          72,
+          128
+        ],
+        "motion": [
+          1,
+          2,
+          72,
+          128
+        ]
+      },
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "GridSample": 1
+      },
+      "n_nodes": 8,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 1.7881393432617188e-07,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 5.960464477539063e-08,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.03315168015658856,
+        "latency_ms_p50": 0.03283200040459633
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 10,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 0.03751426935195923,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.035044480301439765,
+        "latency_ms_p50": 0.03478400036692619,
+        "fp16_tolerance_note": "EXPECTED but NOT WAIVED (KB Decision 48). The reference is fp32 torch and half carries ~1e-3 relative precision, so exceeding an FP32 tolerance is not a defect \u2014 but 'expected' is not 'inside the gate'. FP16 needs its own tolerance before it is an acceptance criterion."
+      }
+    },
+    "image_bilinear_zeros_ac0_fp32grid": {
+      "gate": "fp32_grid_workaround",
+      "mode": "bilinear",
+      "padding_mode": "zeros",
+      "align_corners": false,
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ]
+      },
+      "precision": "prev fp16, motion fp32, grid fp32, grid_sample fp32, output fp16",
+      "purpose": "Measured workaround for the FP16 positional error. Reference is the full-fp32 warp, not a half reference.",
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Transpose": 1,
+        "Constant": 3,
+        "Add": 1,
+        "Mul": 1,
+        "Sub": 1,
+        "Cast": 2,
+        "GridSample": 1
+      },
+      "n_nodes": 10,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "run": false,
+        "within_tolerance": true,
+        "note": "mixed-precision graph is measured on TensorRT, not on the CPU EP"
+      },
+      "trt_fp16": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 12,
+        "run_ok": true,
+        "max_abs_diff_vs_torch_fp32": 0.00047016143798828125,
+        "fp32_tolerance": 0.001,
+        "fp32_tolerance_exceeded": false,
+        "output_finite": true,
+        "latency_ms_mean": 0.016247360054403543,
+        "latency_ms_p50": 0.016127999871969223
+      }
+    },
+    "shipped_warp_and_mask": {
+      "gate": "shipped_fp32_only",
+      "shapes": {
+        "prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "depth_t": [
+          1,
+          1,
+          288,
+          512
+        ],
+        "depth_prev": [
+          1,
+          1,
+          288,
+          512
+        ],
+        "normal_t": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "normal_prev": [
+          1,
+          3,
+          288,
+          512
+        ],
+        "motion": [
+          1,
+          2,
+          288,
+          512
+        ],
+        "fin_t": [
+          1,
+          1,
+          288,
+          512
+        ],
+        "fin_prev": [
+          1,
+          1,
+          288,
+          512
+        ],
+        "fresh": [
+          1,
+          1,
+          288,
+          512
+        ]
+      },
+      "outputs": [
+        "warped_prev",
+        "confidence_mask"
+      ],
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Constant": 25,
+        "Expand": 2,
+        "Unsqueeze": 4,
+        "Concat": 1,
+        "Transpose": 1,
+        "Add": 2,
+        "Mul": 12,
+        "Sub": 6,
+        "Cast": 4,
+        "GridSample": 4,
+        "Abs": 1,
+        "ReduceSum": 1,
+        "Clip": 1,
+        "GreaterOrEqual": 1,
+        "LessOrEqual": 1,
+        "And": 2,
+        "Gather": 2,
+        "Greater": 1,
+        "Exp": 1
+      },
+      "n_nodes": 72,
+      "shapes_are_static": true,
+      "onnxruntime": {
+        "max_abs_diff": 3.884732723236084e-05,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 87,
+        "run_ok": true,
+        "max_abs_diff_vs_torch": 1.8775463104248047e-06,
+        "tolerance": 0.001,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.029046400040388106,
+        "latency_ms_p50": 0.02860799990594387
+      },
+      "trt_fp16": {
+        "measured": false,
+        "reason": "intentionally skipped: the minimal group already measured that fp16 grid arithmetic costs up to a quarter-pixel of POSITION at this resolution, and image_bilinear_zeros_ac0_fp32grid measured the fix. Building it here would price a configuration this probe recommends against."
+      }
+    }
+  },
+  "new_operators_vs_m5": [
+    "Abs",
+    "And",
+    "Clip",
+    "Exp",
+    "Greater",
+    "GreaterOrEqual",
+    "GridSample",
+    "LessOrEqual",
+    "ReduceSum"
+  ],
+  "blocked": [],
+  "verdict": "PASS"
+}

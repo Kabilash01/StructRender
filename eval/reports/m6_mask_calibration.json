@@ -1,0 +1,454 @@
+{
+  "milestone": 6,
+  "purpose": "Calibrate alpha/beta of KB \u00a74's confidence mask from measured error distributions and the scene's own geometry scale, rather than from invented constants.",
+  "formula": "M_t = hard_zeros * exp(-alpha*e_D - beta*e_N);  e_D = |D_t - W(D_{t-1})| in metres;  e_N = 1 - N_t . W(N_{t-1})",
+  "generated_utc": "2026-09-10T04:04:00+00:00",
+  "torch_version": "2.13.0+cu132",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id_note": "Style-independent by construction: every quantity here comes from the engine's own depth/normal/motion buffers, never from a teacher target or a model output.",
+  "split": {
+    "policy": "contiguous_sequence_holdout",
+    "val_sequences": [
+      "reap_camera_away_8s",
+      "reap_entity_away_8s"
+    ],
+    "guard_frames": 60,
+    "n_val_frames": 166,
+    "n_consecutive_val_pairs": 164,
+    "n_pairs_dt_eq_1": 44,
+    "n_pairs_dt_gt_1": 120,
+    "pairing_rule": "(f-1, f) with BOTH ends inside the validation split. The two sequence-start frames therefore contribute no pair \u2014 166 val frames give 164 pairs, not 166.",
+    "tick_delta_note": "Computed from each record's own 'tick' field, never assumed. Consecutive frame_ids are always 1 apart; the SIMULATION time between them is 1 or 8 ticks because the recorder drops to a reduced rate during the long reappearance gaps."
+  },
+  "motion_convention": "Backward, screen-UV [0,1], Y-down, analytic from engine transforms (KB Decision 25). Verified to compose: see renderer/temporal/tests/test_warp.py.",
+  "hard_zero_terms": {
+    "list": [
+      "motion_valid == False (frame 0)",
+      "sample out of bounds after warping",
+      "S7: entity with no t-1 transform (motion pinned to (0,0))",
+      "background/sky at t (depth == +inf, motion pinned to (0,0))",
+      "the warped source was background (added; see deviations)"
+    ],
+    "why": "Each is a case where the exponential is not merely large but meaningless: the operands do not exist, or the motion value is bit-identical to a correct one. S7 and background are the dangerous pair \u2014 both carry motion (0,0), which the exponential reads as PERFECT confidence.",
+    "prev_coverage_eps": 0.001
+  },
+  "scene_geometry_scale": {
+    "n_frames": 42,
+    "depth_range_m": {
+      "near": 1.630859375,
+      "far": 25.703125
+    },
+    "within_surface_neighbour_step_m": {
+      "n": 11073954,
+      "mean": 0.03922783583402634,
+      "max": 15.359375,
+      "p1": 0.0,
+      "p5": 0.0,
+      "p25": 0.0,
+      "p50": 0.013671875,
+      "p75": 0.017578125,
+      "p90": 0.0546875,
+      "p95": 0.1171875,
+      "p99": 0.390625,
+      "p99.5": 0.625,
+      "p99.9": 5.1875,
+      "p99.99": 9.296875
+    },
+    "entity_silhouette_neighbour_step_m": {
+      "n": 6378,
+      "mean": 5.280782222747803,
+      "max": 15.7265625,
+      "p1": 0.0078125,
+      "p5": 0.06640625,
+      "p25": 0.953125,
+      "p50": 3.76953125,
+      "p75": 10.87890625,
+      "p90": 11.76171875,
+      "p95": 12.301366806030273,
+      "p99": 13.442304611206055,
+      "p99.5": 14.094779968261719,
+      "p99.9": 15.432121276855469,
+      "p99.99": 15.597030639648438
+    },
+    "within_surface_neighbour_normal_error": {
+      "n": 11073954,
+      "mean": 0.004595009610056877,
+      "max": 1.308837890625,
+      "p1": 0.0,
+      "p5": 0.0,
+      "p25": 0.0,
+      "p50": 5.036592483520508e-05,
+      "p75": 0.00048828125,
+      "p90": 0.0009763240814208984,
+      "p95": 0.0009763240814208984,
+      "p99": 0.0009763240814208984,
+      "p99.5": 0.0009765625,
+      "p99.9": 1.0,
+      "p99.99": 1.2587890625
+    },
+    "entity_silhouette_neighbour_normal_error": {
+      "n": 6378,
+      "mean": 0.8939852714538574,
+      "max": 1.2587890625,
+      "p1": 0.0,
+      "p5": 0.00048828125,
+      "p25": 1.0,
+      "p50": 1.0,
+      "p75": 1.0,
+      "p90": 1.0,
+      "p95": 1.0,
+      "p99": 1.0,
+      "p99.5": 1.0,
+      "p99.9": 1.0,
+      "p99.99": 1.2587890625
+    },
+    "depth_separation": {
+      "sweep": {
+        "0.02": {
+          "across_object_above": 0.980244590780809,
+          "within_surface_above": 0.22632999920353652,
+          "youden_j": 0.7539145915772725
+        },
+        "0.05": {
+          "across_object_above": 0.9612731263719034,
+          "within_surface_above": 0.1111751051160227,
+          "youden_j": 0.8500980212558807
+        },
+        "0.1": {
+          "across_object_above": 0.9328943242395735,
+          "within_surface_above": 0.05948191585408428,
+          "youden_j": 0.8734124083854893
+        },
+        "0.15": {
+          "across_object_above": 0.9169018501097522,
+          "within_surface_above": 0.038218237135534426,
+          "youden_j": 0.8786836129742178
+        },
+        "0.175": {
+          "across_object_above": 0.9117278143618689,
+          "within_surface_above": 0.031988664572744296,
+          "youden_j": 0.8797391497891246
+        },
+        "0.2": {
+          "across_object_above": 0.9034179993728442,
+          "within_surface_above": 0.026340546475089203,
+          "youden_j": 0.877077452897755
+        },
+        "0.25": {
+          "across_object_above": 0.8910316713703356,
+          "within_surface_above": 0.019009921840022093,
+          "youden_j": 0.8720217495303135
+        },
+        "0.35": {
+          "across_object_above": 0.8733145186578865,
+          "within_surface_above": 0.012062538818564715,
+          "youden_j": 0.8612519798393218
+        },
+        "0.5": {
+          "across_object_above": 0.8562245217936657,
+          "within_surface_above": 0.006867646370934898,
+          "youden_j": 0.8493568754227309
+        },
+        "1": {
+          "across_object_above": 0.7362809658200062,
+          "within_surface_above": 0.0024241567194517874,
+          "youden_j": 0.7338568091005544
+        },
+        "2": {
+          "across_object_above": 0.6190028222013171,
+          "within_surface_above": 0.002136906113209428,
+          "youden_j": 0.6168659160881077
+        }
+      },
+      "argmax_tau": 0.175,
+      "argmax_youden_j": 0.8797391497891246
+    },
+    "normal_separation": {
+      "sweep": {
+        "0.015192": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004554019278028426,
+          "youden_j": 0.899491135943044
+        },
+        "0.034074": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004554019278028426,
+          "youden_j": 0.899491135943044
+        },
+        "0.060307": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.0043188729156722165,
+          "youden_j": 0.8997262823054002
+        },
+        "0.093692": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004245908913835112,
+          "youden_j": 0.8997992463072373
+        },
+        "0.13397": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004245908913835112,
+          "youden_j": 0.8997992463072373
+        },
+        "0.29289": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004201480338459055,
+          "youden_j": 0.8998436748826134
+        },
+        "0.5": {
+          "across_object_above": 0.9040451552210724,
+          "within_surface_above": 0.004171138872348576,
+          "youden_j": 0.8998740163487239
+        }
+      },
+      "argmax_tau": 0.5,
+      "argmax_youden_j": 0.8998740163487239
+    },
+    "note": "A 'within-surface' step is a neighbouring pixel pair with the SAME entity_id; a 'silhouette' step is one where the ids differ, i.e. the engine says the neighbour is a different object. The crossing is placed at the Youden-optimal separation of the two \u2014 see *_separation."
+  },
+  "error_distributions": {
+    "dt_eq_1": {
+      "n_pairs": 44,
+      "pairs_with_a_just_registered_entity": 0,
+      "hard_zero_term_frame_fractions_mean": {
+        "in_bounds": 0.99771133471619,
+        "bg_at_t": 0.08208519491282376,
+        "prev_was_bg": 0.08852794918824326,
+        "no_prev_transform": 0.0,
+        "hard_valid": 0.9111827517097647
+      },
+      "e_d_metres": {
+        "n": 5911812,
+        "mean": 0.01547765452414751,
+        "max": 14.267183303833008,
+        "p1": 0.0,
+        "p5": 9.608268737792969e-05,
+        "p25": 0.001077413558959961,
+        "p50": 0.0026967525482177734,
+        "p75": 0.007883071899414062,
+        "p90": 0.016160964965820312,
+        "p95": 0.022121429443359375,
+        "p99": 0.16595458984375,
+        "p99.5": 0.29842567443847656,
+        "p99.9": 2.290226936340332,
+        "p99.99": 9.452505111694336
+      },
+      "e_n_literal": {
+        "n": 5911812,
+        "mean": 0.002599803963676095,
+        "max": 1.1941865682601929,
+        "p1": 0.0,
+        "p5": 0.0,
+        "p25": 4.7087669372558594e-05,
+        "p50": 0.0004715919494628906,
+        "p75": 0.0005732178688049316,
+        "p90": 0.0009432435035705566,
+        "p95": 0.0009763240814208984,
+        "p99": 0.01763784885406494,
+        "p99.5": 0.10417306423187256,
+        "p99.9": 0.705079972743988,
+        "p99.99": 1.0
+      },
+      "e_n_renormalised_warped_normal": {
+        "n": 5911812,
+        "mean": 0.001434088102541864,
+        "max": 1.1977959871292114,
+        "p1": 0.0,
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.00048828125,
+        "p90": 0.00048828125,
+        "p95": 0.00048828125,
+        "p99": 0.0004979968070983887,
+        "p99.5": 0.006983757019042969,
+        "p99.9": 0.6113985776901245,
+        "p99.99": 1.0
+      },
+      "mask_at_committed_alpha_beta": {
+        "mean": 0.9638228416442871,
+        "frac_above_0.5": 0.9873693547765051,
+        "frac_above_0.9": 0.960855487285455,
+        "note": "over hard-valid pixels only; hard-zeroed pixels are 0 by construction"
+      }
+    },
+    "dt_gt_1": {
+      "n_pairs": 120,
+      "pairs_with_a_just_registered_entity": 0,
+      "hard_zero_term_frame_fractions_mean": {
+        "in_bounds": 0.9901523177822431,
+        "bg_at_t": 0.11025188118219376,
+        "prev_was_bg": 0.12079094654570023,
+        "no_prev_transform": 0.0,
+        "hard_valid": 0.8776795454323292
+      },
+      "e_d_metres": {
+        "n": 15530294,
+        "mean": 0.11054278165102005,
+        "max": 19.384765625,
+        "p1": 0.0,
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.018486499786376953,
+        "p90": 0.047600746154785156,
+        "p95": 0.07895851135253906,
+        "p99": 1.71209716796875,
+        "p99.5": 9.0625,
+        "p99.9": 16.578277587890625,
+        "p99.99": 18.609619140625
+      },
+      "e_n_literal": {
+        "n": 15530294,
+        "mean": 0.013863420113921165,
+        "max": 2.0,
+        "p1": 0.0,
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 5.036592483520508e-05,
+        "p75": 0.000819861888885498,
+        "p90": 0.0009763240814208984,
+        "p95": 0.0009763240814208984,
+        "p99": 0.6913025379180908,
+        "p99.5": 1.0435959100723267,
+        "p99.9": 1.99951171875,
+        "p99.99": 2.0
+      },
+      "e_n_renormalised_warped_normal": {
+        "n": 15530294,
+        "mean": 0.013225514441728592,
+        "max": 2.0,
+        "p1": 0.0,
+        "p5": 0.0,
+        "p25": 0.0,
+        "p50": 2.5093555450439453e-05,
+        "p75": 0.00048828125,
+        "p90": 0.00048828125,
+        "p95": 0.00048828125,
+        "p99": 0.67656409740448,
+        "p99.5": 1.043609619140625,
+        "p99.9": 2.0,
+        "p99.99": 2.0
+      },
+      "mask_at_committed_alpha_beta": {
+        "mean": 0.9372429847717285,
+        "frac_above_0.5": 0.9865754634136353,
+        "frac_above_0.9": 0.8102695930933439,
+        "note": "over hard-valid pixels only; hard-zeroed pixels are 0 by construction"
+      }
+    }
+  },
+  "calibration": {
+    "e_d_half_metres": 0.175,
+    "e_d_rationale": "The Youden-optimal separation between the two measured neighbour-step distributions in scene_geometry_scale: the depth step at which 'same surface' stops explaining the difference and 'different object' starts. The separation curve is FLAT over [0.10, 0.35] m, so the third digit carries no weight and the value must not be re-tuned to move a result.",
+    "e_n_half": 0.1339745962155613,
+    "e_n_half_degrees": 30.0,
+    "e_n_rationale": "1 - cos(30 deg). A 30-degree orientation change is a change of facet; correctly-tracked normals sit far below it (see error_distributions), and a 90-degree cube edge lands at 2^-7.5 = 0.006, i.e. effectively zero. NOT LOAD-BEARING ON THIS SCENE: the geometry is axis-aligned boxes and a ground plane, so the normal separation is near-binary and its Youden index is flat across 10-60 degrees (see scene_geometry_scale.normal_separation). Curved geometry would make this term discriminative and would need the calibration re-run.",
+    "alpha": 3.960841178894043,
+    "beta": 5.173720836639404,
+    "derivation": "alpha = ln(2)/e_D*, beta = ln(2)/e_N* \u2014 each term alone crosses 0.5 at its own half point, so both at their half points give 0.25."
+  },
+  "sensitivity": {
+    "e_d_half_metres": {
+      "0.02": {
+        "dt_eq_1": 0.9406200670792644,
+        "dt_gt_1": 0.7629309528847297
+      },
+      "0.05": {
+        "dt_eq_1": 0.9795996557400675,
+        "dt_gt_1": 0.9062368684069986
+      },
+      "0.1": {
+        "dt_eq_1": 0.9862867763724557,
+        "dt_gt_1": 0.9665083610136421
+      },
+      "0.15": {
+        "dt_eq_1": 0.9893288216878344,
+        "dt_gt_1": 0.9872572277124954
+      },
+      "0.175": {
+        "dt_eq_1": 0.9903525348911637,
+        "dt_gt_1": 0.9881903072794372
+      },
+      "0.2": {
+        "dt_eq_1": 0.9913217808685392,
+        "dt_gt_1": 0.988288438068204
+      },
+      "0.25": {
+        "dt_eq_1": 0.9933553367393957,
+        "dt_gt_1": 0.9884622274375489
+      },
+      "0.35": {
+        "dt_eq_1": 0.9956928603277642,
+        "dt_gt_1": 0.9887698842018059
+      },
+      "0.5": {
+        "dt_eq_1": 0.9964454214714541,
+        "dt_gt_1": 0.9890673673016106
+      },
+      "1": {
+        "dt_eq_1": 0.9979730410912931,
+        "dt_gt_1": 0.9895922768751191
+      },
+      "2": {
+        "dt_eq_1": 0.9988783472816795,
+        "dt_gt_1": 0.9901641913540079
+      }
+    },
+    "e_n_half_degrees": {
+      "10": {
+        "e_n_half": 0.01519224698779198,
+        "dt_eq_1": 0.9899110458857623,
+        "dt_gt_1": 0.9867556918111144
+      },
+      "15": {
+        "e_n_half": 0.03407417371093169,
+        "dt_eq_1": 0.991430546167571,
+        "dt_gt_1": 0.9869948373160224
+      },
+      "20": {
+        "e_n_half": 0.06030737921409157,
+        "dt_eq_1": 0.9930652395576856,
+        "dt_gt_1": 0.9871948979201552
+      },
+      "25": {
+        "e_n_half": 0.09369221296335006,
+        "dt_eq_1": 0.9945297651549135,
+        "dt_gt_1": 0.9874021058455171
+      },
+      "30": {
+        "e_n_half": 0.1339745962155613,
+        "dt_eq_1": 0.9957471584008423,
+        "dt_gt_1": 0.9876321079304745
+      },
+      "45": {
+        "e_n_half": 0.2928932188134524,
+        "dt_eq_1": 0.9977815600360769,
+        "dt_gt_1": 0.9884326722984124
+      },
+      "60": {
+        "e_n_half": 0.4999999999999999,
+        "dt_eq_1": 0.99850688756679,
+        "dt_gt_1": 0.9893116640290261
+      }
+    },
+    "note": "Fraction of HARD-VALID pixels the soft term alone would keep above 0.5, per candidate crossing. Committed values are e_D* = 0.175 m and e_N* = 1 - cos(30 deg)."
+  },
+  "deviations_flagged_for_the_decision_log": [
+    {
+      "item": "\u00a74's e_D is undefined on background, on BOTH sides of the subtraction",
+      "detail": "depth carries +inf for background, so |D_t - W(D_{t-1})| is inf-inf = NaN when either operand is sky. Zeroing only the current-frame side leaves the 'was sky, is surface now' disocclusion undefined. A fifth hard zero on the warped source's background coverage was added; it is not in \u00a74's three lines.",
+      "action": "needs a Decision Log entry \u2014 NOT written by this run"
+    },
+    {
+      "item": "e_N is not renormalised after warping",
+      "detail": "\u00a74's form taken literally. Bilinear interpolation across a silhouette shortens the warped normal and so raises e_N there, conflating interpolation shortening with genuine orientation mismatch. Both distributions are measured above; the difference is confined to the top percentile.",
+      "action": "needs a Decision Log entry \u2014 NOT written by this run"
+    },
+    {
+      "item": "S7 never fires on this session",
+      "detail": "The hard zero for a just-registered entity is implemented and unit tested, but this session registers both entities at frame 0 and spawns nothing afterwards, so it has no data-backed exercise. Reported so it is not mistaken for verified-in-the-field coverage.",
+      "action": "needs a Decision Log entry \u2014 NOT written by this run"
+    }
+  ]
+}

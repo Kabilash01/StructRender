@@ -93,6 +93,12 @@ run_step "teacher targets (M3)" "$ROOT/scripts/test_teacher.sh"
 # step SKIPs without the seed session / targets).
 run_step "cnn baseline (M4)" "$ROOT/scripts/test_baseline.sh"
 
+# M6 engine-guided temporal reprojection — warp direction/convention, the
+# confidence mask's hard zeros, the temporal-error metric, and the assertions
+# that the three committed M6 artifacts still say what they are quoted as saying.
+# Pure-tensor parts run anywhere; data- and artifact-backed parts SKIP cleanly.
+run_step "temporal reprojection (M6)" "$ROOT/scripts/test_temporal.sh"
+
 echo ""
 echo "=================================================================="
 echo "SUMMARY"
