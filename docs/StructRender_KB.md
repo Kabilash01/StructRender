@@ -2742,6 +2742,8 @@ Second cleanup pass, continuing Decision 51. No training, no third attempt, no t
 
 - **The first implementation was confounded and the first numbers were wrong.** Masked *pooling* alone does not exclude background: conv features have receptive fields, so pixels around the silhouette reach the descriptor. Measured — replacing the **entire** background scored **0.979** while inverting the **entity itself** scored **0.971**, comparable magnitudes, i.e. the descriptor was reading the scene nearly as much as the entity it was supposed to describe. Fixed by zeroing the background **before** the trunk, after which the same background swap scores exactly **1.000**. Caught by a test written to be non-vacuous rather than by inspection, and the pre-fix numbers are not reported anywhere.
 
+- **⚠ The figures in this entry are the SINGLE-FRAME-PAIR measurement, superseded by Decision 54.** Each sequence was scored on exactly one pair — `last_seen_frame` against `first_seen_again_frame` — so one unlucky pose moved a whole data point out of only ten. Decision 54 re-measures over a 3-frame window each side (90 pairs per source). The ordering and the central finding are unchanged; the values below are not the current ones. Read `eval/reports/rcs.json`.
+
 - **The measured baseline.** Ten reappearance sequences — 0.5/1/2/4/8 s × `camera_away`/`entity_away`, built by M2 for exactly this. The **native engine** scores **0.973** (the ceiling that pose change alone allows; not 1.0 because the object is seen from a different angle after the gap). The **teacher targets** score **0.918** — *less* consistent than the engine, so the supervision itself injects inconsistency. All three trained models land at **0.926–0.927**, indistinguishable from one another against a per-source sd of ~0.02, and slightly **above** their own teacher.
 
 - **The finding that matters: RCS does not degrade with time outside view.** Across a 16× range of unseen durations the change from 0.5 s to 8 s is **−0.012 to −0.028** for the models and **+0.000** for the engine, against a sd of ~0.02 — inside noise, and non-monotone (2 s is the worst rung for most sources, including the engine, so it is a property of that rung's pose, not of elapsed time).
@@ -2754,6 +2756,21 @@ Second cleanup pass, continuing Decision 51. No training, no third attempt, no t
 - **A confound to carry forward.** The models score *above* their teacher, and blur is the likely reason: averaging suppresses the high-frequency variation that differs between two views. The same softness that failed M5's sharpness gate plausibly *helps* RCS. So RCS must never be read alone — it is paired with the sharpness ratio, or a blurrier model looks like a more consistent one.
 
 - **Scope.** One session, one style, one entity per sequence, n = 10, and a descriptor whose absolute scale has no meaning outside comparisons made with it. The ordering (engine > models > teacher) and the absence of a time trend are the results; the third decimal place is not.
+
+---
+
+### Decision 54: Strict Masking Reaches TensorRT; RCS Re-measured Over Frame Windows (2026-09-10)
+
+Two verifications closing gaps Decisions 52 and 53 left open. No training, no new milestone.
+
+- **The strict entity mask exports and runs under TensorRT.** Decision 52 replaced the additive `-100` penalty with masking to `-inf` and recorded the TensorRT behaviour as **unverified** — a real risk, because that module is M7's and M8's core mechanism. Verified now on both attention paths: ONNX export succeeds, shapes stay static, the engine builds and runs, parity is far inside the 1e-3 tolerance, and — the failure that actually mattered — **the outputs are finite**. The `-inf` mask, uniform-row substitution and output gate survive the export boundary without producing NaN. Evidence: `eval/reports/m7_mask_strictness_trt.json`, written by `scripts/verify_mask_strictness_trt.py`. The historical probe `m5_export_probe.json` describes the previous additive form and is **unmodified**.
+  **Five operators are new** relative to M5's declared allow-list — `Greater`, `Not`, `Or`, `ReduceSum`, `IsNaN` — from computing `row_has_legal`, the uniform-row substitution, and SDPA's own NaN handling. All are TensorRT-supported and all ran. They are deliberately **not** added to `ALLOWED_OPS`, because this module is probe-only and is not in M5's shipped graph; they must be added when it actually ships at M7. Recorded so that is a visible diff and not a surprise (§12).
+
+- **RCS now averages over a frame window, and the finding survives it.** Decision 53's measurement used a single pair per sequence — ten samples in total, where one unlucky pose moved a whole data point. `evaluate_source` now walks up to three *contiguous visible* frames outward from each boundary (stopping at the gap rather than jumping it) and averages every before×after pair: **90 pairs per source**, with a within-sequence spread recorded alongside each score.
+  Every score falls slightly, which is expected — a wider window admits more pose variation — and the **ordering is unchanged**: engine > models > teacher, with the three models still indistinguishable from one another and still slightly above their own teacher.
+
+- **The central finding is stronger, not weaker.** Under the single-pair measurement the 0.5 s → 8 s change was −0.012 to −0.028, which was inside noise. Under 90 pairs it is **zero or slightly positive for four of five sources**. There is no degradation with time outside view to be found, and the 2 s rung remains the worst for **every** source *including the native engine*, which is the control that settles it: that dip is the rung's own geometry, not elapsed time and not any model's behaviour.
+  So Decision 53's consequence for M8 stands and is now better supported: against frame-independent rungs there is **no slope for EPAM to beat**, and EPAM's demonstrable claim on this dataset is a **level** improvement toward the engine's ceiling. The current headroom and the spread it must overcome are in `eval/reports/rcs.json`; deliberately not retyped here, per Decision 42.
 
 ---
 

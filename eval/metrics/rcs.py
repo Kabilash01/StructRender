@@ -108,6 +108,10 @@ class SequenceRCS:
     px_before: int
     px_after: int
     score: float
+    n_pairs: int = 1
+    pair_sd: float | None = None
+    frames_before: list | None = None
+    frames_after: list | None = None
 
 
 def entity_mask_at(session, frame_id: int, instance_id: int) -> np.ndarray:
@@ -120,8 +124,26 @@ def reappearance_sequences(session) -> list[dict]:
     return [s for s in session.header["sequences"] if s["sequence_kind"] == "reappearance"]
 
 
+def _visible_run(session, iid: int, anchor: int, direction: int, want: int,
+                 min_entity_px: int) -> list[int]:
+    """Up to ``want`` frames walking outward from ``anchor``, keeping only frames
+    where the entity is actually visible with enough pixels.
+
+    ``direction`` is -1 to walk backwards from the last-seen frame, +1 to walk
+    forwards from the first-seen-again frame.
+    """
+    frames, fid = [], anchor
+    while len(frames) < want and 0 <= fid < session.frame_count:
+        if (session.load_structure(fid).entity_id == iid).sum() >= min_entity_px:
+            frames.append(fid)
+        else:
+            break  # contiguity matters: stop at the gap, don't jump over it
+        fid += direction
+    return frames
+
+
 def evaluate_source(session, image_for_frame, encoder: AppearanceEncoder,
-                    min_entity_px: int = 200) -> list[SequenceRCS]:
+                    min_entity_px: int = 200, window: int = 3) -> list[SequenceRCS]:
     """RCS for every reappearance sequence, for one source of images.
 
     ``image_for_frame(frame_id) -> (H,W,3) float in [0,1]`` is the only thing that
@@ -136,16 +158,27 @@ def evaluate_source(session, image_for_frame, encoder: AppearanceEncoder,
     for s in reappearance_sequences(session):
         iid = int(s["target_instance_id"])
         t0, t1 = int(s["last_seen_frame"]), int(s["first_seen_again_frame"])
-        m0, m1 = entity_mask_at(session, t0, iid), entity_mask_at(session, t1, iid)
-        if m0.sum() < min_entity_px or m1.sum() < min_entity_px:
+        # A single frame pair makes one unlucky pose move a whole data point, and
+        # with only ten sequences that is most of the signal. Average over all
+        # before x after pairs in a short contiguous window each side, which also
+        # yields a within-sequence spread (KB Decision 54).
+        before = _visible_run(session, iid, t0, -1, window, min_entity_px)
+        after = _visible_run(session, iid, t1, +1, window, min_entity_px)
+        if not before or not after:
             continue  # too few pixels to describe; recorded by omission, not imputed
-        e0 = encoder(image_for_frame(t0), m0)
-        e1 = encoder(image_for_frame(t1), m1)
+        embs_b = [encoder(image_for_frame(f), entity_mask_at(session, f, iid)) for f in before]
+        embs_a = [encoder(image_for_frame(f), entity_mask_at(session, f, iid)) for f in after]
+        pairs = [rcs(b, a) for b in embs_b for a in embs_a]
+        arr = np.asarray(pairs, dtype=np.float64)
         out.append(SequenceRCS(
             sequence_id=s["sequence_id"], mechanism=s["mechanism"],
             unseen_seconds=float(s["unseen_seconds"]), instance_id=iid,
             last_seen_frame=t0, first_seen_again_frame=t1,
-            px_before=int(m0.sum()), px_after=int(m1.sum()), score=rcs(e0, e1)))
+            px_before=int(entity_mask_at(session, before[0], iid).sum()),
+            px_after=int(entity_mask_at(session, after[0], iid).sum()),
+            score=float(arr.mean()), n_pairs=int(arr.size),
+            pair_sd=float(arr.std(ddof=1)) if arr.size > 1 else None,
+            frames_before=before, frames_after=after))
     return out
 
 

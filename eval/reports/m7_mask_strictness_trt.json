@@ -1,0 +1,120 @@
+{
+  "purpose": "TensorRT verification of the STRICT (-inf) entity mask introduced by KB Decision 52. The historical probe eval/reports/m5_export_probe.json describes the previous additive form and is not modified.",
+  "masking": "strict: illegal keys masked to -inf; fully-masked rows uniform then gated to 0.0",
+  "generated_utc": "2026-09-10T03:16:48+00:00",
+  "torch_version": "2.13.0+cu132",
+  "tensorrt_version": "11.2.1.2",
+  "opset": 17,
+  "tolerance_max_abs": 0.001,
+  "shapes": {
+    "x": [
+      1,
+      32,
+      18,
+      32
+    ],
+    "entity_tokens": [
+      1,
+      8,
+      32
+    ],
+    "entity_mask": [
+      1,
+      8,
+      18,
+      32
+    ]
+  },
+  "k_max_probe": 8,
+  "variants": {
+    "manual": {
+      "attn_impl": "manual",
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Identity": 2,
+        "Shape": 2,
+        "Constant": 18,
+        "Slice": 2,
+        "Concat": 2,
+        "Reshape": 7,
+        "Transpose": 7,
+        "LayerNormalization": 2,
+        "MatMul": 6,
+        "Add": 5,
+        "Unsqueeze": 1,
+        "Cast": 3,
+        "ReduceSum": 1,
+        "Greater": 1,
+        "Not": 2,
+        "Or": 1,
+        "Mul": 2,
+        "Where": 1,
+        "Softmax": 1,
+        "ReduceMax": 1
+      },
+      "shapes_are_static": true,
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 135,
+        "run_ok": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.026203199941664933
+      }
+    },
+    "sdpa": {
+      "attn_impl": "sdpa",
+      "torch_output_finite": true,
+      "onnx_export_ok": true,
+      "op_types": {
+        "Identity": 2,
+        "Shape": 3,
+        "Constant": 22,
+        "Slice": 3,
+        "Concat": 2,
+        "Reshape": 7,
+        "Transpose": 7,
+        "LayerNormalization": 2,
+        "MatMul": 6,
+        "Add": 6,
+        "Unsqueeze": 1,
+        "Cast": 4,
+        "ReduceSum": 1,
+        "Greater": 1,
+        "Not": 1,
+        "Or": 1,
+        "Sqrt": 3,
+        "Div": 1,
+        "Mul": 3,
+        "Where": 2,
+        "Softmax": 1,
+        "IsNaN": 1,
+        "ReduceMax": 1
+      },
+      "shapes_are_static": true,
+      "trt_fp32": {
+        "build_ok": true,
+        "errors": [],
+        "n_layers": 177,
+        "run_ok": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "within_tolerance": true,
+        "output_finite": true,
+        "latency_ms_mean": 0.027102400083094835
+      }
+    }
+  },
+  "verdict": "PASS",
+  "new_operators_vs_m5_allow_list": [
+    "Greater",
+    "IsNaN",
+    "Not",
+    "Or",
+    "ReduceSum"
+  ],
+  "new_operators_note": "Introduced by strict masking (KB Decision 52): Greater/Not/Or/ReduceSum come from computing row_has_legal and the uniform-row substitution; Where/Cast from masked_fill. All built and ran under TensorRT here. They are NOT added to scripts/export_benchmark_m5.py::ALLOWED_OPS, because this module is probe-only and is not in M5's shipped graph. They MUST be added deliberately when entity-masked cross-attention actually ships at M7 - recorded here so that is a visible diff rather than a surprise (KB 12).",
+  "historical_probe_note": "eval/reports/m5_export_probe.json is unmodified and describes the PREVIOUS additive -100 form. The additive variant emitted Sub where the strict form emits the boolean ops above."
+}
