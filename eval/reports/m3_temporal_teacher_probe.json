@@ -1,0 +1,30 @@
+{
+  "purpose": "Probe: does cross-frame conditioning reduce the teacher's temporal instability, which KB Decision 57 identified as M6's root cause?",
+  "not_a_regeneration": "This generates one short span, not the 990-frame target set. It answers whether a regeneration would pay before it is spent.",
+  "generated_utc": "2026-09-12T05:51:30+00:00",
+  "session_id": "ds_1788687350_337657ea",
+  "style_id": "oil_impasto",
+  "span": [
+    439,
+    468
+  ],
+  "n_frames": 30,
+  "n_pairs": 11,
+  "metric": "mask-weighted mean |I_t - W(I_{t-1}, V_t)| \u2014 the M6 gate's quantity",
+  "change_under_test": "init_t = M_t * W(styled_{t-1}, V_t) + (1 - M_t) * native_t, instead of init_t = native_t. Seed, prompt, strength, guidance and controlnet scale are unchanged.",
+  "temporal_error": {
+    "native_engine": 0.00016260223955296996,
+    "teacher_independent_frames": 0.005210807123644786,
+    "teacher_cross_frame": 0.06154128011654724
+  },
+  "ratios": {
+    "independent_vs_engine": 32.046342891527594,
+    "cross_frame_vs_engine": 378.47744462645795,
+    "improvement_pct": 1081.0316263155248
+  },
+  "caveats": "Cross-frame conditioning makes generation SEQUENTIAL (no parallelism) and can accumulate drift over a long span; this probe covers a short one. It also changes what the alignment gates see, so KB Decision 32's four gates would have to be re-run on any regenerated set.",
+  "verdict": "REFUTED \u2014 cross-frame conditioning as tested makes the teacher 11x LESS temporally stable",
+  "mechanism_hypothesis": "Consistent with compounding re-stylisation, not with flicker. At strength 0.50 the pipeline re-denoises half the trajectory; feeding it an ALREADY-STYLED frame applies the style a second time, then a third, and so on down the chain. Each frame is a bigger departure from the last, so the frame-to-frame difference grows rather than shrinks. The engine's own motion is not the problem \u2014 native_engine is unchanged at ~0.00016 across both runs. NOT CONFIRMED: the per-frame images were not retained, so this is the reading most consistent with 378x, not a measurement.",
+  "what_this_rules_out": "Naive appearance propagation through img2img. It does NOT rule out cross-frame conditioning in general \u2014 latent-space blending, a lower strength on chained frames, or true cross-frame attention are untested and would each need their own probe. No further variant is proposed here.",
+  "cost_avoided": "Regenerating 990 targets, re-running KB Decision 32's four alignment gates, and retraining Models A, C and D \u2014 roughly a day of compute \u2014 on a change that would have made the root cause worse."
+}

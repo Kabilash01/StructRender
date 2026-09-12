@@ -2872,6 +2872,34 @@ Model D shipped with its export block marked `NOT YET EXERCISED`. §10 does not 
 
 ---
 
+### Decision 60: Cross-Frame Teacher Conditioning Is REFUTED — 11x Worse, Not Better (2026-09-12)
+
+Decision 57 identified the teacher's temporal instability (~32-35x the engine's) as M6's root cause: a temporal rung trained on per-frame-independent supervision is taught to reproduce flicker, and its temporal loss is outvoted by reconstruction. The obvious remedy — condition each frame on the previous one — was **probed before being adopted, and it failed badly.** Evidence: `eval/reports/m3_temporal_teacher_probe.json`, written by `scripts/probe_m3_temporal_teacher.py`.
+
+- **What was tested.** One variable. `init_t = M_t · W(styled_{t-1}, V_t) + (1 - M_t) · native_t` — seed frame *t*'s img2img from the previous **styled** frame warped forward by the engine's own motion, falling back to the native frame where M6's confidence mask says the warp is untrustworthy. Seed, prompt, strength, guidance and ControlNet scale unchanged. 30 frames of a moving span in the guard band.
+
+- **The result, on the M6 gate's own metric:**
+
+  | source | temporal error | vs engine |
+  |---|---|---|
+  | native engine | 0.000163 | — |
+  | teacher, independent frames (current) | 0.005211 | 32x |
+  | teacher, **cross-frame** | **0.061541** | **378x** |
+
+  **+1081 %.** The remedy made the root cause an order of magnitude worse.
+
+- **⚠ The explanation is a reading, not a measurement — and must not harden into one.** The number most consistent with 378x is **compounding re-stylisation**: at `strength 0.50` the pipeline re-denoises half the trajectory, so feeding it an already-styled frame applies the style a second time, then a third, down the chain; each frame departs further from the last and the frame-to-frame difference *grows* rather than shrinks. Supporting this reading: `native_engine` is unchanged at ~0.00016 across both runs, so the engine's motion is not implicated. **Not confirmed:** the per-frame images were not retained, so no drift curve was measured. If this entry is ever cited as "the reason we did not do cross-frame conditioning", the citation must carry this caveat with it. The *refutation* is measured; the *mechanism* is inferred.
+
+- **What this rules out, and what it does not.** Ruled out: naive appearance propagation through img2img at this strength. **Not** ruled out: cross-frame conditioning in general — latent-space blending, a reduced strength on chained frames, and true cross-frame attention are all untested and would each need their own probe. No further variant is proposed here.
+
+- **A second, more important finding about the current teacher.** While building the probe: the pipeline **already re-seeds `torch.Generator` with the same value on every frame**, so the initialisation noise is *identical* across frames and the flicker is not a noise artefact. It is inherent to per-frame img2img — small drifts in the conditioning push the denoising trajectory to a different mode. Any future attempt at teacher temporal stability must start from that fact; "fix the seeding" was already done and is not the lever.
+
+- **What the probe bought.** ~20 minutes of GPU, against a regeneration of 990 targets, a re-run of Decision 32's four alignment gates, and a retrain of Models A, C and D — roughly a day — on a change that would have made supervision twelve times less stable. This is the third time in this project that probing before committing has changed the decision (Decisions 45, 55, 60).
+
+- **Chosen path instead: more data, current teacher unchanged.** Three results now point at the 644-frame training set rather than at any mechanism (Decision 49's M5 result, Decision 53's RCS finding, Decision 57's M6 result). 2-3 further sessions are being recorded, targets regenerated with the **current, independent-frame** teacher config, and Models A, C and D retrained. **M5's and M6's failures are to be re-evaluated against the larger set before either is called resolved** — more data being *sufficient* is a hypothesis to test, not an assumption to act on.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
