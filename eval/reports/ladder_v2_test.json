@@ -1,0 +1,247 @@
+{
+  "purpose": "Ladder v2 scored on the sealed test split \u2014 the project's first independent generalisation estimate (KB Decision 64).",
+  "generated_utc": "2026-09-14T04:15:05+00:00",
+  "torch_version": "2.13.0+cu132",
+  "style_id": "oil_impasto",
+  "split": {
+    "policy": "session_level_holdout",
+    "train_sessions": [
+      "ds_1788687350_337657ea",
+      "ds_1789192790_9264b885",
+      "ds_1789193096_37004478",
+      "ds_1789193412_4d71d367",
+      "ds_1789193842_2a519089",
+      "ds_1789194434_0ce650d3",
+      "ds_1789194910_9f04884a",
+      "ds_1789195333_37d59304",
+      "ds_1789196087_ea939d9e",
+      "ds_1789205895_4fefdf2d",
+      "ds_1789206436_e5254e89"
+    ],
+    "val_sessions": [
+      "ds_1789208992_ad005e43",
+      "ds_1789211940_838e841b"
+    ],
+    "test_sessions": [
+      "ds_1789212559_8faa6c75",
+      "ds_1789212883_c158f35c"
+    ],
+    "n_train_frames": 10890,
+    "n_val_frames": 1980,
+    "n_test_frames": 1980,
+    "test_note": "The test split is NEVER used for training or checkpoint selection. It is scored once, at the end, and is the project's first independent generalisation estimate (KB Decision 64)."
+  },
+  "gates": {
+    "min_sharpness_ratio": 0.9,
+    "min_hist_travel_fraction_of_target": 0.8,
+    "note": "Imported unchanged from M4/M5 (Decisions 35, 41). Not re-tuned."
+  },
+  "models": {
+    "a": {
+      "ladder_model": "A",
+      "arch": "unet_baseline",
+      "checkpoint": "checkpoints/ladder_v2_a/best.pt",
+      "parameters": 7853763,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 1980,
+        "l1": 0.00939265638589859,
+        "psnr_db": 33.202457427978516,
+        "ssim": 0.972032904624939,
+        "lpips_alex": 0.04748373106122017
+      },
+      "test_set": {
+        "n_frames": 1980,
+        "l1": 0.009035788476467133,
+        "psnr_db": 34.17570877075195,
+        "ssim": 0.974922776222229,
+        "lpips_alex": 0.042108748108148575
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 34.175710678100586,
+        "psnr_native_vs_target_db": 28.732632637023926,
+        "ssim_pred_vs_target": 0.9749271273612976,
+        "ssim_native_vs_target": 0.9576478004455566,
+        "hist_pred_vs_native": 0.6337396201416655,
+        "hist_target_vs_native": 0.5853134663328892,
+        "grad_energy_pred": 0.02343583106994629,
+        "grad_energy_target": 0.025795314460992813,
+        "grad_energy_native": 0.023236365988850594,
+        "sharpness_ratio": 0.9063904937502257,
+        "sharpness_ratio_native": 0.9024372686906197,
+        "lpips_pred_vs_target": 0.04210874252021313,
+        "lpips_native_vs_target": 0.10192202404141426
+      },
+      "gates": {
+        "sharpness_ratio": 0.9063904937502257,
+        "sharpness_pass": true,
+        "sharpness_native_anchor": 0.9024372686906197,
+        "hist_travel_ratio": 1.0827354171640307,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 5.44307804107666,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.00939265638589859,
+        "test_l1": 0.009035788476467133,
+        "gap_pct": -3.7994353755688484,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    },
+    "b": {
+      "ladder_model": "B",
+      "arch": "temporal_unet",
+      "checkpoint": "checkpoints/ladder_v2_b/best.pt",
+      "parameters": 8378563,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 1980,
+        "l1": 0.009537631645798683,
+        "psnr_db": 33.151527404785156,
+        "ssim": 0.9717087149620056,
+        "lpips_alex": 0.04779753088951111
+      },
+      "test_set": {
+        "n_frames": 1980,
+        "l1": 0.008935341611504555,
+        "psnr_db": 34.420284271240234,
+        "ssim": 0.9751014709472656,
+        "lpips_alex": 0.041415028274059296
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 34.420284271240234,
+        "psnr_native_vs_target_db": 28.732632637023926,
+        "ssim_pred_vs_target": 0.9751058220863342,
+        "ssim_native_vs_target": 0.9576478004455566,
+        "hist_pred_vs_native": 0.6594157380554679,
+        "hist_target_vs_native": 0.5853134663328892,
+        "grad_energy_pred": 0.023640673607587814,
+        "grad_energy_target": 0.025795314460992813,
+        "grad_energy_native": 0.023236365988850594,
+        "sharpness_ratio": 0.9126437789423374,
+        "sharpness_ratio_native": 0.9024372686906197,
+        "lpips_pred_vs_target": 0.041415026411414146,
+        "lpips_native_vs_target": 0.10192202404141426
+      },
+      "temporal_caveat": "TEMPORAL RUNG SCORED COLD-START. The frame-wise eval supplies no previous-frame history, so this model ran reduced to its own baseline (Model A for B, Model C for D). These numbers are NOT the temporal model's; a history-aware evaluation is required before any temporal claim is made from them.",
+      "gates": {
+        "sharpness_ratio": 0.9126437789423374,
+        "sharpness_pass": true,
+        "sharpness_native_anchor": 0.9024372686906197,
+        "hist_travel_ratio": 1.126602711170896,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 5.687651634216309,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.009537631645798683,
+        "test_l1": 0.008935341611504555,
+        "gap_pct": -6.314880430084932,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    },
+    "c": {
+      "ladder_model": "C",
+      "arch": "structformer",
+      "checkpoint": "checkpoints/ladder_v2_c/best.pt",
+      "parameters": 7775467,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 1980,
+        "l1": 0.010008949786424637,
+        "psnr_db": 32.74336624145508,
+        "ssim": 0.9697139263153076,
+        "lpips_alex": 0.0485563799738884
+      },
+      "test_set": {
+        "n_frames": 1980,
+        "l1": 0.009181496687233448,
+        "psnr_db": 33.80890655517578,
+        "ssim": 0.9723796844482422,
+        "lpips_alex": 0.042427897453308105
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 33.808902740478516,
+        "psnr_native_vs_target_db": 28.732632637023926,
+        "ssim_pred_vs_target": 0.972384124994278,
+        "ssim_native_vs_target": 0.9576478004455566,
+        "hist_pred_vs_native": 0.6159999152403666,
+        "hist_target_vs_native": 0.5853134663328892,
+        "grad_energy_pred": 0.02313620038330555,
+        "grad_energy_target": 0.025795314460992813,
+        "grad_energy_native": 0.023236365988850594,
+        "sharpness_ratio": 0.8942839333074601,
+        "sharpness_ratio_native": 0.9024372686906197,
+        "lpips_pred_vs_target": 0.042427901178598404,
+        "lpips_native_vs_target": 0.10192202404141426
+      },
+      "gates": {
+        "sharpness_ratio": 0.8942839333074601,
+        "sharpness_pass": false,
+        "sharpness_native_anchor": 0.9024372686906197,
+        "hist_travel_ratio": 1.0524273755390157,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 5.07627010345459,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.010008949786424637,
+        "test_l1": 0.009181496687233448,
+        "gap_pct": -8.267132085261153,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    },
+    "d": {
+      "ladder_model": "D",
+      "arch": "temporal_structformer",
+      "checkpoint": "checkpoints/ladder_v2_d/best.pt",
+      "parameters": 8236747,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 1980,
+        "l1": 0.010255442000925541,
+        "psnr_db": 32.45920944213867,
+        "ssim": 0.9687685966491699,
+        "lpips_alex": 0.051679711788892746
+      },
+      "test_set": {
+        "n_frames": 1980,
+        "l1": 0.009489906951785088,
+        "psnr_db": 33.340354919433594,
+        "ssim": 0.9713054895401001,
+        "lpips_alex": 0.04728839918971062
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 33.34035873413086,
+        "psnr_native_vs_target_db": 28.732632637023926,
+        "ssim_pred_vs_target": 0.9713098704814911,
+        "ssim_native_vs_target": 0.9576478004455566,
+        "hist_pred_vs_native": 0.6178412589070683,
+        "hist_target_vs_native": 0.5853134663328892,
+        "grad_energy_pred": 0.022905522026121616,
+        "grad_energy_target": 0.025795314460992813,
+        "grad_energy_native": 0.023236365988850594,
+        "sharpness_ratio": 0.8853159712199142,
+        "sharpness_ratio_native": 0.9024372686906197,
+        "lpips_pred_vs_target": 0.04728839546442032,
+        "lpips_native_vs_target": 0.10192202404141426
+      },
+      "temporal_caveat": "TEMPORAL RUNG SCORED COLD-START. The frame-wise eval supplies no previous-frame history, so this model ran reduced to its own baseline (Model A for B, Model C for D). These numbers are NOT the temporal model's; a history-aware evaluation is required before any temporal claim is made from them.",
+      "gates": {
+        "sharpness_ratio": 0.8853159712199142,
+        "sharpness_pass": false,
+        "sharpness_native_anchor": 0.9024372686906197,
+        "hist_travel_ratio": 1.0555732858462537,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 4.607726097106934,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.010255442000925541,
+        "test_l1": 0.009489906951785088,
+        "gap_pct": -7.464671430752227,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    }
+  }
+}

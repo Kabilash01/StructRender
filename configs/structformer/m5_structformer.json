@@ -56,10 +56,11 @@
   },
   "data": {
     "style_id": "oil_impasto",
-    "session_dir": null,
+    "session_dir": "data_pipeline/recorder/ds_1788687350_337657ea",
     "target_root": null,
     "require_validated": true,
-    "require_aligned": true
+    "require_aligned": true,
+    "session_dir_note": "PINNED (KB Decision 65). `discover_session()` returns the NEWEST session by mtime, so recording the 15-session set silently repointed every config that relied on it \u2014 historical checkpoints were suddenly being scored against data they had never seen, and two calibrated tests began failing for that reason alone. Historical configs name their session explicitly so their numbers stay reproducible. Ladder v2 uses `data.split_file` instead."
   },
   "split": {
     "policy": "contiguous_sequence_holdout",

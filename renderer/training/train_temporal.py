@@ -350,9 +350,21 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
     np.random.seed(t["seed"])
     epochs = int(epochs if epochs is not None else t["epochs"])
 
-    session, target_dir, split = resolve_data(cfg)
-    train_ds = TemporalTripleDataset(session, target_dir, split.train_ids)
-    val_ds = TemporalFrameDataset(session, target_dir, split.val_ids)
+    # Session-level split (KB Decision 64) when the config declares one; the
+    # single-session path is untouched so every historical config still resolves
+    # exactly as it did.
+    if cfg["data"].get("split_file"):
+        from renderer.training.multi_session import (build_temporal_splits,
+                                                     load_session_split, split_report)
+        _sp = load_session_split(cfg["data"]["split_file"])
+        train_ds, val_ds = build_temporal_splits(cfg["data"]["style_id"], _sp)
+        split_info = split_report(_sp)
+        session = None
+    else:
+        session, target_dir, split = resolve_data(cfg)
+        train_ds = TemporalTripleDataset(session, target_dir, split.train_ids)
+        val_ds = TemporalFrameDataset(session, target_dir, split.val_ids)
+        split_info = split.as_report()
     loader = DataLoader(
         train_ds,
         batch_size=int(t["batch_size"]),
@@ -439,7 +451,7 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
                         "model_kwargs": model_kwargs(cfg),
                         "epoch": epoch,
                         "config_version": cfg["config_version"],
-                        "split": split.as_report(),
+                        "split": split_info,
                         "val": val,
                     },
                     ckpt_dir / "best.pt",
@@ -457,10 +469,10 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
         "parameters": parameter_count(model),
         "arch": ARCH,
         "ladder_model": cfg.get("ladder_model"),
-        "split": split.as_report(),
+        "split": split_info,
         "n_train_triples": len(train_ds),
         "n_val_frames": len(val_ds),
-        "session_id": session.session_id,
+        "session_id": (session.session_id if session is not None else f"session_split:{cfg['data']['split_file']}"),
         "style_id": cfg["data"]["style_id"],
         "objective": criterion.describe(),
         "init": init_note,

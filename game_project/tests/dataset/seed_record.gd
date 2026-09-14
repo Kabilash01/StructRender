@@ -35,7 +35,38 @@ func _initialize() -> void:
 		quit(1)
 		return
 
+	# ---- session variant (KB Decision 61) --------------------------------------
+	# Variant 0 reproduces the committed session EXACTLY, so ds_1788687350_337657ea
+	# stays regenerable. Variants > 0 perturb the CAMERA PATH and ENTITY
+	# TRAJECTORIES only. Prop layout is deliberately NOT jittered: Decision 38's
+	# three placement constraints (cover both camera poses, never fully occlude the
+	# camera->target sightline, sit 3-40 m) are hand-verified for the current
+	# layout, and the occlusion guard `_check_one_hidden_run` runs in the CI
+	# fixture, not here. So this buys VIEWPOINT and TRAJECTORY diversity, not new
+	# scene content, and the KB says so rather than implying more.
+	var variant := int(OS.get_environment("STRUCTRENDER_SESSION_VARIANT"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260912 + variant * 1000
+	var yaw_lo := -18.0
+	var yaw_hi := 18.0
+	var drift_amp := 1.5
+	var drift_phase := 0.0
 	var cam_home: Transform3D = sc.cam.global_transform
+	if variant > 0:
+		# Yaw the whole camera rig, so a different part of the enriched set is in
+		# frame. Kept well inside the 165-deg aimed-away pose the rungs rely on.
+		var rig_yaw := rng.randf_range(-30.0, 30.0)
+		var t0v := cam_home
+		t0v.basis = Basis(Vector3.UP, deg_to_rad(rig_yaw)) * cam_home.basis
+		t0v.origin += Vector3(rng.randf_range(-1.2, 1.2), rng.randf_range(-0.3, 0.6), rng.randf_range(-1.0, 1.0))
+		sc.cam.global_transform = t0v
+		cam_home = t0v
+		yaw_lo = rng.randf_range(-26.0, -10.0)
+		yaw_hi = rng.randf_range(10.0, 26.0)
+		drift_amp = rng.randf_range(0.9, 2.2)
+		drift_phase = rng.randf_range(0.0, TAU)
+		print("SEED variant    : ", variant, "  rig_yaw=", rig_yaw,
+			"  sweep=[", yaw_lo, ",", yaw_hi, "]  drift_amp=", drift_amp)
 	var target_home: Vector3 = sc.e0.global_position
 	var S := {
 		"rec": rec, "rec_adapter": adapter, "tick": 0,
@@ -53,11 +84,11 @@ func _initialize() -> void:
 	for i in WINDOW:
 		S.tick += 1
 		var u := float(i) / float(WINDOW - 1)
-		var yaw := lerpf(-18.0, 18.0, u)
+		var yaw := lerpf(yaw_lo, yaw_hi, u)
 		var t := cam_home
 		t.basis = Basis(Vector3.UP, deg_to_rad(yaw)) * cam_home.basis
 		sc.cam.global_transform = t
-		sc.e0.global_position = target_home + Vector3(sin(u * TAU) * 1.5, 0.0, 0.0)
+		sc.e0.global_position = target_home + Vector3(sin(u * TAU + drift_phase) * drift_amp, 0.0, 0.0)
 		await rec.record_frame(S.tick)
 	rec.add_temporal_sequence("temporal_0", t0, int(rec.frame_count()) - 1)
 

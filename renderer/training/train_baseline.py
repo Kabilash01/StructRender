@@ -478,7 +478,13 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
         # data and objective it came from cannot be told apart from a stale one.
         # An overfit artifact from a retired scene survived undetected precisely
         # because these four fields were absent.
-        "session_id": session.session_id,
+        # Multi-session runs have no single session_id; name the split instead so
+        # the report still self-identifies its data (KB Decision 42/64).
+        "session_id": (session.session_id if session is not None
+                       else f"session_split:{cfg['data']['split_file']}"),
+        "n_sessions": (1 if session is not None
+                       else len(split_info["train_sessions"]) + len(split_info["val_sessions"])
+                       + len(split_info["test_sessions"])),
         "style_id": cfg["data"]["style_id"],
         "arch": cfg["model"].get("arch", "unet_baseline"),
         "objective": criterion.describe(),
@@ -516,6 +522,12 @@ def run_overfit(cfg: dict, device: torch.device, log_every: int = 200) -> dict:
 #: ``arch`` -> (class, constructor keys read from ``cfg["model"]``). Adding a rung
 #: means adding a row here, never a second training loop (KB Decision 35: the
 #: ladder must measure the architecture, so split/selection/objective are shared).
+def _temporal_unet_cls(**kwargs):
+    """Model B (KB Decision 63). Late import for the same reason as Model D's."""
+    from renderer.temporal.temporal_unet import TemporalUNet
+    return TemporalUNet(**kwargs)
+
+
 def _temporal_structformer_cls(**kwargs):
     """Late import: `renderer.temporal.temporal_model` is not needed to train or
     load Models A and C, and importing it eagerly would pull the warp and mask
@@ -534,6 +546,11 @@ ARCHITECTURES: dict[str, tuple[type, tuple[str, ...]]] = {
     # Model D (M6). Registered here so `load_checkpoint` can read a temporal
     # checkpoint — the evaluator could not score Model D at all otherwise. The
     # import is local to avoid a cycle: `train_temporal` imports this module.
+    # Model B — the CNN temporal rung, the control M6 lacked (KB Decision 63).
+    "temporal_unet": (
+        _temporal_unet_cls,
+        ("in_channels", "out_channels", "base_channels", "image_size"),
+    ),
     "temporal_structformer": (
         _temporal_structformer_cls,
         ("in_channels", "out_channels", "image_size", "embed_dim", "depths",
@@ -573,9 +590,21 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
     np.random.seed(t["seed"])
     epochs = int(epochs if epochs is not None else t["epochs"])
 
-    session, target_dir, split = resolve_data(cfg)
-    train_ds = StyledFrameDataset(session, target_dir, split.train_ids)
-    val_ds = StyledFrameDataset(session, target_dir, split.val_ids)
+    # Two data paths. A config carrying `data.split_file` uses the SESSION-level
+    # split across 15 recordings (KB Decision 64); anything else keeps the
+    # single-session contiguous-sequence split, so every historical config still
+    # resolves exactly as it did.
+    if cfg["data"].get("split_file"):
+        from renderer.training.multi_session import build_splits, load_session_split, split_report
+        _sp = load_session_split(cfg["data"]["split_file"])
+        train_ds, val_ds, _test_ds = build_splits(cfg["data"]["style_id"], _sp)
+        split_info = split_report(_sp)
+        session = None
+    else:
+        session, target_dir, split = resolve_data(cfg)
+        train_ds = StyledFrameDataset(session, target_dir, split.train_ids)
+        val_ds = StyledFrameDataset(session, target_dir, split.val_ids)
+        split_info = split.as_report()
     loader = DataLoader(
         train_ds,
         batch_size=int(t["batch_size"]),
@@ -635,6 +664,13 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
 
     lp = LpipsMetric(device=device) if lpips_available() else None
     history, best = [], {"val_l1": float("inf"), "epoch": -1}
+    stale_evals = 0
+    stopped_early = None
+    # Hoisted out of the epoch loop: these are read after every epoch, including
+    # epochs that run no evaluation.
+    _es = t.get("early_stopping") or {}
+    _patience = int(_es.get("patience_evals", 0))
+    _min_rel = float(_es.get("min_rel_delta", 0.0))
     started = time.time()
     for epoch in range(epochs):
         model.train()
@@ -680,6 +716,18 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         if (epoch + 1) % int(t["eval_every_epochs"]) == 0 or epoch == epochs - 1:
             val = evaluate(model, val_ds, device, lpips_metric=lp)
             entry.update({f"val_{k}": v for k, v in val.items()})
+            # Early stopping (KB Decision 62). Patience is counted in EVALUATIONS,
+            # not epochs, so it means the same thing at any `eval_every_epochs`.
+            # `min_rel_delta` exists because val_l1 wobbles at the 1e-5 level
+            # between evaluations; without it "improvement" is noise and the run
+            # never stops. It does NOT change the selection rule: `best.pt` is
+            # still the lowest val_l1 ever seen, so stopping early can only cost
+            # time, never the chosen checkpoint.
+            _improved = val["l1"] < best["val_l1"] * (1.0 - _min_rel)
+            if _improved:
+                stale_evals = 0
+            else:
+                stale_evals += 1
             if val["l1"] < best["val_l1"]:
                 best = {"val_l1": val["l1"], "epoch": epoch, **{f"val_{k}": v for k, v in val.items()}}
                 torch.save(
@@ -689,7 +737,7 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
                         "model_kwargs": _model_kwargs(cfg),
                         "epoch": epoch,
                         "config_version": cfg["config_version"],
-                        "split": split.as_report(),
+                        "split": split_info,
                         "val": val,
                     },
                     ckpt_dir / "best.pt",
@@ -697,15 +745,37 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         history.append(entry)
         if not quiet:
             print(json.dumps(entry), flush=True)
+        if _patience and stale_evals >= _patience:
+            stopped_early = {
+                "stopped_at_epoch": epoch,
+                "best_epoch": best["epoch"],
+                "patience_evals": _patience,
+                "min_rel_delta": _min_rel,
+                "reason": (f"val_l1 did not improve by >{_min_rel:.2%} for {_patience} consecutive "
+                           f"evaluations; best was epoch {best['epoch']}"),
+            }
+            if not quiet:
+                print(json.dumps({"early_stop": stopped_early}), flush=True)
+            break
 
     return {
+        "epochs_configured": epochs,
+        "epochs_run": len(history),
+        "early_stopping": t.get("early_stopping") or {"patience_evals": 0, "note": "disabled"},
+        "stopped_early": stopped_early,
         "epochs": epochs,
         "steps_per_epoch": len(loader),
         "wall_seconds": time.time() - started,
         "parameters": parameter_count(model),
         "arch": cfg["model"].get("arch", "unet_baseline"),
-        "split": split.as_report(),
-        "session_id": session.session_id,
+        "split": split_info,
+        # Multi-session runs have no single session_id; name the split instead so
+        # the report still self-identifies its data (KB Decision 42/64).
+        "session_id": (session.session_id if session is not None
+                       else f"session_split:{cfg['data']['split_file']}"),
+        "n_sessions": (1 if session is not None
+                       else len(split_info["train_sessions"]) + len(split_info["val_sessions"])
+                       + len(split_info["test_sessions"])),
         "style_id": cfg["data"]["style_id"],
         # KB Decision 42: every committed report names the data AND the objective
         # it was produced under. Without this a metrics file from an L1-only run
@@ -781,7 +851,13 @@ def main() -> int:
         lp = LpipsMetric(device=device) if lpips_available() else None
         qual_dir = report_path(cfg, "qualitative_dir")
         report = {
-            "session_id": session.session_id,
+            # Multi-session runs have no single session_id; name the split instead so
+        # the report still self-identifies its data (KB Decision 42/64).
+        "session_id": (session.session_id if session is not None
+                       else f"session_split:{cfg['data']['split_file']}"),
+        "n_sessions": (1 if session is not None
+                       else len(split_info["train_sessions"]) + len(split_info["val_sessions"])
+                       + len(split_info["test_sessions"])),
             "style_id": cfg["data"]["style_id"],
             "checkpoint": str(ckpt),
             "arch": cfg["model"].get("arch", "unet_baseline"),

@@ -2900,6 +2900,62 @@ Decision 57 identified the teacher's temporal instability (~32-35x the engine's)
 
 ---
 
+### Decision 61: Fifteen Sessions — Viewpoint and Trajectory Diversity, Not New Scene Content (2026-09-13)
+
+The 990-frame session every rung through M6 was trained on was recorded by a fully deterministic script: fixed camera sweep (-18..18 deg), fixed drift (`sin(u*TAU)*1.5`), fixed prop layout. Re-running it produces the same session, so "more data" required adding controlled variation first.
+
+- **`STRUCTRENDER_SESSION_VARIANT`**, read by `seed_record.gd`. **Variant 0 reproduces the committed session exactly**, so `ds_1788687350_337657ea` stays regenerable; variants > 0 perturb the camera rig yaw, the sweep range, and the entity drift amplitude and phase from a variant-seeded RNG.
+- **Prop layout is deliberately NOT jittered.** Decision 38's three placement constraints (cover both camera poses, never fully occlude the camera->target sightline across the drift envelope, sit 3-40 m) are hand-verified for the current arrangement, and `_check_one_hidden_run` runs in the CI fixture rather than the seed recorder. **So this buys viewpoint and trajectory diversity, not new scene content** — stated plainly rather than implied otherwise.
+- **15 sessions, 14,850 frames, 15/15 VALIDATED with zero warnings**, 15/15 ALIGNED with zero failures. Decision 34's frame-diversity check is clean on every one, so the perturbation produces genuinely distinct content rather than near-duplicates.
+- **Five sessions failed on the first attempt** at the recorder's 1800 s timeout, during the final 8-second rung. Not thermal (GPU 60 C, no throttling) and not progressive — the *last* variant completed normally afterwards. The cause was IO contention: 4 GB of session writes had filled the page cache. Re-recorded with a 3x timeout and a `sync` plus settle between runs; all five then passed.
+- **The variant sessions score BETTER on style signal** than the original — `stylisation_hist` median 0.618 against the original set's 0.287 minimum. The camera-rig yaw puts more geometry in frame, which is what Decision 37 predicted would raise style strength. The concern that a variant might yaw toward emptier geometry and weaken gate 2 did not materialise.
+
+---
+
+### Decision 62: Early Stopping on Every Rung (2026-09-13)
+
+- **Identical rule for all four rungs**, so each trains to its own convergence rather than to an arbitrary shared epoch count: patience **6 evaluations**, minimum relative improvement **0.1 %**.
+- **Patience counts EVALUATIONS, not epochs**, so it means the same thing at any `eval_every_epochs`. `min_rel_delta` exists because `val_l1` wobbles at the 1e-5 level between evaluations; without it noise reads as improvement and the run never stops.
+- **It cannot change which checkpoint is selected.** `best.pt` is still the lowest `val_l1` ever seen, so stopping early can only cost time. Verified by simulation before use.
+- **It does introduce different training budgets between rungs** — A stopped at 41, B at 45, C at 41, D ran to 59 — and that is visible in every report (`epochs_run`, `stopped_early`, `best_epoch`) rather than hidden.
+
+---
+
+### Decision 63: Model B — the CNN Temporal Rung M6 Was Missing (2026-09-13)
+
+M6 concluded "temporal reprojection does not help" from Model D versus Model C alone. That cannot separate *"temporal reprojection does not help here"* from *"temporal reprojection does not help a transformer here"*, because §10 Milestone 9's **Model B** — the CNN temporal rung — had never been built.
+
+- **The temporal mechanism is character-for-character Model D's**: the same mask-gated residual, the same zero-initialised 1x1 fusion convolution, the same warp, the same confidence mask, the same area pooling of the mask to feature resolution. If it differed, A->B and C->D would not be the same delta and the comparison would be worthless.
+- **Fusion point is the U-Net's bottleneck**, its encoder/decoder junction — the structural analogue of where Model D fuses.
+- **Capacity deltas match**: A->B is +6.7 % (8,378,563 vs 7,853,763), C->D is +5.9 %. Both are only the fusion convolution.
+- **Untrained Model B is bit-identical to Model A**, cold start and with history, exactly as untrained D equals C. Asserted.
+
+---
+
+### Decision 64: Session-Level Split — the Project's First Independent Test Set (2026-09-13)
+
+Every number in this project before now was a **best-of-N-epochs minimum on the frames used to pick the checkpoint**. With one session that was unfixable: Decision 35 held out contiguous *sequences* within it and needed a 60-frame guard band to keep train and val non-adjacent. Fifteen independent recordings change the instrument.
+
+- **11 train / 2 val / 2 test sessions** — 10,890 / 1,980 / 1,980 frames. Train is **17x** the 644 frames every earlier rung used. Frozen in `configs/data/session_split_v1.json`.
+- **Test sessions were chosen by POSITION in the sorted session-id list, before any metric was computed**, so the held-out set cannot have been picked to flatter a result. `build_splits` asserts the three sets are disjoint and refuses any session lacking a VALIDATED or ALIGNED marker.
+- **The guard band is gone and is not needed**: sessions are independent recordings, not adjacent frames of one continuous drift. Train, val and test share no frames, no camera path and no entity trajectory.
+- **Deviation from Decision 35, recorded as one.** Earlier ladder numbers are **historical**: they were measured on a different split and are not comparable to these. Every threshold is re-derived from the new data rather than carried over.
+- **Triples never span a session boundary** — Model D's `(t-2, t-1, t)` are built per session and only then concatenated, because frame `t-1` of one recording has no motion relationship to frame `t` of another.
+
+---
+
+### Decision 65: Adding Sessions Silently Repointed Every Historical Test (2026-09-14)
+
+Recording the 15-session set broke two calibrated tests, and the cause was not the models or the data — it was `discover_session()`, which returns the **newest** `ds_*` directory by mtime. Every config and fixture that relied on it was suddenly resolving to a session recorded yesterday instead of the one its numbers were calibrated on.
+
+- **What actually happened.** `test_output_is_not_blurrier_than_the_target` began scoring the **M4 checkpoint against a session M4 was never trained on**, and reported 0.896 against its 0.90 floor — a real number about the wrong pairing. `test_the_median_error_reduction_is_substantial` measured the warp on a different camera path and got 1.23x against a 1.5x threshold calibrated on the original. **Neither was a regression; both were the data moving under the test.**
+
+- **Fixed by pinning, not by relaxing.** Eight historical configs now name `data.session_dir` explicitly, and the temporal test fixture pins the same session with a fallback. The thresholds were not touched — moving a threshold to fit data the test was never meant to measure is how a gate stops being a gate.
+
+- **The general hazard, worth stating beyond this instance:** *any* newest-wins discovery silently changes what a test measures the moment new data arrives, and it fails in the most misleading way possible — a plausible number about the wrong thing. Ladder v2 avoids it by construction: `data.split_file` names its sessions rather than discovering them.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

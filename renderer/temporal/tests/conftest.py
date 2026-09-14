@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from renderer.training.dataset import discover_session  # noqa: E402
+from renderer.training.train_baseline import ROOT  # noqa: E402
 
 
 @pytest.fixture(scope="session")
@@ -25,7 +26,13 @@ def session():
     from data_pipeline.teacher.structural import StructuralSession
 
     try:
-        path = discover_session()
+        # PINNED, not discovered (KB Decision 65). `discover_session()` returns the
+        # NEWEST session by mtime; recording the 15-session set silently repointed
+        # this fixture, and the warp thresholds here were calibrated on the
+        # ORIGINAL session's camera path. A test that quietly changes which data
+        # it measures is not a regression test.
+        pinned = Path(ROOT) / "data_pipeline" / "recorder" / "ds_1788687350_337657ea"
+        path = pinned if pinned.is_dir() else discover_session()
     except FileNotFoundError as e:
         pytest.skip(f"no recorded structural session: {e}")
     s = StructuralSession(path)

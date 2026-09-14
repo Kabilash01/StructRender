@@ -1,0 +1,29 @@
+{
+  "policy": "session_level_holdout",
+  "rationale": "15 independent recordings make whole-session holdout possible for the first time. Every number before this was a best-of-N-epochs minimum on the frames used to pick the checkpoint - no generalisation estimate existed anywhere in the ladder. Deviates from KB Decision 35's within-session contiguous holdout; needs its own dated entry. The guard band is no longer required: sessions are independent recordings, not adjacent frames of one drift.",
+  "selection_rule": "test/val chosen by POSITION in the sorted session_id list - the last two and the two before - fixed before any metric was computed, so the held-out set cannot be picked to flatter a result.",
+  "train_sessions": [
+    "ds_1788687350_337657ea",
+    "ds_1789192790_9264b885",
+    "ds_1789193096_37004478",
+    "ds_1789193412_4d71d367",
+    "ds_1789193842_2a519089",
+    "ds_1789194434_0ce650d3",
+    "ds_1789194910_9f04884a",
+    "ds_1789195333_37d59304",
+    "ds_1789196087_ea939d9e",
+    "ds_1789205895_4fefdf2d",
+    "ds_1789206436_e5254e89"
+  ],
+  "val_sessions": [
+    "ds_1789208992_ad005e43",
+    "ds_1789211940_838e841b"
+  ],
+  "test_sessions": [
+    "ds_1789212559_8faa6c75",
+    "ds_1789212883_c158f35c"
+  ],
+  "n_train_frames": 10890,
+  "n_val_frames": 1980,
+  "n_test_frames": 1980
+}
