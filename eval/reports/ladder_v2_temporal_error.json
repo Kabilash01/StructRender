@@ -1,0 +1,44 @@
+{
+  "purpose": "M6's exit metric (temporal error) on ladder v2's sealed TEST sessions.",
+  "metric": "mask-weighted mean |I_t - W(I_{t-1}, V_t)| over pairs with >= 1 px motion",
+  "generated_utc": "2026-09-14T07:55:23+00:00",
+  "test_sessions": [
+    "ds_1789212559_8faa6c75",
+    "ds_1789212883_c158f35c"
+  ],
+  "motion_threshold_px": 1.0,
+  "temporal_rungs_rendered_with_history": true,
+  "models": {
+    "a": {
+      "n": 330,
+      "mean": 0.0028767521733023002,
+      "sd": 0.0017543401022758602
+    },
+    "b": {
+      "n": 330,
+      "mean": 0.002862341565108209,
+      "sd": 0.0018365726393875918
+    },
+    "c": {
+      "n": 330,
+      "mean": 0.004155144182203168,
+      "sd": 0.001707594858507852
+    },
+    "d": {
+      "n": 330,
+      "mean": 0.0038061931559985334,
+      "sd": 0.0012946816345435676
+    },
+    "native": {
+      "n": 330,
+      "mean": 0.00018992747820007164,
+      "sd": 0.0003524949494676633
+    },
+    "target": {
+      "n": 330,
+      "mean": 0.00613667348498535,
+      "sd": 0.0023675372365595344
+    }
+  },
+  "n_moving_pairs": 330
+}

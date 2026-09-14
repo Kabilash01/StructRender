@@ -1,0 +1,105 @@
+{
+  "purpose": "Models B and D scored on the sealed test split WITH previous-frame history. ladder_v2_test.json scored them cold-start, reduced to their baselines (KB Decision 66).",
+  "generated_utc": "2026-09-14T06:46:23+00:00",
+  "torch_version": "2.13.0+cu132",
+  "style_id": "oil_impasto",
+  "split": {
+    "policy": "session_level_holdout",
+    "train_sessions": [
+      "ds_1788687350_337657ea",
+      "ds_1789192790_9264b885",
+      "ds_1789193096_37004478",
+      "ds_1789193412_4d71d367",
+      "ds_1789193842_2a519089",
+      "ds_1789194434_0ce650d3",
+      "ds_1789194910_9f04884a",
+      "ds_1789195333_37d59304",
+      "ds_1789196087_ea939d9e",
+      "ds_1789205895_4fefdf2d",
+      "ds_1789206436_e5254e89"
+    ],
+    "val_sessions": [
+      "ds_1789208992_ad005e43",
+      "ds_1789211940_838e841b"
+    ],
+    "test_sessions": [
+      "ds_1789212559_8faa6c75",
+      "ds_1789212883_c158f35c"
+    ],
+    "n_train_frames": 10890,
+    "n_val_frames": 1980,
+    "n_test_frames": 1980,
+    "test_note": "The test split is NEVER used for training or checkpoint selection. It is scored once, at the end, and is the project's first independent generalisation estimate (KB Decision 64)."
+  },
+  "n_test_frames": 1980,
+  "models": {
+    "b": {
+      "ladder_model": "B",
+      "arch": "temporal_unet",
+      "with_history": {
+        "n_frames": 1980,
+        "l1": 0.008935343344564164,
+        "psnr_db": 34.4202751294531,
+        "ssim": 0.9751014287423606,
+        "lpips_alex": 0.04141495482657443,
+        "sharpness_ratio": 0.9591197432172404
+      },
+      "cold_start_same_path": {
+        "n_frames": 1980,
+        "l1": 0.008935343344564164,
+        "psnr_db": 34.4202751294531,
+        "ssim": 0.9751014287423606,
+        "lpips_alex": 0.04141495482657443,
+        "sharpness_ratio": 0.9591197432172404
+      },
+      "cold_start_from_frame_eval": {
+        "l1": 0.008935341611504555,
+        "psnr_db": 34.420284271240234,
+        "sharpness_ratio": 0.9126437789423374,
+        "note": "From ladder_v2_test.json, whose sharpness uses style_acquisition's implementation. NOT comparable to the rows above \u2014 kept only for cross-reference."
+      },
+      "delta_from_history": {
+        "l1_pct": 0.0,
+        "psnr_db": 0.0,
+        "sharpness": 0.0,
+        "note": "Both rows from the SAME code path; the only difference is the history."
+      },
+      "sharpness_pass": true,
+      "baseline_for_comparison": "A"
+    },
+    "d": {
+      "ladder_model": "D",
+      "arch": "temporal_structformer",
+      "with_history": {
+        "n_frames": 1980,
+        "l1": 0.009236692191769529,
+        "psnr_db": 33.539966043799815,
+        "ssim": 0.9719730941936223,
+        "lpips_alex": 0.04628021825349542,
+        "sharpness_ratio": 0.9391866813880212
+      },
+      "cold_start_same_path": {
+        "n_frames": 1980,
+        "l1": 0.009490114458450915,
+        "psnr_db": 33.340342945522735,
+        "ssim": 0.9713053630457984,
+        "lpips_alex": 0.047288254313547204,
+        "sharpness_ratio": 0.9489614490519834
+      },
+      "cold_start_from_frame_eval": {
+        "l1": 0.009489906951785088,
+        "psnr_db": 33.340354919433594,
+        "sharpness_ratio": 0.8853159712199142,
+        "note": "From ladder_v2_test.json, whose sharpness uses style_acquisition's implementation. NOT comparable to the rows above \u2014 kept only for cross-reference."
+      },
+      "delta_from_history": {
+        "l1_pct": -2.6703815616861717,
+        "psnr_db": 0.1996230982770797,
+        "sharpness": -0.009774767663962236,
+        "note": "Both rows from the SAME code path; the only difference is the history."
+      },
+      "sharpness_pass": true,
+      "baseline_for_comparison": "C"
+    }
+  }
+}
