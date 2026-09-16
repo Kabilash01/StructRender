@@ -1,7 +1,7 @@
 {
   "purpose": "M6's exit metric (temporal error) on ladder v2's sealed TEST sessions.",
   "metric": "mask-weighted mean |I_t - W(I_{t-1}, V_t)| over pairs with >= 1 px motion",
-  "generated_utc": "2026-09-14T07:55:23+00:00",
+  "generated_utc": "2026-09-16T05:40:36+00:00",
   "test_sessions": [
     "ds_1789212559_8faa6c75",
     "ds_1789212883_c158f35c"
@@ -29,6 +29,16 @@
       "mean": 0.0038061931559985334,
       "sd": 0.0012946816345435676
     },
+    "c_seedB": {
+      "n": 330,
+      "mean": 0.004242997432381592,
+      "sd": 0.001410944501630003
+    },
+    "c_seedC": {
+      "n": 330,
+      "mean": 0.004538986011351826,
+      "sd": 0.0014682110953067149
+    },
     "native": {
       "n": 330,
       "mean": 0.00018992747820007164,
@@ -40,5 +50,21 @@
       "sd": 0.0023675372365595344
     }
   },
-  "n_moving_pairs": 330
+  "n_moving_pairs": 330,
+  "m6_verdict": {
+    "rule": "M6 passes if Model D's temporal error is at least 2 StructFormer across-seed standard deviations below Model C's mean. KB Decisions 55/57; the spread is re-derived on ladder v2 per Decision 64.",
+    "model_c_seeds": [
+      0.004155144182203168,
+      0.004242997432381592,
+      0.004538986011351826
+    ],
+    "model_c_mean": 0.004312375875312195,
+    "model_c_sd": 0.0002011061006251503,
+    "relative_sd": 0.04663464095893338,
+    "margin": 0.09326928191786676,
+    "model_d_must_be_at_most": 0.003910163674061894,
+    "model_d_te": 0.0038061931559985334,
+    "model_d_vs_c_mean_pct": -11.73790814969293,
+    "verdict": "PASS"
+  }
 }

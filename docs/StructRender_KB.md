@@ -2956,6 +2956,41 @@ Recording the 15-session set broke two calibrated tests, and the cause was not t
 
 ---
 
+### Decision 66: Model B's Temporal Fusion Is Inert; Model D's Is Not (2026-09-14)
+
+`eval_ladder_v2.py` scores every rung through a frame-wise dataset that supplies no previous frame, so both temporal rungs ran **cold-start** — reduced to their own baselines. Their numbers there are not the temporal models'. `eval_temporal_ladder_v2.py` supplies the history and measures both paths **through identical code**, so the only difference between the two rows is the history.
+
+| rung | cold-start L1 | with history | change |
+|---|---|---|---|
+| **B** (CNN temporal) | 0.008935 | 0.008935 | **+0.0 %** |
+| **D** (StructFormer temporal) | 0.009490 | 0.009237 | **-2.7 %** |
+
+- **Model B's fusion never engaged.** Identical to six decimal places with and without history: the zero-initialised fusion convolution never moved off zero. Model B is Model A plus 524,800 parameters that do nothing, and B's apparent edge over A in the image-quality table is not a temporal effect.
+- **Model D's fusion works** — history improves L1 by 2.7 %, at a small sharpness cost.
+- **A measurement error caught before it became a claim.** An earlier version of this comparison read cold-start sharpness from `style_acquisition` and history sharpness from a new local Sobel, and reported B gaining **+0.0465**. That was two different implementations, not an effect. Both rows now come from one code path. Recorded because a +0.0465 "temporal improves sharpness" would have entered the log as fact.
+
+---
+
+### Decision 67: M6 PASSES on Ladder v2 — the Margin Was Stale, Not the Result (2026-09-16)
+
+**Milestone 6's exit criterion is met.** Evidence: `eval/reports/ladder_v2_temporal_error.json`, computed by `scripts/eval_temporal_error_v2.py` in a single pass that derives the threshold **before** writing the artifact, so the verdict is not a figure worked out by hand after seeing the numbers.
+
+| | temporal error (330 moving pairs, sealed test sessions) |
+|---|---|
+| native engine | 0.000190 |
+| teacher targets | 0.006137 |
+| Model C seeds | 0.004155 / 0.004243 / 0.004539 |
+| **Model D** | **0.003806** |
+
+- **Margin: 2 x StructFormer's across-seed sd = 9.33 %. Model D is 11.74 % below the Model C mean. PASS.**
+- **The rule did not change; the number feeding it was re-measured.** The margin had been carried over from the 644-frame dataset, where StructFormer's relative across-seed sd was **9.07 %** and the bar therefore ~18 %. Decision 64 required every threshold to be re-derived for ladder v2 and this one had not been. On 17x the data the spread falls to **4.66 %** — more data made StructFormer materially more reproducible — so the bar is 9.33 %.
+- **Both sides moved, and that matters for how this is read.** D's improvement over C went from **-5.5 %** on the old data to **-11.74 %** here, and **D now beats every individual C seed**, including the best. On the old data one C seed beat D outright, which is what sank the earlier verdict (Decision 57). This is not the same measurement returning a different answer because the threshold moved.
+- **Honest limits.** n = 3, so the sd is a preliminary estimate and not a confidence interval — the same caveat Decision 51 records for the CNN's. D clears the bar by 2.4 percentage points, which is real but not large.
+- **The ceiling is unchanged and still governs.** The teacher targets remain **32x** the engine's temporal error, untouched by 17x more data, and Decision 60's probe refuted the obvious fix (cross-frame conditioning made it 11x worse). Model D at 0.003806 is still **20x** the engine. M6 passing means the temporal mechanism works *within* that ceiling — it does not lift it, and it does not weaken Decision 57's finding about the supervision.
+- **M5 is unaffected and still fails.** On ladder v2's sealed test set Model C is +1.6 % worse than Model A on L1 and misses the sharpness gate at **0.8943** against the 0.90 floor. M6's criterion is temporal error; M5's is image quality against the CNN baseline. They are different questions and only one of them has flipped.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

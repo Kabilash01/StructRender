@@ -25,6 +25,12 @@ from renderer.training.multi_session import load_session_split
 from renderer.training.train_baseline import ROOT, load_checkpoint, load_config
 
 MODELS = {m: f"configs/ladder_v2/model_{m}.json" for m in ("a", "b", "c", "d")}
+# The three Model C runs — identical but for `train.seed` — give StructFormer's
+# across-seed temporal-error spread ON LADDER V2's DATA. M6's margin is 2x that
+# spread, and the value used until now (9.07%) was measured on 644 frames and a
+# different split, which KB Decision 64 requires be re-derived. (KB Decision 67)
+MODELS.update({"c_seedB": "configs/ladder_v2/model_c_seedB.json",
+               "c_seedC": "configs/ladder_v2/model_c_seedC.json"})
 MOTION_PX = 1.0
 
 
@@ -114,10 +120,27 @@ def main() -> int:
         if v:
             report["models"][k] = {"n": len(v), "mean": st.mean(v),
                                    "sd": st.stdev(v) if len(v) > 1 else None}
+    # derive the margin from the three C seeds, then score D against it
+    cs = [report["models"][k]["mean"] for k in ("c", "c_seedB", "c_seedC") if k in report["models"]]
+    if len(cs) == 3 and "d" in report["models"]:
+        mean_c, sd_c = st.mean(cs), st.stdev(cs)
+        rel = sd_c / mean_c
+        d_te = report["models"]["d"]["mean"]
+        report["m6_verdict"] = {
+            "rule": ("M6 passes if Model D's temporal error is at least 2 StructFormer across-seed "
+                     "standard deviations below Model C's mean. KB Decisions 55/57; the spread is "
+                     "re-derived on ladder v2 per Decision 64."),
+            "model_c_seeds": cs, "model_c_mean": mean_c, "model_c_sd": sd_c,
+            "relative_sd": rel, "margin": 2 * rel,
+            "model_d_must_be_at_most": mean_c * (1 - 2 * rel),
+            "model_d_te": d_te,
+            "model_d_vs_c_mean_pct": 100 * (d_te - mean_c) / mean_c,
+            "verdict": "PASS" if d_te <= mean_c * (1 - 2 * rel) else "FAIL",
+        }
     out = ROOT / "eval" / "reports" / "ladder_v2_temporal_error.json"
     out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"\n[te] wrote {out}\n")
-    for k in ("native", "target", "a", "b", "c", "d"):
+    for k in ("native", "target", "a", "b", "c", "c_seedB", "c_seedC", "d"):
         if k in report["models"]:
             print(f"  {k:<8} TE {report['models'][k]['mean']:.6f}  (n={report['models'][k]['n']})")
     return 0
