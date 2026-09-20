@@ -1,0 +1,47 @@
+{
+  "policy": "session_level_holdout",
+  "version": "v2_29_sessions",
+  "rationale": "29 validated+aligned sessions (one dropped: ds_1789549998_8973903e failed M2 validation with non-finite motion at frame 616). Train is 17x -> 33x the original 644 frames.",
+  "selection_rule": "v1's val and test sessions are KEPT held out, so the scaling curve 644 -> 10,890 -> 28,710 is measured on the same frames at every size and the three points are comparable. New held-out sessions are added by POSITION in the sorted session-id list, the same blind rule v1 used, fixed before any metric was computed.",
+  "dropped_sessions": {
+    "ds_1789549998_8973903e": "M2 validation FAIL: buf.motion_nonfinite frame 616"
+  },
+  "train_sessions": [
+    "ds_1788687350_337657ea",
+    "ds_1789192790_9264b885",
+    "ds_1789193096_37004478",
+    "ds_1789193412_4d71d367",
+    "ds_1789193842_2a519089",
+    "ds_1789194434_0ce650d3",
+    "ds_1789194910_9f04884a",
+    "ds_1789195333_37d59304",
+    "ds_1789196087_ea939d9e",
+    "ds_1789205895_4fefdf2d",
+    "ds_1789206436_e5254e89",
+    "ds_1789547152_769a45f4",
+    "ds_1789547469_62b71562",
+    "ds_1789547782_8bbbeb45",
+    "ds_1789548091_e9d5f3d7",
+    "ds_1789548424_9d070714",
+    "ds_1789548736_9efa5b9a",
+    "ds_1789549062_3626bdd7",
+    "ds_1789549383_704e83b7",
+    "ds_1789549686_9c94fac7",
+    "ds_1789550322_a0da05d4"
+  ],
+  "val_sessions": [
+    "ds_1789208992_ad005e43",
+    "ds_1789211940_838e841b",
+    "ds_1789550640_caaee313",
+    "ds_1789550961_11cec870"
+  ],
+  "test_sessions": [
+    "ds_1789212559_8faa6c75",
+    "ds_1789212883_c158f35c",
+    "ds_1789551269_8e6b239c",
+    "ds_1789551585_dbe828cf"
+  ],
+  "n_train_frames": 20790,
+  "n_val_frames": 3960,
+  "n_test_frames": 3960
+}

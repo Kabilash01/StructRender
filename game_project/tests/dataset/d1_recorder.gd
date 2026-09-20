@@ -26,6 +26,13 @@ const RATE := DH.TICK_RATE
 
 
 func _initialize() -> void:
+	# Same vsync disable as seed_record.gd (KB Decision 68), applied here so this
+	# fixture's bit-identical determinism checks actually EXERCISE it. The claim
+	# "disabling vsync cannot change what is recorded" is verified by this test,
+	# not merely asserted: the sim is stepped by tick count, never by wall time.
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
+
 	await _test_determinism_and_immutability()
 	await _test_fixture_and_manifest()
 	H.finish(self)

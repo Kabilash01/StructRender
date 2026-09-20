@@ -1,0 +1,67 @@
+{
+  "config_version": "ladder-v3-a",
+  "ladder_model": "A",
+  "notes": "Ladder v3 (KB Decision 69): 29 sessions, 20,790 training frames \u2014 32x the original 644 and 1.9x ladder v2. Tests whether StructFormer's sharpness crosses the 0.90 floor, which the measured scaling trend (0.8327 at 644 -> 0.8858 at 10,890) projects at ~2.1x more data. Model A is retrained on the SAME data: the CNN improves too, so comparing a fresh C against an old A would be rigged. v1's held-out sessions stay held out so all three scaling points are measured on the same frames.",
+  "data": {
+    "style_id": "oil_impasto",
+    "split_file": "configs/data/session_split_v2.json"
+  },
+  "model": {
+    "arch": "unet_baseline",
+    "in_channels": 7,
+    "out_channels": 3,
+    "base_channels": 32
+  },
+  "train": {
+    "seed": 20260905,
+    "epochs": 60,
+    "lr": 0.0002,
+    "weight_decay": 0.0001,
+    "amp_dtype": "bfloat16",
+    "num_workers": 2,
+    "eval_every_epochs": 2,
+    "early_stopping": {
+      "patience_evals": 6,
+      "min_rel_delta": 0.001,
+      "note": "Identical rule for EVERY rung, so each is trained to its own convergence rather than to an arbitrary shared epoch count. Patience is counted in EVALUATIONS so it means the same at any eval_every_epochs; min_rel_delta exists because val_l1 wobbles at 1e-5 between evals and without it noise reads as improvement. It cannot change which checkpoint is selected - best.pt is still the lowest val_l1 ever seen - so it can only cost time. KB Decision 62."
+    },
+    "batch_size": 8,
+    "accum_steps": 1,
+    "checkpoint_dir": "checkpoints/ladder_v3_a"
+  },
+  "loss": {
+    "l1": 1.0,
+    "perceptual": 0.5,
+    "perceptual_net": "alex"
+  },
+  "overfit": {
+    "notes": "Exit-criterion 2 thresholds, FIXED BEFORE TRAINING so the verdict is not a hindsight judgement call. Asserted by renderer/training/tests/test_overfit.py.",
+    "n_frames": 32,
+    "n_frames_rationale": "KB \u00a711 'Local Pre-Cloud Training Gate' item 4 mandates 'overfit 32-128 frames' and states the gate is mandatory to protect the compute budget. 32 is the floor of that range. The earlier N=8 was below the mandated range and therefore a strictly weaker test \u2014 fewer frames are easier to memorise. Frames are spread evenly across the training span (not the first N \u2014 consecutive frames would make the criterion nearly vacuous).",
+    "max_steps": 2000,
+    "batch_size": 2,
+    "lr": 0.0002,
+    "lr_rationale": "Pinned here rather than borrowed from train.lr so that retuning the main training LR cannot silently move the overfit exit criterion. Value is the one the criterion was fixed against.",
+    "seed": 20260905,
+    "thresholds": {
+      "min_psnr_db": 30.0,
+      "max_final_l1": 0.02,
+      "min_loss_drop_factor": 10.0,
+      "min_ssim": 0.95
+    },
+    "threshold_notes": "min_loss_drop_factor is a SANITY CHECK, not an independent gate, and it is a MIXED-UNIT ratio (step0_loss is the total objective L1+w*LPIPS; final_l1 is pure L1) - KB Decision 44: the network is sigmoid-initialised (output ~0.5) against dark targets, so step-0 loss is large by construction and a 10x drop is close to vacuous (measured ~53-57x across runs; the loop is not seed-deterministic, so see eval/reports/m4_overfit.json rather than any quoted value). PSNR / final L1 / SSIM are the criteria that carry the verdict."
+  },
+  "style_acquisition": {
+    "notes": "Exit-criterion 3 ('recognizable styled output') thresholds. UNLIKE the overfit block these were fixed AFTER the model existed, so they are stated as calibrated-against-a-failure-mode rather than pre-registered \u2014 see min_sharpness_ratio_rationale.",
+    "min_hist_travel_fraction_of_target": 0.8,
+    "min_hist_travel_rationale": "'Comparable colour-histogram travel away from the native palette' \u2014 the M3 gate-4 quantity (Decision 32, Finding 1) that rejects a passthrough. The floor is one-sided on purpose: a model that restyles HARDER than the teacher is not the failure mode this criterion guards against. 0.8 makes 'comparable' mean comparable; the earlier 0.5 admitted a prediction that travelled half as far, which the prose did not say.",
+    "min_sharpness_ratio": 0.9,
+    "min_sharpness_ratio_rationale": "grad_energy(pred) / grad_energy(target), high-pass (squared Sobel) energy. The histogram term CANNOT distinguish restyling from smoothing \u2014 a blurred frame keeps its shifted palette and scores higher on histogram travel, not lower. M3's gate 4 was calibrated against a teacher whose failure mode was doing nothing; a trained regressor's failure mode is blur. Threshold calibrated against the failure mode, not against the model's score: Gaussian-blurring the teacher targets gives ratios 0.977 / 0.897 / 0.761 / 0.654 at sigma 0.5 / 1.0 / 1.5 / 2.0, so 0.9 means 'no softer than a ~1 px blur of the target'."
+  },
+  "reports": {
+    "train": "eval/reports/ladder_v3_a_train.json",
+    "overfit": "eval/reports/ladder_v3_a_overfit.json",
+    "metrics": "eval/reports/ladder_v3_a_metrics.json",
+    "qualitative_dir": "eval/reports/ladder_v3_a_qualitative"
+  }
+}

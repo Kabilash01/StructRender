@@ -23,6 +23,20 @@ const MARGIN := 12
 
 
 func _initialize() -> void:
+	# Do not wait on the compositor (KB Decision 68). Vsync defaults to ENABLED, so
+	# every recorded frame blocks on a Wayland frame callback. With the screen on
+	# that is ~60 fps and recording runs at ~9.6 files/s; when the screen blanks or
+	# the window is occluded the compositor throttles those callbacks and recording
+	# collapses to ~0.27 files/s — a 35x slowdown with the GPU parked in P8 and
+	# Godot using 1% CPU, which looks like a hang rather than a stall. The recorder
+	# never presents to a display, so it has no reason to wait.
+	#
+	# This CANNOT change what is recorded: the simulation is stepped by an explicit
+	# tick counter, never by wall-clock time or delta, so the output is a function
+	# of tick count alone. Asserted by scripts/test_dataset.sh's determinism checks.
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
+
 	var root := DH.dataset_root()
 	var sid := DH.new_session_id()
 	var sc: Dictionary = await DH.build_scene(self, true)
