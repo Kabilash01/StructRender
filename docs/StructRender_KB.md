@@ -2991,6 +2991,36 @@ Recording the 15-session set broke two calibrated tests, and the cause was not t
 
 ---
 
+### Decision 70: Product Scope — a Style Renderer, Not a Game Generator (2026-09-21)
+
+Recorded because the intended deliverable was described in conversation but never written down, and the gap between what it says and what a reader assumes is large enough to mislead.
+
+**What a user prompt controls: how the game LOOKS. Not what the game IS.**
+
+StructRender re-renders an **existing Godot project** in a learned style. It does not generate geometry, levels, physics, mechanics, entities, or any game content. A user cannot type "make me a racing game" and receive one. This is not a limitation to be engineered away — it follows directly from the locked rule that **Godot owns all physics/logic/entity identity**, which is the same rule that lets EPAM key appearance memory to an entity that the engine *guarantees* is the same entity. Remove the engine's authority and the headline novelty has nothing to key on.
+
+**The target interaction, scoped:**
+
+> Play the game -> switch style -> the same world, same physics, same objects, repainted at ~4 ms/frame -> and the same barrel still looks like the same barrel across the switch.
+
+The final clause is the contribution. It is what M8's *"style change clears memory"* exit criterion exists to verify.
+
+**Three versions, and which one is being built:**
+
+| | scope | status |
+|---|---|---|
+| **A — live switching among trained styles** | 2-4 styles, instant switching, EPAM clearing correctly | **this is what M8 builds** |
+| B — new style from a new prompt | any prompt; ~4 h target generation + ~10 h training per style, offline | possible, documented as the extension path |
+| C — unseen prompt, zero-shot | true generalisation to prompts never trained on | **out of scope** |
+
+**Why C is out of scope, with numbers.** The renderer is a feed-forward network trained to *imitate* a diffusion teacher, not a diffusion model. It learned `oil_impasto` by copying 20,790 target images; it has no representation of what any other prompt means. Style tokens from a text encoder would let a new prompt produce a new token, but the model only learns what a token *means* from examples — with 1-2 styles it produces garbage for anything unseen. Zero-shot style generalisation realistically needs **20-50 trained styles**, which at ~4 h of target generation each is **80-200 hours before training starts**. That is not available on this hardware, and claiming it without the styles would be claiming a capability that was never measured.
+
+**Consequence for the write-up.** StructRender must be positioned as a **renderer**, closer to a graphics setting than to a world model. The systems that do generate worlds from prompts need 4M+ frames and H200-class hardware (Decision 5's analysis) and hallucinate geometry — the exact failure engine grounding eliminates. That is a strength, but stated wrongly it reads as a shortfall against a capability never claimed.
+
+**Open scope item for M8:** how many styles ship. Two is the minimum that makes the style token a genuine runtime input rather than a folded constant (Decision 45); more is better for the demo, and each costs ~4 h of generation.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
