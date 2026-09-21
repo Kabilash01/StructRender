@@ -1,0 +1,42 @@
+{
+  "question": "Is the teacher residual (what structure does NOT explain) correlated across time for the same entity? EPAM sharpens only if it is.",
+  "generated_utc": "2026-09-21T04:02:15+00:00",
+  "residual": "teacher_t - model_a_v3(structure_t), on the entity's own pixels",
+  "same_entity_by_lag": {
+    "lag_1": {
+      "mean": 0.717246533681949,
+      "sd": 0.14819877364312709,
+      "n": 96,
+      "se": 0.015125473997161909
+    },
+    "lag_2": {
+      "mean": 0.5297070666468547,
+      "sd": 0.21280302714814764,
+      "n": 96,
+      "se": 0.021719118009691576
+    },
+    "lag_5": {
+      "mean": 0.28696423456616077,
+      "sd": 0.2313610208713584,
+      "n": 96,
+      "se": 0.023613185312676553
+    },
+    "lag_10": {
+      "mean": 0.1448334284699134,
+      "sd": 0.2543598101929969,
+      "n": 96,
+      "se": 0.02596048941850092
+    },
+    "lag_30": {
+      "mean": 0.03662758036070082,
+      "sd": 0.15566443484136433,
+      "n": 73,
+      "se": 0.0182191440314706
+    }
+  },
+  "control_different_entities": {
+    "mean": -0.008005668118130416,
+    "sd": 0.13903459185324735,
+    "n": 64
+  }
+}

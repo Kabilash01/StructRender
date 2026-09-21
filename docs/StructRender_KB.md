@@ -3091,6 +3091,32 @@ The teacher flickers 32x the engine; the renderer trains under L1+LPIPS whose op
 
 ---
 
+### Decision 73: The Residual Memory Probe — Information Exists, but Not at EPAM's Timescales (2026-09-21)
+
+Run before M8 to test the assumption Decision 72 left standing: EPAM sharpens only if the part of the teacher that **structure does not explain** is correlated across time for the same entity. If it is independent, conditioning on memory narrows nothing, the L1+LPIPS optimum is the same blurry mean, and EPAM cannot sharpen. Evidence: `scripts/probe_residual_memory.py`, `eval/reports/probe_residual_memory.json`. Residual = `teacher_t - model_a_v3(structure_t)`, on the entity's own pixels. No training.
+
+| lag (ticks) | residual correlation | sigma |
+|---|---|---|
+| 1 | **0.7172** | 47.4 |
+| 2 | 0.5297 | 24.4 |
+| 5 | 0.2870 | 12.2 |
+| 10 | 0.1448 | 5.6 |
+| 30 | **0.0366** | 2.0 |
+| control: different entities, same frame | **-0.0080** | — |
+
+The control sitting at zero validates the method.
+
+- **Information exists, with a half-life of roughly 2 ticks.** By 30 ticks it is 0.037.
+- **EPAM's reappearance gaps are 30-480 ticks** (0.5 s to 8 s at 60 tps). Across that entire range the residual correlation is at or below 0.037 — effectively nothing to retrieve. **A memory would return stale information.**
+- **The exploitable window (1-5 ticks) is what temporal warping already covers.** Model D's one-frame history produced -11.74 % temporal error (Decision 67). EPAM would be reaching for signal that mechanism has already taken.
+- **This does not contradict Decision 72's averaging result.** Averaging genuinely costs 6.2 % sharpness at 16.4 sigma — that mechanism is real. What this probe shows is that *memory across a reappearance gap* is not the lever that recovers it, because by then the residual is uncorrelated. Both findings stand; together they say the sharpness loss is real but memory cannot address it at the timescale EPAM operates on.
+
+**A retraction, recorded so it does not resurface.** While interpreting this probe I claimed the 4 s and 8 s reappearance sequences were mislabeled, on the grounds that their frame gaps (30 and 60) implied 7.5 fps rather than 60. **That was wrong.** Long gaps are deliberately recorded at 1-in-8 (`REDUCED_STRIDE = 8`, documented in `dataset_harness.gd` and `dataset_manifest.md`), and 60/8 = 7.5 is exactly that stride. The per-frame `tick` field confirms the true gaps are **240 and 480 ticks = 4.00 s and 8.00 s**. Decision 72's analysis by `unseen_seconds` was correct; the "correction" — recomputing by frame index — was the error, since it lumped the 4 s sequence (30 frames, 240 ticks) with the 0.5 s one (30 frames, 30 ticks). **No decay with unseen time, to a genuine 8 seconds, stands as originally recorded.**
+
+**Consequence for M8, to be decided before building:** EPAM's specified mechanism — persist appearance across an occlusion and restore it on reappearance — has no measurable information to carry in this data. The options are to re-scope EPAM toward where signal demonstrably exists (short-lag commitment, cross-style consistency), or to build it as specified and report a null result honestly. This is recorded now, before the milestone, rather than discovered inside it.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
