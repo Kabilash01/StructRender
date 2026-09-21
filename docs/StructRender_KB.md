@@ -3050,6 +3050,47 @@ Ladder v3: 20,790 training frames, both rungs retrained on identical data, score
 
 ---
 
+### Decision 72: RCS Cannot Measure EPAM — Its Claim Moves to Sharpness (2026-09-21)
+
+RCS computed on the trained ladder for the first time: 40 reappearance sequences across the 4 sealed test sessions, every source through one identical path, masks always from the **engine's** entity map. Evidence: `eval/reports/rcs_ladder.json`, `scripts/eval_rcs_ladder.py`.
+
+| source | RCS | sd | vs native |
+|---|---|---|---|
+| **native engine** | **0.9283** | 0.0226 | ceiling |
+| teacher targets | 0.8959 | 0.0383 | **-0.0323** |
+| c_v2 (best model) | 0.9176 | 0.0250 | -0.0106 |
+| a_v3 | 0.9120 | 0.0311 | -0.0163 |
+
+**Two good findings.** Every model beats its own teacher (0.912-0.918 vs 0.896) — the renderers are *more* identity-consistent than the supervision they learned from, the same pattern as temporal error, and engine grounding is doing real work. StructFormer scores highest on RCS while losing on image quality.
+
+**The finding that changes M8.** All six rungs are **statistically indistinguishable**: they span 0.0057 against 2 SE = 0.0093. Worse, headroom from the best model to the native ceiling is **0.0106**, so an EPAM effect would need to capture **87% of all remaining headroom** merely to become detectable.
+
+**And nothing decays with time unseen** — the premise EPAM was scoped against:
+
+| source | 0.5s | 2s | 8s | 8s - 0.5s |
+|---|---|---|---|---|
+| native | 0.9439 | 0.9086 | 0.9465 | **+0.0027** |
+| a_v3 | 0.9287 | 0.8865 | 0.9319 | **+0.0031** |
+| c_v2 | 0.9313 | 0.8954 | 0.9410 | **+0.0098** |
+
+Every source rises slightly from 0.5s to 8s, and all share one shape (dip at 2s, recover at 8s) that therefore comes from *which scenarios those are*, not elapsed time. The gap to native is flat, not growing. **This is structural, not a scenario-design problem:** a frame-independent deterministic renderer cannot drift — same structural input, same output, regardless of how long the entity was away. Harder scenarios would not change it. Confirms Decision 53 at 4x the sample size.
+
+**Where EPAM's value actually is — probed, not assumed.** `scripts/probe_averaging_cost.py`, no training required: take an entity across 3-4 consecutive frames at near-identical pose and compare individual teacher targets against their mean, on the entity's own pixels.
+
+| | grad energy |
+|---|---|
+| individual teacher frames | 0.18396 |
+| mean of those frames | 0.17259 |
+| **cost of averaging** | **-6.2%, at 16.4 sigma** |
+
+The teacher flickers 32x the engine; the renderer trains under L1+LPIPS whose optimum is the **conditional mean** of that flicker. The model is learning the blurry average by construction. That is a concrete mechanism for M5's sharpness failure, and "commit to one appearance per entity" attacks it directly.
+
+- **Stated explicitly, because the distinction will otherwise be lost:** this measures *teacher frames averaged*, NOT EPAM's gain. It establishes the mechanism exists and is significant. It does **not** predict how much of the 6.2% EPAM recovers — the model averages over a far wider distribution than 3-4 frames, so the true cost may be larger, or EPAM may capture only part of it. "Averaging costs 6.2%" must not become "EPAM will gain 6.2%".
+- **M8's pre-registered metrics, fixed before the model exists:** **sharpness ratio** is primary (the mechanism lives there); **RCS** is secondary and reported with the explicit note that it cannot distinguish an averaging model from a committing one; **cross-style RCS** is new — identity across a style switch, which the present single-style data cannot answer.
+- **EPAM's scope is unchanged** (Decision: protected headline novelty). What changes is which measurement is expected to show it, decided from evidence before the milestone rather than after.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
