@@ -3021,6 +3021,35 @@ The final clause is the contribution. It is what M8's *"style change clears memo
 
 ---
 
+### Decision 71: M5 Fails at 32x the Data — the Scaling Hypothesis Is Refuted (2026-09-21)
+
+Ladder v3: 20,790 training frames, both rungs retrained on identical data, scored on 4 sealed test sessions (3,960 frames). Evidence: `eval/reports/ladder_v3_test.json`.
+
+| | L1 | PSNR | sharpness | gate |
+|---|---|---|---|---|
+| **A** (CNN) | **0.008947** | **34.041** | **0.9104** | **PASS** |
+| **C** (StructFormer) | 0.009174 | 33.858 | **0.8514** | **FAIL** |
+
+**The prediction was wrong, and in the opposite direction.** Decision 69 recorded a projection of **0.8979** before the run. The measured value is **0.8514** — further below the floor than ladder v2's 0.8858.
+
+| train frames | StructFormer sharpness | slope per e-fold |
+|---|---|---|
+| 644 | 0.8327 | |
+| 10,890 | 0.8858 | **+0.0188** |
+| **20,790** | **0.8514** | **-0.0532** |
+
+**Sharpness decreased with more data.** The curve did not flatten, it reversed. The log-linear extrapolation that justified the scale-up was fitted to **two points**, which cannot distinguish a trend from a coincidence; that limitation was stated at the time and the projection was used anyway. ~13 h of compute tested the hypothesis, which is what testing is for — but the confidence attached beforehand was not earned by the evidence available.
+
+- **M5's failure is not a data-volume problem.** Three sizes spanning 32x, all measured on the same held-out sessions, and StructFormer never approaches the floor while the CNN clears it at every size.
+- **The CNN absorbs data better than the transformer.** Model A improved to 0.008947 / 0.9104 and now passes cleanly. The gap widened from **+1.6%** (v2) to **+2.53%** (v3).
+- **Parameter parity held**: 7,853,763 vs 7,775,467 = **0.990x**, inside Decision 47's band. The comparison is not confounded by capacity.
+- **Why sharpness fell is NOT established.** Candidates: the 4-session val set moved the early-stopping point (C stopped at epoch 31 vs 41 on v2), or L1 and sharpness trade off as L1 improves. This is **one run**; the measured seed spread is +/-0.0079 and the drop is 0.034, so noise alone is an unlikely explanation, but a single draw cannot separate the causes. Stated as unresolved rather than attributed.
+- **Standing conclusion:** at parameter parity on a small custom dataset, a windowed transformer underperforms a U-Net. This is a finding about inductive bias, and it is better evidence than a rescued pass would have been.
+- **What this does NOT touch:** M6 passed on ladder v2 (Decision 67) on a *different criterion* — temporal error, within the StructFormer branch. M5 and M6 ask different questions and only one of them fails.
+- **The GAN question is now properly motivated.** Decision 4 marks adversarial loss optional-and-risky. Three scaling points showing data alone does not lift sharpness is a far stronger justification for trying it than the untested assumption that existed before.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

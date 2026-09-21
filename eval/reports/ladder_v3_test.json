@@ -1,0 +1,157 @@
+{
+  "purpose": "Ladder v2 scored on the sealed test split \u2014 the project's first independent generalisation estimate (KB Decision 64).",
+  "generated_utc": "2026-09-20T18:53:44+00:00",
+  "torch_version": "2.13.0+cu132",
+  "style_id": "oil_impasto",
+  "split": {
+    "policy": "session_level_holdout",
+    "train_sessions": [
+      "ds_1788687350_337657ea",
+      "ds_1789192790_9264b885",
+      "ds_1789193096_37004478",
+      "ds_1789193412_4d71d367",
+      "ds_1789193842_2a519089",
+      "ds_1789194434_0ce650d3",
+      "ds_1789194910_9f04884a",
+      "ds_1789195333_37d59304",
+      "ds_1789196087_ea939d9e",
+      "ds_1789205895_4fefdf2d",
+      "ds_1789206436_e5254e89",
+      "ds_1789547152_769a45f4",
+      "ds_1789547469_62b71562",
+      "ds_1789547782_8bbbeb45",
+      "ds_1789548091_e9d5f3d7",
+      "ds_1789548424_9d070714",
+      "ds_1789548736_9efa5b9a",
+      "ds_1789549062_3626bdd7",
+      "ds_1789549383_704e83b7",
+      "ds_1789549686_9c94fac7",
+      "ds_1789550322_a0da05d4"
+    ],
+    "val_sessions": [
+      "ds_1789208992_ad005e43",
+      "ds_1789211940_838e841b",
+      "ds_1789550640_caaee313",
+      "ds_1789550961_11cec870"
+    ],
+    "test_sessions": [
+      "ds_1789212559_8faa6c75",
+      "ds_1789212883_c158f35c",
+      "ds_1789551269_8e6b239c",
+      "ds_1789551585_dbe828cf"
+    ],
+    "n_train_frames": 20790,
+    "n_val_frames": 3960,
+    "n_test_frames": 3960,
+    "test_note": "The test split is NEVER used for training or checkpoint selection. It is scored once, at the end, and is the project's first independent generalisation estimate (KB Decision 64)."
+  },
+  "gates": {
+    "min_sharpness_ratio": 0.9,
+    "min_hist_travel_fraction_of_target": 0.8,
+    "note": "Imported unchanged from M4/M5 (Decisions 35, 41). Not re-tuned."
+  },
+  "models": {
+    "a": {
+      "ladder_model": "A",
+      "arch": "unet_baseline",
+      "checkpoint": "checkpoints/ladder_v3_a/best.pt",
+      "parameters": 7853763,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 3960,
+        "l1": 0.009045425802469254,
+        "psnr_db": 33.885040283203125,
+        "ssim": 0.974519670009613,
+        "lpips_alex": 0.044731318950653076
+      },
+      "test_set": {
+        "n_frames": 3960,
+        "l1": 0.008947054855525494,
+        "psnr_db": 34.040863037109375,
+        "ssim": 0.9747219681739807,
+        "lpips_alex": 0.04585050418972969
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 34.04086112976074,
+        "psnr_native_vs_target_db": 28.8847975730896,
+        "ssim_pred_vs_target": 0.9747261255979538,
+        "ssim_native_vs_target": 0.9589034914970398,
+        "hist_pred_vs_native": 0.6625583807092189,
+        "hist_target_vs_native": 0.6137384690820971,
+        "grad_energy_pred": 0.022602336015552282,
+        "grad_energy_target": 0.024778554681688547,
+        "grad_energy_native": 0.022796464152634144,
+        "sharpness_ratio": 0.9103799638316221,
+        "sharpness_ratio_native": 0.9209658193380624,
+        "lpips_pred_vs_target": 0.04585050139576197,
+        "lpips_native_vs_target": 0.09997166134417057
+      },
+      "gates": {
+        "sharpness_ratio": 0.9103799638316221,
+        "sharpness_pass": true,
+        "sharpness_native_anchor": 0.9209658193380624,
+        "hist_travel_ratio": 1.0795451386649049,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 5.156063556671143,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.009045425802469254,
+        "test_l1": 0.008947054855525494,
+        "gap_pct": -1.0875214621395297,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    },
+    "c": {
+      "ladder_model": "C",
+      "arch": "structformer",
+      "checkpoint": "checkpoints/ladder_v3_c/best.pt",
+      "parameters": 7775467,
+      "objective": "1*L1 + 0.5*LPIPS(alex)",
+      "selection_set_val": {
+        "n_frames": 3960,
+        "l1": 0.009386131539940834,
+        "psnr_db": 33.67639923095703,
+        "ssim": 0.9729271531105042,
+        "lpips_alex": 0.04523662105202675
+      },
+      "test_set": {
+        "n_frames": 3960,
+        "l1": 0.009173774160444736,
+        "psnr_db": 33.85769271850586,
+        "ssim": 0.9728106260299683,
+        "lpips_alex": 0.04657841846346855
+      },
+      "style_acquisition_test": {
+        "psnr_pred_vs_target_db": 33.85769462585449,
+        "psnr_native_vs_target_db": 28.8847975730896,
+        "ssim_pred_vs_target": 0.9728148728609085,
+        "ssim_native_vs_target": 0.9589034914970398,
+        "hist_pred_vs_native": 0.6376291134452892,
+        "hist_target_vs_native": 0.6137384690820971,
+        "grad_energy_pred": 0.021140951197594404,
+        "grad_energy_target": 0.024778554681688547,
+        "grad_energy_native": 0.022796464152634144,
+        "sharpness_ratio": 0.8513931384679102,
+        "sharpness_ratio_native": 0.9209658193380624,
+        "lpips_pred_vs_target": 0.04657841194421053,
+        "lpips_native_vs_target": 0.09997166134417057
+      },
+      "gates": {
+        "sharpness_ratio": 0.8513931384679102,
+        "sharpness_pass": false,
+        "sharpness_native_anchor": 0.9209658193380624,
+        "hist_travel_ratio": 1.0389264247993495,
+        "hist_pass": true,
+        "psnr_vs_do_nothing": 4.972897052764893,
+        "beats_do_nothing": true
+      },
+      "generalisation_gap": {
+        "val_l1": 0.009386131539940834,
+        "test_l1": 0.009173774160444736,
+        "gap_pct": -2.2624590183128435,
+        "note": "How much worse the model is on data it was never selected on."
+      }
+    }
+  }
+}
