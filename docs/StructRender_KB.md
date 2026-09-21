@@ -3127,7 +3127,9 @@ All three exit criteria met, each asserted by a test rather than argued for. Cod
 
 **Criterion 3 — deterministic overflow.** Descending `pixel_count`, ties broken by `(instance_id, generation)`. The tie-break is the part that makes "deterministic" real: equal pixel counts sorted by count alone would fall back to input order, which is exactly the arbitrary order the criterion forbids. Tested by feeding the same entities in different orders and requiring the same answer. An entity with no engine key is **dropped, not given a slot** — an entity the engine did not describe has no address, and inventing one would put an unidentified object in a memory slot.
 
-**Model E — capacity parity.** `embed_dim=224` gives **7,987,747** params = **1.0272x** Model C, inside Decision 47's 0.9-1.1 band. The first attempt reused Model C's `embed_dim=240` and landed at **1.1785x**, outside the band — caught because the band is two-sided, the fix Decision 47 exists for.
+**Model E — capacity parity.** `embed_dim=216` gives **7,428,507** params = **0.9554x** Model C (7,775,451), inside Decision 47's 0.9-1.1 band. Reusing Model C's `embed_dim=240` gives **1.1785x**, outside it. Width must be a multiple of 24 — GroupNorm needs 8, stage-1 attention needs `num_heads=3`.
+
+  **Corrected 2026-09-21, same day.** This entry first claimed `embed_dim=224` gave **1.0272x**. That figure was computed with `num_heads=(4,8)`; Model C's config uses **(3,6)**, under which 224 is not even constructible (`dim 224 not divisible by num_heads 3`). The error came from sweeping widths against assumed hyperparameters instead of the ones in `configs/ladder_v3/model_c.json`, and it survived into a committed Decision because the sweep produced a plausible number and was not re-derived from the config. The corrected figure is above; the *lesson* Decision 47 encodes — that a two-sided band catches an overshoot a one-sided rule would miss — still holds, since 240 really is 1.1785x.
 
 **A defect found and fixed during wiring, recorded because it is subtle.** Zero-initialising the *token* projection is **not** sufficient to start the entity branch at zero: `to_k`/`to_v` carry biases, so zero tokens still yield non-zero keys and values, and the attention's `proj` adds a bias of its own. Model E therefore differed from Model C at initialisation, which would have made "did entity awareness help?" inseparable from "was it initialised differently?" — the exact confound **Decision 66** exposed in Model B, whose fusion turned out never to have engaged. Zeroing `entity_attn.proj` fixes it, and both directions are now tested: E is bit-identical to C at init **and** provably diverges once the branch is unzeroed.
 
@@ -3136,6 +3138,36 @@ All three exit criteria met, each asserted by a test rather than argued for. Cod
 **The probe-only guard was rescoped, not deleted.** It asserted no file may import `masked_entity_attention`. At M7 that is wrong — Model E imports it deliberately. What Decisions 45/50 actually protect is narrower: the **StructFormer files comprising the M5 graph** stay free of it so Model C remains the clean frame-independent baseline. A companion test now asserts Model E *does* import it, so a mechanism that is never wired in — the Model B failure — cannot pass silently.
 
 **Not done here, deliberately:** Model E is built and tested but **not trained**. M7's exit criteria are correctness properties, not quality comparisons, and training rung E belongs with the ladder at M9.
+
+---
+
+### Decision 75: Entity-Masked Attention Degenerates to a Lookup; Model E Is a Null Result (2026-09-21)
+
+**The attention was never attention on this data.** §4 masks attention to `-inf` outside an entity's own pixels, and §4 also defines `S_i(x,y) = 1[ID(x,y) = i]` — which is **disjoint**: a pixel belongs to exactly one entity. Measured (`scripts/probe_entity_attention_degeneracy.py`, `eval/reports/entity_attention_degeneracy.json`): **1,171 bottleneck cells hold a legal entity and 0 hold more than one.** A masked softmax over a set of size one returns **1.0 whatever the scores are**, so
+
+    d(loss)/d(Q) = d(loss)/d(K) = 0, exactly and permanently.
+
+`norm_q`, `to_q`, `to_k` — **374,976 parameters, 5.0 % of Model E** — received zero gradient at every step, still dead at step 11 while every other entity parameter had come alive. What remained was not attention: pixel *p* receives entity *i*'s value vector where *i* is *p*'s entity. That is a **lookup**.
+
+`MaskedEntityInjection` is that lookup written as what it is. It is **bit-identical** to the attention path on disjoint masks (max difference `0.00e+00`, asserted by `test_injection_is_identical_to_masked_attention_on_disjoint_masks`) with the dead half removed — a simplification, **not** a behaviour change and **not** a departure from §4, whose `-inf` guarantee still holds exactly. The alternative — letting every pixel see every token so Q/K have something to choose between — would make attention meaningful by *violating* §4's masking rule, and was rejected.
+
+- **Capacity parity, honestly.** Model E is now **7,053,547** params = **0.9072x** Model C (7,775,451), inside Decision 47's band, with **every parameter trainable**. The attention form's 0.9554x counted 375k parameters that could never learn.
+- **A second undisclosed deviation, fixed.** Bottleneck masks were resampled with `interpolate(area)` then `> 0`, which **dilates**: any cell touched by one pixel of entity *i* became a full cell for *i*, so masks disjoint at image resolution **overlapped** at the bottleneck — pooling mixed entities and tokens reached pixels the engine gave to another. Measured on real data: **6 ambiguous cells**. Replaced with per-cell `argmax`, which preserves disjointness; measured cost **0 of 54 entities lost**. The original isolation test placed entities 32 px apart and never exercised it.
+
+**Model E's result — a null, stated as one.** Sealed test set, 3,960 frames, identical data/split/seed/objective to A and C:
+
+| | L1 | PSNR | SSIM | sharpness | gate |
+|---|---|---|---|---|---|
+| **A** (CNN) | **0.008947** | **34.041** | **0.9747** | **0.9104** | **PASS** |
+| **C** (StructFormer) | 0.009174 | 33.858 | 0.9728 | 0.8514 | FAIL |
+| **E** (entity-aware) | 0.009219 | 33.789 | 0.9726 | 0.8684 | FAIL |
+
+- **E vs C: -0.49 % L1, +0.0170 sharpness.** Model C's measured across-seed spread is ~1.1 % (L1) and **sd 0.0079** (sharpness), so 2 sd is 0.0158. The L1 difference is inside noise; the sharpness gain sits *barely* outside it **on a single run**, which is a hint, not a result.
+- **Entity conditioning produces no measurable change in image quality**, and does not close the gate (0.8684 vs 0.90). The CNN still wins outright on every metric at every dataset scale.
+- **The direction is at least consistent with Decision 72**: committing to a per-entity appearance should sharpen, and E moved the right way. Whether that is real needs repeat seeds; it is **not** claimed here.
+- **M7 the milestone still passes** — its exit criteria are correctness properties (Decision 74), all met. Model E's quality was never M7's bar. A null result at rung E is a finding, not a milestone failure.
+
+**Consequence for M8.** Two independent signals now say the entity direction has thin material in this scene: memory carries no usable information at reappearance timescales (Decision 73), and entity conditioning without memory changes nothing measurable (here). Neither is a reason to abandon EPAM — it is the protected headline novelty — but M8's claims must be scoped to what can actually be demonstrated, and the metric it will be judged on should be fixed before it is built, not after.
 
 ---
 

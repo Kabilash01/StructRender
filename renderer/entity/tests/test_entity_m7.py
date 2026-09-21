@@ -250,3 +250,100 @@ def test_single_style_form_takes_masks_but_not_a_style_input():
     with torch.no_grad():
         assert e(x, m).shape == (1, 3, 64, 64)
         assert e(x).shape == (1, 3, 64, 64)
+
+
+# ---- capacity parity, recomputed (KB Decision 47) -------------------------
+
+def test_model_e_capacity_against_model_c():
+    """Recompute both counts and assert the two-sided band.
+
+    Models C and D each have this test; Model E did not, and that is exactly how
+    a wrong parity figure reached a locked Decision entry — the sweep that
+    produced it used assumed `num_heads`, not the ones in the config, and nothing
+    re-derived it. Decisions 44/51: a number in the KB needs a generator AND a
+    test.
+    """
+    import json
+
+    from renderer.entity.model import EntityAwareStructFormer
+    from renderer.structformer.model import StructFormer
+    from renderer.training.train_baseline import ROOT
+
+    c = json.load(open(ROOT / "configs/ladder_v3/model_c.json"))["model"]
+    e = json.load(open(ROOT / "configs/ladder_v3/model_e.json"))["model"]
+    base = dict(image_size=tuple(c["image_size"]), depths=tuple(c["depths"]),
+                num_heads=tuple(c["num_heads"]), window_sizes=tuple(c["window_sizes"]))
+    n_c = sum(p.numel() for p in StructFormer(embed_dim=c["embed_dim"], **base).parameters())
+    n_e = sum(p.numel() for p in EntityAwareStructFormer(
+        k_max=e["k_max"], embed_dim=e["embed_dim"], **base).parameters())
+    ratio = n_e / n_c
+    assert 0.9 <= ratio <= 1.1, f"Model E is {ratio:.4f}x Model C ({n_e:,} vs {n_c:,})"
+
+
+def test_every_model_e_parameter_can_receive_gradient():
+    """No dead weight — the defect that motivated Decision 75.
+
+    Entity masks are disjoint, so a masked softmax over entity slots runs over a
+    set of size one and returns 1.0 regardless of the scores; Q and K then get
+    exactly zero gradient forever. The attention form carried 374,976 such
+    parameters. This asserts the lookup form carries none.
+    """
+    from renderer.entity.model import EntityAwareStructFormer
+    torch.manual_seed(0)
+    m = EntityAwareStructFormer(k_max=4, **_kw())
+    m.entity_attn.proj.weight.data.normal_(0, 0.1)   # release the zero-init gate
+    m.pool_proj.fc2.weight.data.normal_(0, 0.1)
+    x = torch.randn(2, 7, 64, 64)
+    st = torch.randn(2, m.backbone.style_dim)
+    masks = torch.zeros(2, 4, 64, 64)
+    masks[0, 0, :16, :16] = 1
+    masks[0, 1, 32:, 32:] = 1
+    masks[1, 2, :24, :24] = 1
+    m(x, st, masks).abs().mean().backward()
+    dead = [n for n, p in m.named_parameters()
+            if ("entity_attn" in n or "pool_proj" in n)
+            and (p.grad is None or float(p.grad.abs().sum()) == 0.0)]
+    assert not dead, f"entity-branch parameters with no gradient: {dead}"
+
+
+def test_injection_is_identical_to_masked_attention_on_disjoint_masks():
+    """The simplification is exact, not approximate — so §4's rule is unchanged.
+
+    On disjoint masks the softmax the lookup removes was the constant 1.0, so
+    the two paths must agree bit for bit given the same value/projection weights.
+    """
+    from renderer.entity.injection import MaskedEntityInjection
+    from renderer.structformer.masked_entity_attention import EntityMaskedCrossAttention
+    torch.manual_seed(0)
+    dim = td = 32
+    inj = MaskedEntityInjection(dim, td)
+    att = EntityMaskedCrossAttention(dim=dim, token_dim=td, num_heads=1, k_max=4)
+    att.norm_kv.load_state_dict(inj.norm.state_dict())
+    att.to_v.load_state_dict(inj.to_v.state_dict())
+    with torch.no_grad():
+        inj.proj.weight.normal_(0, 0.1); inj.proj.bias.normal_(0, 0.1)
+        att.proj.weight.copy_(inj.proj.weight); att.proj.bias.copy_(inj.proj.bias)
+    x = torch.randn(2, dim, 6, 8)
+    t = torch.randn(2, 4, td)
+    m = torch.zeros(2, 4, 6, 8)
+    m[0, 0, :3, :4] = 1; m[0, 1, 3:, 4:] = 1; m[1, 2, :, :2] = 1
+    with torch.no_grad():
+        assert torch.equal(att(x, t, m), inj(x, t, m))
+        # background receives nothing at all, bias included
+        bg = (m.sum(1) == 0)
+        assert float(inj(x, t, m).permute(0, 2, 3, 1)[bg].abs().max()) == 0.0
+
+
+def test_downsampled_masks_stay_disjoint():
+    """area+`>0` dilates: a cell touched by one pixel of entity i becomes a full
+    cell for i, so disjoint masks OVERLAP at the bottleneck and an entity's token
+    reaches pixels the engine gave to another. Measured on real data before the
+    fix: 6 ambiguous cells. argmax keeps at most one owner per cell."""
+    from renderer.entity.model import downsample_masks_disjoint
+    m = torch.zeros(1, 3, 32, 32)
+    m[0, 0, :, :12] = 1          # boundary at x=12 falls INSIDE an 8px cell
+    m[0, 1, :, 12:] = 1
+    d = downsample_masks_disjoint(m, (4, 4))
+    assert bool((d.sum(1) <= 1).all()), "downsampled masks overlap"
+    old = (torch.nn.functional.interpolate(m, size=(4, 4), mode="area") > 0).float()
+    assert int((old.sum(1) > 1).sum()) > 0, "fixture no longer exercises the dilation"

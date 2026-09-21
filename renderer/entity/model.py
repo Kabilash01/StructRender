@@ -30,10 +30,42 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from renderer.structformer.masked_entity_attention import EntityMaskedCrossAttention
 from renderer.structformer.model import StructFormer
 
+from .injection import MaskedEntityInjection
+
 from .pooling import EntityTokenProjection, entity_consistency_loss, masked_mean_pool
+
+
+def downsample_masks_disjoint(masks: torch.Tensor, size) -> torch.Tensor:
+    """Image-resolution entity masks -> bottleneck masks that are still DISJOINT.
+
+    KB §4 defines `S_i(x,y) = 1[ID(x,y) = i]`, which is disjoint by construction:
+    a pixel belongs to exactly one entity. Attention runs at the bottleneck, so
+    the masks have to be resampled, and the obvious spelling — `interpolate(area)`
+    then `> 0` — silently **dilates** them: any cell containing a single pixel of
+    entity *i* becomes a full cell for *i*. Two entities that are disjoint at
+    image resolution then OVERLAP at the bottleneck, and with that:
+
+      * pooling stops being "this entity's own pixels" — a shared cell's features
+        enter both descriptors, so an NPC standing in front of a car contributes
+        to the car's token;
+      * §4's `-inf` rule holds only against the *dilated* mask, so entity *i*'s
+        token legally reaches pixels the engine says belong to *j*.
+
+    Both are exactly what the entity mechanism exists to prevent, and neither is
+    visible in a test whose entities sit far apart.
+
+    So each cell is assigned to **at most one** entity: the one holding the most
+    pixels in it (`argmax` over area-pooled coverage), and to none at all when the
+    cell is background. Disjointness is preserved, which is the property §4
+    actually specifies. A thin entity can still lose a contested cell — that is a
+    real cost, but losing coverage is a weaker failure than leaking identity.
+    """
+    cov = torch.nn.functional.interpolate(masks, size=size, mode="area")  # [B,K,h,w]
+    best = cov.argmax(dim=1, keepdim=True)                                # [B,1,h,w]
+    onehot = torch.zeros_like(cov).scatter_(1, best, 1.0)
+    return onehot * (cov.sum(dim=1, keepdim=True) > 0).to(cov.dtype)
 
 
 class EntityAwareStructFormer(nn.Module):
@@ -41,6 +73,9 @@ class EntityAwareStructFormer(nn.Module):
 
     def __init__(self, k_max: int = 8, entity_heads: int = 1,
                  token_dim: int | None = None, **structformer_kwargs) -> None:
+        # `entity_heads` is accepted and ignored: it configured the attention
+        # heads that no longer exist. Kept so ladder configs written against the
+        # attention form still load rather than failing on an unexpected key.
         super().__init__()
         self.backbone = StructFormer(**structformer_kwargs)
         self.k_max = k_max
@@ -50,9 +85,16 @@ class EntityAwareStructFormer(nn.Module):
         self.feature_dim = dim
         self.token_dim = token_dim or dim
         self.pool_proj = EntityTokenProjection(dim, self.token_dim)
-        self.entity_attn = EntityMaskedCrossAttention(
-            dim=dim, token_dim=self.token_dim, num_heads=entity_heads, k_max=k_max,
-            attn_impl=structformer_kwargs.get("attn_impl", "manual"))
+        # A LOOKUP, not attention — and that is a measured fact, not a shortcut.
+        # Entity masks are disjoint (§4: S_i = 1[ID = i]), so on this data every
+        # bottleneck cell has at most one legal entity (1,171 cells, 0 with more
+        # than one). A masked softmax over a single element returns 1.0 whatever
+        # the scores are, so Q and K receive exactly zero gradient forever —
+        # 374,976 params, 5.0% of Model E, still dead at step 11 while every
+        # other entity parameter had come alive. `MaskedEntityInjection` is
+        # bit-identical to the attention path on disjoint masks (max diff 0.00e+00)
+        # with the dead half removed. KB Decision 75.
+        self.entity_attn = MaskedEntityInjection(dim=dim, token_dim=self.token_dim)
         # Zeroing the TOKEN projection is not enough to start the entity path at
         # zero: `to_k`/`to_v` carry biases, so zero tokens still produce non-zero
         # keys and values, and `proj` adds a bias of its own. The attention's
@@ -60,8 +102,7 @@ class EntityAwareStructFormer(nn.Module):
         # Without this, Model E differs from Model C at initialisation and "did
         # entity awareness help?" stops being answerable — the exact confound
         # Decision 66 found in Model B's fusion.
-        nn.init.zeros_(self.entity_attn.proj.weight)
-        nn.init.zeros_(self.entity_attn.proj.bias)
+        # (MaskedEntityInjection already zeroes its own output projection.)
 
     def _tokens(self, feats: torch.Tensor, masks: torch.Tensor) -> torch.Tensor:
         return self.pool_proj(masked_mean_pool(feats, masks))
@@ -79,12 +120,7 @@ class EntityAwareStructFormer(nn.Module):
 
         tokens = None
         if entity_masks is not None:
-            # Masks arrive at IMAGE resolution; attention runs at the bottleneck.
-            # area interpolation keeps a small entity from vanishing the way
-            # nearest sampling can when it is thinner than the stride.
-            m = torch.nn.functional.interpolate(
-                entity_masks, size=x.shape[-2:], mode="area")
-            m = (m > 0).to(x.dtype)
+            m = downsample_masks_disjoint(entity_masks, x.shape[-2:])
             tokens = self._tokens(x, m)
             x = x + self.entity_attn(x, tokens, m)
 
@@ -104,7 +140,12 @@ class EntityAwareSingleStyle(nn.Module):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self.net = EntityAwareStructFormer(**kwargs)
-        self.style_token = nn.Parameter(torch.zeros(1, self.net.backbone.style_dim))
+        # NOT zeros. `StructFormerSingleStyle` uses trunc_normal_ deliberately:
+        # with a zero token, d(loss)/d(style_film.weight) is exactly zero, so the
+        # FiLM weight never learns. M5 recorded that and guards it with a
+        # gradient test; initialising to zeros here would silently regress it.
+        self.style_token = nn.Parameter(torch.empty(1, self.net.backbone.style_dim))
+        nn.init.trunc_normal_(self.style_token, std=0.02)
 
     def forward(self, structure: torch.Tensor,
                 entity_masks: torch.Tensor | None = None) -> torch.Tensor:

@@ -143,13 +143,19 @@ def test_module_is_not_imported_by_the_M5_GRAPH():
         ast.parse(src)
 
 
-def test_model_e_does_import_it_so_the_guard_above_is_scoped_not_absolute():
-    """The mirror of the test above: if NOTHING imported the module, M7 would
-    have shipped a mechanism that is never wired in — the Model B failure."""
-    from pathlib import Path
-    from renderer.training.train_baseline import ROOT
-    src = (Path(ROOT) / "renderer" / "entity" / "model.py").read_text(encoding="utf-8")
-    assert "masked_entity_attention" in src
+def test_the_attention_module_is_still_reachable_and_still_the_reference():
+    """Model E no longer imports this module — Decision 75 replaced the attention
+    with `MaskedEntityInjection`, which is bit-identical on disjoint masks with
+    the provably-dead Q/K removed.
+
+    The module stays because it remains the REFERENCE the simplification is
+    checked against: `test_injection_is_identical_to_masked_attention_on_disjoint_masks`
+    asserts the two agree exactly, so if anyone ever changes the lookup, the
+    equivalence claim fails loudly instead of quietly becoming false.
+    """
+    from renderer.entity.injection import MaskedEntityInjection  # noqa: F401
+    from renderer.structformer.masked_entity_attention import (  # noqa: F401
+        EntityMaskedCrossAttention)
 
 
 def test_onnx_export_and_cpu_parity():

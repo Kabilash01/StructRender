@@ -1,0 +1,7 @@
+{
+  "cells_with_an_entity": 1171,
+  "cells_with_more_than_one": 0,
+  "softmax_is_constant": true,
+  "model_c_params": 7775467,
+  "note": "With every cell owned by at most one entity the masked softmax returns 1.0 by construction, so Q and K receive exactly zero gradient. See KB Decision 75."
+}

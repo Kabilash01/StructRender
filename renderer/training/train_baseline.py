@@ -253,6 +253,32 @@ def _selection_note(cfg: dict) -> str:
         return base + f"(selection gain unavailable: {exc}). KB Decision 35."
 
 
+def unpack_batch(batch, device):
+    """``(x, y, extra)`` for EITHER batch shape the ladder produces.
+
+    Model E's dataset yields a dict (it carries entity masks); every other rung
+    yields ``(x, y, frame_id)``. One helper rather than an ``isinstance`` check at
+    each call site: the first attempt patched only the training loop, and
+    `evaluate` then died one epoch in with ``'str' object has no attribute 'to'``
+    — 30 minutes of GPU time to discover a second unpack site. There are three,
+    and a fourth added later would fail the same way, so every consumer routes
+    through here.
+
+    ``extra`` is the tuple of additional positional args the model wants after
+    ``structure`` — empty for rungs that take only structure. ``fids`` is the
+    frame-id tensor, or None for a dict batch that does not carry one; the
+    qualitative pass needs it and dropping it silently is what broke
+    `test_trained_checkpoint` with ``NameError: name 'fids' is not defined``.
+    """
+    if isinstance(batch, dict):
+        x = batch["structure"].to(device)
+        y = batch["target"].to(device)
+        extra = (batch["entity_masks"].to(device),) if "entity_masks" in batch else ()
+        return x, y, extra, batch.get("frame_id")
+    x, y, fids = batch
+    return x.to(device), y.to(device), (), fids
+
+
 @torch.no_grad()
 def evaluate(
     model: torch.nn.Module,
@@ -264,9 +290,13 @@ def evaluate(
     model.eval()
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     l1s, psnrs, ssims, lps = [], [], [], []
-    for x, y, _ in loader:
-        x, y = x.to(device), y.to(device)
-        pred = model(x).float()
+    for _b in loader:
+        x, y, _extra, _ = unpack_batch(_b, device)
+        # `*_extra` is load-bearing: without it Model E is validated with its
+        # entity path OFF, so val_l1 measures a model that is not the one being
+        # trained, and early stopping selects on it. This is the same failure
+        # that made the ladder-v2 temporal evaluation meaningless (Decision 66).
+        pred = model(x, *_extra).float()
         l1s.append((pred - y).abs().flatten(1).mean(dim=1).cpu())
         psnrs.append(psnr(pred, y).cpu())
         ssims.append(ssim(pred, y).cpu())
@@ -317,9 +347,10 @@ def style_acquisition(
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     p_t, n_t, s_pt, s_nt, l_pt, l_nt = [], [], [], [], [], []
     h_pn, h_tn, g_p, g_t, g_n = [], [], [], [], []
-    for x, y, fids in loader:
-        pred = model(x.to(device)).float().cpu()
-        y = y.float()
+    for _b in loader:
+        x, y, _extra, fids = unpack_batch(_b, device)
+        pred = model(x, *_extra).float().cpu()
+        y = y.float().cpu()
         p_t.append(psnr(pred, y))
         s_pt.append(ssim(pred, y))
         g_p.append(gradient_energy(pred))
@@ -373,8 +404,14 @@ def dump_qualitative(
     model.eval()
     written = []
     for fid in frame_ids:
-        x, y, _ = dataset[dataset.frame_ids.index(fid)]
-        pred = model(x[None].to(device)).float().cpu()[0]
+        _item = dataset[dataset.frame_ids.index(fid)]
+        if isinstance(_item, dict):
+            x = _item["structure"]
+            _extra = (_item["entity_masks"][None].to(device),)
+        else:
+            x, _y, _ = _item
+            _extra = ()
+        pred = model(x[None].to(device), *_extra).float().cpu()[0]
         strip = np.concatenate(
             [
                 dataset.session.load_native_rgb(fid),
@@ -528,6 +565,12 @@ def _temporal_unet_cls(**kwargs):
     return TemporalUNet(**kwargs)
 
 
+def _entity_structformer_cls(**kwargs):
+    """Model E (KB Decision 74). Late import, same rationale as B and D."""
+    from renderer.entity.model import EntityAwareSingleStyle
+    return EntityAwareSingleStyle(**kwargs)
+
+
 def _temporal_structformer_cls(**kwargs):
     """Late import: `renderer.temporal.temporal_model` is not needed to train or
     load Models A and C, and importing it eagerly would pull the warp and mask
@@ -550,6 +593,14 @@ ARCHITECTURES: dict[str, tuple[type, tuple[str, ...]]] = {
     "temporal_unet": (
         _temporal_unet_cls,
         ("in_channels", "out_channels", "base_channels", "image_size"),
+    ),
+    # Model E (M7). Late import for the same reason as B and D: `renderer.entity`
+    # pulls in the masked-attention module, which the M4/M5 code paths must not
+    # import (Decisions 45/50 keep Model C the clean frame-independent baseline).
+    "entity_structformer": (
+        _entity_structformer_cls,
+        ("in_channels", "out_channels", "image_size", "embed_dim", "depths",
+         "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl", "k_max"),
     ),
     "temporal_structformer": (
         _temporal_structformer_cls,
@@ -597,7 +648,16 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
     if cfg["data"].get("split_file"):
         from renderer.training.multi_session import build_splits, load_session_split, split_report
         _sp = load_session_split(cfg["data"]["split_file"])
-        train_ds, val_ds, _test_ds = build_splits(cfg["data"]["style_id"], _sp)
+        if cfg.get("model", {}).get("arch") == "entity_structformer":
+            # Model E needs the engine's entity masks, which `build_input` omits
+            # by design (Decision 9: IDs are addresses, never input channels), so
+            # they cannot arrive as an eighth channel. Same sessions, same order,
+            # same split — only the extra tensor differs (Decision 35).
+            from renderer.entity.dataset import build_entity_splits
+            train_ds, val_ds, _test_ds = build_entity_splits(
+                cfg["data"]["style_id"], _sp, int(cfg["model"].get("k_max", 8)))
+        else:
+            train_ds, val_ds, _test_ds = build_splits(cfg["data"]["style_id"], _sp)
         split_info = split_report(_sp)
         session = None
     else:
@@ -685,10 +745,15 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
         accum = int(t.get("accum_steps", 1))
         n_batches = len(loader)
         opt.zero_grad(set_to_none=True)
-        for step, (x, y, _) in enumerate(loader):
+        for step, _batch in enumerate(loader):
+            # Model E's dataset yields a dict (it carries entity masks); every
+            # other rung yields the (x, y, frame_id) tuple. Unpacking both here
+            # keeps ONE training loop, which Decision 35 requires: the ladder
+            # must measure the architecture, not a second trainer.
+            x, y, _extra, _ = unpack_batch(_batch, device)
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
             with torch.autocast("cuda", dtype=amp, enabled=use_amp):
-                loss, _parts = criterion(model(x), y)
+                loss, _parts = criterion(model(x, *_extra), y)
             value = assert_finite_loss(loss, step=step, epoch=epoch)
             # Divide by the microbatches actually IN THIS GROUP, not by `accum`.
             # The last group of an epoch can be short (161 batches at accum 2 gives
