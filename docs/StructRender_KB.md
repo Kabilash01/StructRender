@@ -3117,6 +3117,28 @@ The control sitting at zero validates the method.
 
 ---
 
+### Decision 74: M7 Complete — Structured Entity Awareness (2026-09-21)
+
+All three exit criteria met, each asserted by a test rather than argued for. Code: `renderer/entity/` (keys, selection, pooling, model); tests: `renderer/entity/tests/test_entity_m7.py` (24) — suite now 477.
+
+**Criterion 1 — correct entity mask/token association.** Pooling uses the entity's own pixels and nothing else, so a token describes its entity before masking is involved; disturbing one entity's pixels provably cannot move another's token. Masks land in **selection order**, unused slots are all-zero, and empty slots pool to exactly zero rather than NaN (dividing by a zero pixel count is the natural spelling and poisons every downstream token through the linears).
+
+**Criterion 2 — no raw-ID production input.** Masks are binary indicators: `build_entity_masks` for `instance_id=3` and `instance_id=9999` produce **bit-identical** tensors, so the ID's *value* is gone by construction (Decision 9). Malformed keys raise rather than silently mis-address.
+
+**Criterion 3 — deterministic overflow.** Descending `pixel_count`, ties broken by `(instance_id, generation)`. The tie-break is the part that makes "deterministic" real: equal pixel counts sorted by count alone would fall back to input order, which is exactly the arbitrary order the criterion forbids. Tested by feeding the same entities in different orders and requiring the same answer. An entity with no engine key is **dropped, not given a slot** — an entity the engine did not describe has no address, and inventing one would put an unidentified object in a memory slot.
+
+**Model E — capacity parity.** `embed_dim=224` gives **7,987,747** params = **1.0272x** Model C, inside Decision 47's 0.9-1.1 band. The first attempt reused Model C's `embed_dim=240` and landed at **1.1785x**, outside the band — caught because the band is two-sided, the fix Decision 47 exists for.
+
+**A defect found and fixed during wiring, recorded because it is subtle.** Zero-initialising the *token* projection is **not** sufficient to start the entity branch at zero: `to_k`/`to_v` carry biases, so zero tokens still yield non-zero keys and values, and the attention's `proj` adds a bias of its own. Model E therefore differed from Model C at initialisation, which would have made "did entity awareness help?" inseparable from "was it initialised differently?" — the exact confound **Decision 66** exposed in Model B, whose fusion turned out never to have engaged. Zeroing `entity_attn.proj` fixes it, and both directions are now tested: E is bit-identical to C at init **and** provably diverges once the branch is unzeroed.
+
+**Where the isolation guarantee lives, stated precisely.** KB §4's `-inf` rule is asserted at the **attention output**, not at the final image. The decoder mixes spatially by design — convolutions and shifted windows deliberately spread information — so deleting a distant entity *does* change a given pixel's final colour, downstream of attention. A test asserting isolation on the output image would fail for a *correct* model, and "fixing" that would mean crippling the decoder. Measured directly: removing entity 1 changes entity 0's attention output by **0.000e+00**, while entity 1's own cells change by 1.33. §4 promises a token cannot reach a pixel outside its mask; that is what is tested.
+
+**The probe-only guard was rescoped, not deleted.** It asserted no file may import `masked_entity_attention`. At M7 that is wrong — Model E imports it deliberately. What Decisions 45/50 actually protect is narrower: the **StructFormer files comprising the M5 graph** stay free of it so Model C remains the clean frame-independent baseline. A companion test now asserts Model E *does* import it, so a mechanism that is never wired in — the Model B failure — cannot pass silently.
+
+**Not done here, deliberately:** Model E is built and tested but **not trained**. M7's exit criteria are correctness properties, not quality comparisons, and training rung E belongs with the ladder at M9.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

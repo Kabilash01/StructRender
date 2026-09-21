@@ -121,17 +121,35 @@ def test_legal_entity_does_still_influence_its_own_pixels():
     assert (after - base)[0][:, region0].abs().max() > 1e-6
 
 
-def test_module_stays_probe_only():
-    """M5 ships without this (KB Decisions 45/50). It must not be imported by the
-    model, only by its own tests."""
+def test_module_is_not_imported_by_the_M5_GRAPH():
+    """M5's exported graph ships WITHOUT entity attention (KB Decisions 45/50).
+
+    This began as "the module is probe-only, nothing may import it". At M7 that
+    became wrong: `renderer/entity/model.py` (Model E) imports it deliberately,
+    which is the milestone's entire point. What must still hold is narrower and
+    is the thing Decisions 45/50 actually protect — the **StructFormer files that
+    make up the M5 graph** stay free of it, so Model C remains the clean
+    frame-independent baseline the ladder compares against. Model E is a separate
+    rung in a separate package, not a change to Model C.
+    """
     import ast
     from pathlib import Path
     from renderer.training.train_baseline import ROOT
 
     for name in ("model.py", "encoder.py", "decoder.py", "cnn_stem.py", "rgb_head.py"):
         src = (Path(ROOT) / "renderer" / "structformer" / name).read_text(encoding="utf-8")
-        assert "masked_entity_attention" not in src, f"{name} imports the probe-only module"
+        assert "masked_entity_attention" not in src, (
+            f"{name} imports entity attention; Model C must stay the clean baseline")
         ast.parse(src)
+
+
+def test_model_e_does_import_it_so_the_guard_above_is_scoped_not_absolute():
+    """The mirror of the test above: if NOTHING imported the module, M7 would
+    have shipped a mechanism that is never wired in — the Model B failure."""
+    from pathlib import Path
+    from renderer.training.train_baseline import ROOT
+    src = (Path(ROOT) / "renderer" / "entity" / "model.py").read_text(encoding="utf-8")
+    assert "masked_entity_attention" in src
 
 
 def test_onnx_export_and_cpu_parity():
