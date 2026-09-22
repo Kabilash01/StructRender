@@ -122,25 +122,43 @@ def test_legal_entity_does_still_influence_its_own_pixels():
 
 
 def test_module_is_not_imported_by_the_M5_GRAPH():
-    """M5's exported graph ships WITHOUT entity attention (KB Decisions 45/50).
+    """M5's exported graph ships WITHOUT entity conditioning (KB Decisions 45/50).
 
-    This began as "the module is probe-only, nothing may import it". At M7 that
-    became wrong: `renderer/entity/model.py` (Model E) imports it deliberately,
-    which is the milestone's entire point. What must still hold is narrower and
-    is the thing Decisions 45/50 actually protect — the **StructFormer files that
-    make up the M5 graph** stay free of it, so Model C remains the clean
-    frame-independent baseline the ladder compares against. Model E is a separate
-    rung in a separate package, not a change to Model C.
+    Model C must stay the clean frame-independent baseline the ladder compares
+    against, so nothing in `renderer/structformer/` may pull entity machinery in.
+
+    This **enumerates the package** rather than checking a hardcoded list of five
+    filenames, which is how it was first written: a file added to the package
+    later would have been silently unguarded, and the guard would have kept
+    passing while the property it protects quietly stopped holding. It also
+    parses each module and inspects real import statements instead of substring-
+    matching the source, so a name appearing in a comment is not a false alarm
+    and an aliased import is not a false pass.
     """
     import ast
     from pathlib import Path
     from renderer.training.train_baseline import ROOT
 
-    for name in ("model.py", "encoder.py", "decoder.py", "cnn_stem.py", "rgb_head.py"):
-        src = (Path(ROOT) / "renderer" / "structformer" / name).read_text(encoding="utf-8")
-        assert "masked_entity_attention" not in src, (
-            f"{name} imports entity attention; Model C must stay the clean baseline")
-        ast.parse(src)
+    pkg = Path(ROOT) / "renderer" / "structformer"
+    banned = {"masked_entity_attention"}
+    checked = []
+    for path in sorted(pkg.glob("*.py")):
+        if path.name in ("__init__.py", "masked_entity_attention.py"):
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""] + [a.name for a in node.names]
+            for n in names:
+                assert not (set(n.split(".")) & banned), (
+                    f"{path.name} imports entity machinery ({n}); "
+                    "Model C must stay the clean baseline")
+        checked.append(path.name)
+    # the enumeration must actually have found the graph files, or this passes vacuously
+    assert {"model.py", "encoder.py", "decoder.py"} <= set(checked), checked
 
 
 def test_the_attention_module_is_still_reachable_and_still_the_reference():

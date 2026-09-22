@@ -129,21 +129,45 @@ def test_keys_for_frame_skips_destroyed_and_background():
 
 # ---- consistency loss ----------------------------------------------------
 
-def test_consistency_loss_ignores_slots_empty_in_either_frame():
-    t, p = torch.zeros(1, 2, 4), torch.zeros(1, 2, 4)
-    p[0, 1] = 5.0                                  # slot 1 differs wildly
-    m = torch.zeros(1, 2, 2, 2); m[0, 0] = 1       # but slot 1 is empty now
-    pm = torch.ones(1, 2, 2, 2)
-    assert float(entity_consistency_loss(t, m, p, pm)) == 0.0
+def test_consistency_loss_pairs_by_identity_not_by_slot():
+    """The defect this function was rewritten for (KB Decision 76).
+
+    Slot index is a per-frame pixel_count rank, so two entities swapping
+    on-screen size swap slots. A slot-keyed loss then pulls entity A's token
+    toward entity B's history — identity by rank position, which Decision 9
+    forbids. Here A moves from slot 1 to slot 0 and its token is UNCHANGED, so a
+    correct loss is exactly zero; the slot-keyed version scored 1.0.
+    """
+    a, b = EntityKey("s", 1, 0), EntityKey("s", 2, 0)
+    tok = torch.zeros(1, 2, 4); tok[0, 0] = 1.0        # A now in slot 0
+    prev = torch.zeros(1, 2, 4); prev[0, 1] = 1.0      # A was in slot 1
+    assert float(entity_consistency_loss(tok, [[a, b]], prev, [[b, a]])) == 0.0
 
 
-def test_consistency_loss_penalises_a_drifting_occupied_slot():
-    t, p = torch.zeros(1, 1, 4), torch.ones(1, 1, 4)
-    m = torch.ones(1, 1, 2, 2)
-    assert float(entity_consistency_loss(t, m, p, m)) == pytest.approx(1.0)
+def test_consistency_loss_still_penalises_genuine_drift():
+    """The mirror: a loss that is always zero would pass the test above."""
+    a = EntityKey("s", 1, 0)
+    assert float(entity_consistency_loss(
+        torch.zeros(1, 1, 4), [[a]], torch.ones(1, 1, 4), [[a]])) == pytest.approx(1.0)
 
 
-# ---- Model E wiring ------------------------------------------------------
+def test_consistency_loss_ignores_an_entity_absent_from_either_frame():
+    """Appeared, vanished, or overflow-dropped: no pair to be consistent with,
+    and pairing it anyway would pull a real token toward a padded zero."""
+    a, b = EntityKey("s", 1, 0), EntityKey("s", 2, 0)
+    tok = torch.zeros(1, 2, 4); prev = torch.ones(1, 2, 4)
+    assert float(entity_consistency_loss(tok, [[a, None]], prev, [[b, b]])) == 0.0
+    assert float(entity_consistency_loss(tok, [[None, None]], prev, [[a, b]])) == 0.0
+
+
+def test_consistency_loss_distinguishes_a_recycled_instance_id():
+    """generation is part of the key, so a recycled instance_id is a DIFFERENT
+    entity and must not inherit the destroyed one's token history — the same
+    property M8's 'destroyed entity cannot leak memory' rests on."""
+    old_e, new_e = EntityKey("s", 7, 0), EntityKey("s", 7, 1)
+    tok = torch.zeros(1, 1, 4); prev = torch.ones(1, 1, 4)
+    assert float(entity_consistency_loss(tok, [[new_e]], prev, [[old_e]])) == 0.0
+
 
 def _kw():
     return dict(image_size=(64, 64), embed_dim=32, depths=(1, 1, 1),

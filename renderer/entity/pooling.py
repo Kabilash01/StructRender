@@ -60,20 +60,36 @@ class EntityTokenProjection(nn.Module):
         return self.fc2(self.act(self.fc1(self.norm(pooled))))
 
 
-def entity_consistency_loss(tokens: torch.Tensor, masks: torch.Tensor,
+def entity_consistency_loss(tokens: torch.Tensor, keys: list[list],
                             prev_tokens: torch.Tensor | None = None,
-                            prev_masks: torch.Tensor | None = None) -> torch.Tensor:
+                            prev_keys: list[list] | None = None) -> torch.Tensor:
     """Penalise an entity's token for drifting between frames — KB §4, M7 deliverable.
 
-    Only slots occupied in BOTH frames contribute; a slot that was empty in either
-    has no pair to be consistent with, and including it would pull real tokens
-    toward the zero of a padded slot. With no valid pair the loss is exactly zero,
-    which keeps it safe to add to the objective unconditionally.
+    Entities are paired by **EntityKey**, never by slot index. Slot index is a
+    per-frame ``pixel_count`` rank (see `selection.select_entities`), so two
+    entities that swap relative on-screen size — the normal case as objects
+    approach and recede — swap slots. A slot-keyed loss then pulls entity A's
+    token toward **entity B's** previous token, which is identity resolved by
+    rank position: exactly what Decision 9 says identity must never be. The
+    first version of this function did that, and its tests did not catch it
+    because none of them swapped slots.
+
+    ``keys`` / ``prev_keys`` are per-batch-item lists of the EntityKey (or any
+    hashable engine-owned identity) occupying each slot, ``None`` for empty
+    slots. Only entities present in BOTH frames contribute; an entity that
+    appeared, vanished, or was overflow-dropped has no pair to be consistent
+    with, and including it would pull a real token toward a padded zero. With no
+    valid pair the loss is exactly zero, so it stays safe to add unconditionally.
     """
-    if prev_tokens is None or prev_masks is None:
+    if prev_tokens is None or prev_keys is None:
         return tokens.new_zeros(())
-    occupied = (masks.flatten(2).sum(2) > 0) & (prev_masks.flatten(2).sum(2) > 0)  # [B,K]
-    if not bool(occupied.any()):
+    rows, prev_rows = [], []
+    for b, (now, before) in enumerate(zip(keys, prev_keys)):
+        where = {k: i for i, k in enumerate(before) if k is not None}
+        for slot, k in enumerate(now):
+            if k is not None and k in where:
+                rows.append(tokens[b, slot])
+                prev_rows.append(prev_tokens[b, where[k]])
+    if not rows:
         return tokens.new_zeros(())
-    d = (tokens - prev_tokens).pow(2).mean(dim=2)   # [B,K]
-    return (d * occupied.float()).sum() / occupied.float().sum().clamp_min(EPS)
+    return (torch.stack(rows) - torch.stack(prev_rows)).pow(2).mean()

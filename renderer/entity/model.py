@@ -10,11 +10,14 @@ rule is KB §4's, unchanged:
 so an NPC's pixels cannot retrieve a car's token. Addressing is by engine mask
 only, never by visual similarity (Decision 9: entity IDs are addresses).
 
-**Placement.** Entity attention sits at the stage-2 bottleneck, on the deepest
+**Placement.** Entity conditioning sits at the stage-2 bottleneck, on the deepest
 and smallest feature map. Two reasons, and the second is the load-bearing one:
-the bottleneck is where features are most semantic, and it is 1/16 resolution, so
-the K_max x HW attention that KB §12 flags as the project's operator risk stays
-small enough to export. The mechanism itself was already built, tested and
+the bottleneck is where features are most semantic, and it is **1/8** resolution
+(STEM_STRIDE=4 plus one stage-2 halving = 36x64 at 288x512), so the K_max x HW
+cost that KB §12 flags as the project's operator risk stays small. An earlier
+version of this docstring said 1/16, which understated the attention positions
+by 4x — the export-safety argument was being made against a resolution the model
+does not have. The mechanism itself was already built, tested and
 TensorRT-verified at M5 (`eval/reports/m7_mask_strictness_trt.json`) precisely so
 that this wiring step could not discover an export failure after the fact.
 
@@ -79,9 +82,11 @@ class EntityAwareStructFormer(nn.Module):
         super().__init__()
         self.backbone = StructFormer(**structformer_kwargs)
         self.k_max = k_max
-        dim = self.backbone.stage2.out_dim if hasattr(self.backbone.stage2, "out_dim") \
-            else self.backbone.decoder.in_dim if hasattr(self.backbone.decoder, "in_dim") \
-            else structformer_kwargs.get("embed_dim", 32) * 2
+        # Both `hasattr` branches this used to have were dead — neither EncoderStage
+        # nor DecoderStage defines out_dim/in_dim, so it always fell through to the
+        # kwarg, and was correct only because the fallback default happened to match
+        # StructFormer's. Stated directly instead: stage 2 doubles the stem width.
+        dim = int(structformer_kwargs.get("embed_dim", 32)) * 2
         self.feature_dim = dim
         self.token_dim = token_dim or dim
         self.pool_proj = EntityTokenProjection(dim, self.token_dim)
