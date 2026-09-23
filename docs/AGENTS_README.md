@@ -17,7 +17,7 @@ docs/AGENTS_README.md              # this file
 - Start each session normally — CLAUDE.md loads automatically and gives Claude the project context and non-negotiables.
 - For domain-specific work, either let Claude auto-delegate (its descriptions are written to route correctly) or invoke explicitly: `Use the ml-training agent to implement the EPAM update rule`.
 - **Run spec-guardian before closing out any milestone**, not just at the end of the project: `Use the spec-guardian agent to check the entity token packing work against the KB`. It's read-only by design — it can't "helpfully" fix anything, only report.
-- All five agents have `memory: project` enabled, so each builds up its own notes in `.claude/agent-memory/<name>/` over time (e.g. Godot quirks discovered, TensorRT export gotchas). Check these into version control — they're genuinely useful institutional knowledge for later sessions, and worth glancing at when you resume work after a break.
+- The four writing agents have `memory: project` enabled (spec-guardian is read-only and has none), so each builds up its own notes in `.claude/agent-memory/<name>/` over time (e.g. Godot quirks discovered, TensorRT export gotchas). Check these into version control — they're genuinely useful institutional knowledge for later sessions, and worth glancing at when you resume work after a break.
 
 ## Setting this up
 1. Copy your finalized `StructRender_KB_v3.md` into `docs/StructRender_KB.md` in your repo (rename to that exact path so CLAUDE.md's reference resolves).

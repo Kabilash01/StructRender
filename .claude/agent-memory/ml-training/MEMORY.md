@@ -4,10 +4,10 @@ Index of persistent memories. One line each.
 
 ## Project
 - [M2 dataset validator](project_m2_validator.md) — validator built and passing; M2 both exit criteria met
-- [Milestone status and training timeline](project_milestone_status.md) — M0-M5 done (M5 = negative result); M6 in progress; M4 baseline is the ladder's Model A
+- [Milestone status snapshot, 2026-09-06](project_milestone_status.md) — historical; current status is the KB Decision Log, not this note
 - [M5 export probe](project_m5_export_probe.md) — attention reached TensorRT before the architecture was built; nothing blocked, 3 KB entries pending
-- [M5 Model B built, untrained](project_m5_model_b.md) — StructFormer ready to train; unresolved capacity confound and a measured 8 GB ceiling
-- [M6 Model D built, untrained](project_m6_model_d.md) — temporal StructFormer ready to train; the previous-feature decision and two stated confounds
+- [M5 StructFormer build notes](project_m5_model_b.md) — historical; this is ladder Model C (renamed by Decision 50), trained since
+- [M6 Model D build notes](project_m6_model_d.md) — historical; trained since, M6 passed on ladder v2 (Decision 67)
 
 ## Feedback
 - [Validator scope discipline](feedback_validator_scope.md) — report-only, strict thresholds, recompute derived fields
