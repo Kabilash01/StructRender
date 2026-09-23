@@ -3219,6 +3219,28 @@ Model E at three seeds (20260905 / 20260908 / 20260909 — the **same** seeds as
 
 ---
 
+### Decision 78: M8 Design — EPAM Store, Model F, and a Built-In No-Memory Control (2026-09-23)
+
+**Exit criteria (§10 M8), restated:** same entity retrieves same memory after leaving view; destroyed entity cannot leak memory to a later object; style change clears memory; EPAM improves over the non-memory model. Criteria 1-3 are lifecycle properties; the fourth is empirical.
+
+**The store** (`renderer/epam/memory.py`) implements §4 verbatim: keyed by `EntityKey` (with `generation`), EMA update `M = gamma*M + (1-gamma)*F` only when `C > tau`, frozen while out of view, deleted on destroy, cleared on style change and session end, no eviction, keys from another session rejected. A lookup under a different style returns nothing even if a clear were missed. 17 tests assert each rule. **Criteria 1-3 are met** by that suite.
+
+**Confidence `C_i`** is visible pixels over a "fully visible" budget of **1,600 px** — the *measured* median entity size (443 observations: p5 1,025 / p50 1,634 / p95 4,934). The first value, 800, was chosen without measuring and made the gate inert. Stated plainly: even at 1,600 the gate rarely fires in this scene, because entities here are large; it guards edge slivers, not typical frames.
+
+**Model F** (`renderer/epam/model.py`) = Model E + memory + a learned per-style token table (live switching; Decision 15's cached encoding, Decision 70's scope). Resumes from Model E per the §4 curriculum: **all 111 tensors map, and F with no memory reproduces Model E with max difference 0.00e+00.** F adds 16 parameters (the second style row).
+
+**One memory rule for training and runtime** (`renderer/epam/runtime.py::memory_step`) — a model trained under a subtly different rule than it runs under would pass every test and fail only in the game. It is keyed by `EntityKey`, never slot (Decision 76).
+
+**The control is built into the code.** With `gamma = 0` memory reduces to the current descriptor — exactly Model E. So **F (gamma 0.9) and F0 (gamma 0)** train through identical code, clips, styles, objective, schedule, step count and selection rule, and **F - F0 measures memory and nothing else.** That is a cleaner ablation than F vs Model E, which trained for fewer steps, on one style, without clips. Both properties are tested: gamma = 0 is bit-identical to single-frame rendering, and gamma > 0 provably uses history.
+
+**Clip training.** Memory is detached (§4), so history frames need only a no-grad forward: 4-frame clips, strides {1,2,4}, loss on the last frame. 67 % of validation clips have a last-frame entity also seen in history — the fraction on which memory can act at all.
+
+**Style B: `watercolor`**, parameters copied unchanged from `oil_impasto` (only prompt and seed differ, so any alignment failure is attributable to the style). Stride probe: 90/90 frames pass, spurious max 0.149 vs a 0.35 gate, stylisation min 0.402 (stronger than oil's 0.287). Per Decision 40 the first full session is a hard gate; the chain aborts if it fails.
+
+**Pre-registered expectation, recorded before training:** Decision 73 measured residual correlation <= 0.037 beyond 30 ticks, so memory across a *reappearance gap* should contribute little. Clips span 3-12 frames, where correlation is 0.14-0.72, so any F - F0 gain is expected at short lags. **Primary metric: test-set sharpness** (Decision 72); L1, RCS and temporal error reported alongside. A null F - F0 is an acceptable, reportable outcome.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

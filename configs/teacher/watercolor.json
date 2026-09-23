@@ -1,0 +1,22 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "watercolor",
+  "backend": "sd15_controlnet_depth",
+  "prompt": "soft watercolor painting, translucent washes of cool blue and sage green, wet-on-wet pigment blooms, white paper showing through, delicate ink linework",
+  "negative_prompt": "photograph, photorealistic, text, watermark, signature, blurry, extra objects, cluttered background, distorted geometry, duplicated shapes, fisheye",
+  "reference_image": null,
+  "teacher": {
+    "model_id": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet_model_id": "lllyasviel/sd-controlnet-depth",
+    "controlnet_revision": "35e42a3ea49845b3c76f202f145f257b9fb1b7d4"
+  },
+  "seed": 20260923,
+  "params": {
+    "num_inference_steps": 24,
+    "guidance_scale": 7.5,
+    "strength": 0.5,
+    "controlnet_conditioning_scale": 1.6
+  },
+  "notes": "Style B for M8 live style switching (KB Decision 78). Parameters copied UNCHANGED from oil_impasto (strength 0.50, guidance 7.5, controlnet 1.6, 24 steps) because those are the ones that passed all four alignment gates on 990/990 frames; only prompt and seed differ, so a gate failure is attributable to the style rather than to a parameter change. Chosen to contrast with oil_impasto in palette (cool vs warm) and texture (translucent vs impasto) so a live switch is visibly a different style. Must pass a full-session alignment run before any multi-session generation (Decision 40: cel_bold passed an 81-frame probe and failed 36/990)."
+}

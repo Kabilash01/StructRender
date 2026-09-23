@@ -1,0 +1,69 @@
+{
+  "config_version": "epam-f",
+  "purpose": "Model F: EPAM memory on (gamma=0.9).",
+  "init_from": "checkpoints/ladder_v3_e/best.pt",
+  "data": {
+    "split_file": "configs/data/session_split_v2.json",
+    "styles": [
+      "oil_impasto",
+      "watercolor"
+    ]
+  },
+  "model": {
+    "image_size": [
+      288,
+      512
+    ],
+    "embed_dim": 216,
+    "depths": [
+      2,
+      2,
+      2
+    ],
+    "num_heads": [
+      3,
+      6
+    ],
+    "window_sizes": [
+      8,
+      4
+    ],
+    "k_max": 8
+  },
+  "epam": {
+    "gamma": 0.9,
+    "tau": 0.5,
+    "clip_len": 4,
+    "strides": [
+      1,
+      2,
+      4
+    ],
+    "val_every": 4,
+    "note": "tau=0.5 with full_px=1600 (measured median entity size) -> updates need >=800 px."
+  },
+  "loss": {
+    "l1": 1.0,
+    "perceptual": 0.5,
+    "perceptual_net": "alex"
+  },
+  "train": {
+    "seed": 20260905,
+    "epochs": 30,
+    "warmup_epochs": 1,
+    "lr": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 2,
+    "accum_steps": 4,
+    "num_workers": 2,
+    "eval_every_epochs": 2,
+    "early_stopping": {
+      "patience_evals": 6,
+      "min_rel_delta": 0.001,
+      "note": "Identical rule for EVERY rung, so each is trained to its own convergence rather than to an arbitrary shared epoch count. Patience is counted in EVALUATIONS so it means the same at any eval_every_epochs; min_rel_delta exists because val_l1 wobbles at 1e-5 between evals and without it noise reads as improvement. It cannot change which checkpoint is selected - best.pt is still the lowest val_l1 ever seen - so it can only cost time. KB Decision 62."
+    },
+    "checkpoint_dir": "checkpoints/epam_f",
+    "lr_note": "1e-4, half of Model E's, because this RESUMES from E (Decision 56: a warm restart at full lr perturbs a converged solution). Identical for F and F0."
+  },
+  "report": "eval/reports/epam_f_train.json"
+}
