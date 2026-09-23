@@ -1,0 +1,10 @@
+{
+  "model": "e_seedC",
+  "seed": 20260909,
+  "split": "configs/data/session_split_v2.json",
+  "l1": 0.009153231978416443,
+  "psnr": 33.75334167480469,
+  "ssim": 0.9726507663726807,
+  "sharp": 0.8591241510291853,
+  "anchor": null
+}

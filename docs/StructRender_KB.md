@@ -3195,6 +3195,30 @@ The function now takes per-frame `EntityKey` lists and pairs on them. Only entit
 
 ---
 
+### Decision 77: Entity Conditioning Sharpens — a Predicted Effect, Confirmed at 2.5 Sigma (2026-09-23)
+
+Model E at three seeds (20260905 / 20260908 / 20260909 — the **same** seeds as Model C's variance runs, so the two spreads are measured under identical draws). Sealed test split, 3,960 frames. Evidence: `eval/reports/ladder_v3_e_seed_verdict.json`, generator `scripts/eval_ladder_v3_gates.py`.
+
+| seed | L1 | sharpness | gate |
+|---|---|---|---|
+| 20260905 | 0.009219 | 0.8684 | FAIL |
+| 20260908 | 0.009088 | 0.8720 | FAIL |
+| 20260909 | 0.009153 | 0.8591 | FAIL |
+| **E mean** | **0.009153** | **0.8665** (sd 0.0067) | |
+| **C** | 0.009174 | **0.8514** (sd 0.0079) | FAIL |
+| A (CNN) | 0.008947 | 0.9104 | **PASS** |
+
+**E - C sharpness = +0.0151, pooled SE 0.0060 -> 2.5 sigma. Outside noise.**
+
+- **This was predicted before it was measured.** Decision 72's averaging probe established the mechanism: the teacher flickers 32x the engine, training under `L1 + LPIPS` targets the **conditional mean** of that flicker, and averaging the same entity across consecutive teacher frames costs **6.2 % sharpness at 16.4 sigma**. Committing to one appearance per entity should therefore sharpen. It does. A pre-registered direction, confirmed on held-out sessions across three seeds, is materially stronger evidence than the same number found by inspection.
+- **It gives EPAM a demonstrable mechanism**, which Decision 73 had removed. Memory across an occlusion carries no usable information here (residual correlation <= 0.037 at 30-480 ticks); **per-entity appearance commitment** does. M8's claim should be built on the second, not the first, and its metric is sharpness (pre-registered in Decision 72).
+- **It does not close the gate.** No seed reaches 0.90; the mean recovers roughly a quarter of the distance from C to the CNN. **Model A still wins outright** on every metric at every dataset size.
+- **L1 is unchanged** (-0.22 %, inside noise). The effect is specifically on sharpness, exactly as the averaging mechanism predicts — a broad quality gain would have been evidence *against* that explanation, not for it.
+- **A mid-run reading was wrong and is corrected here.** While the seeds were training I noted that Model E looked *less* reproducible than Model C (val_l1 spread ~3.7 % vs ~1.1 %). That compared a mid-training value against a converged one. Final sharpness sd is **0.0067** for E and **0.0079** for C — E is slightly *tighter*, not looser.
+- **Model E's single-run figure was the worst of its three seeds** (0.8684 vs a 0.8665 mean is above it, but its L1 0.009219 was the worst of the three). The original run understated the rung on L1 and roughly matched it on sharpness; Decision 75's "null result" verdict was correct for L1 and **wrong for sharpness**, which is why repeat seeds were run rather than assumed.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
