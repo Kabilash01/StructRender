@@ -5,7 +5,9 @@ cd "$(dirname "$0")/.."
 PY=/home/kabilash01/miniconda3/envs/dl/bin/python
 LOG=/tmp/m8_chain.log
 say(){ echo "=== $* $(date '+%a %H:%M') ===" | tee -a $LOG; }
-until grep -q WATERCOLOR_DONE /tmp/watercolor_gen.log 2>/dev/null; do sleep 120; done
+# Wait on the targets themselves, not on a log. /tmp is tmpfs here, so a reboot
+# erases the generation log and a log-based wait would block forever.
+until [ "$(ls data_pipeline/teacher_targets/watercolor/*/ALIGNED 2>/dev/null | wc -l)" -ge 29 ]; do sleep 120; done
 n=$(ls data_pipeline/teacher_targets/watercolor/*/ALIGNED 2>/dev/null | wc -l)
 say "watercolor aligned: $n/29"
 if [ "$n" -lt 29 ]; then say "ABORT: not all sessions aligned — dataset refuses unvalidated targets"; echo M8_CHAIN_DONE >> $LOG; exit 1; fi
