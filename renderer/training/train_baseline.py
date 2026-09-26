@@ -886,11 +886,13 @@ def main() -> int:
     # model that does not exist, and publishing it to a destination the M6 config
     # legitimately declares. `load_checkpoint` still handles the arch, because the
     # M6 evaluator needs to load it; only this CLI refuses. KB Decision 58.
-    if cfg.get("model", {}).get("arch") == "temporal_structformer":
+    # Model B too. It was missing from this guard, went through this CLI, and so
+    # trained with its temporal fusion never receiving an input (KB Decision 80).
+    if cfg.get("model", {}).get("arch") in ("temporal_structformer", "temporal_unet"):
         raise SystemExit(
-            "configs with model.arch == 'temporal_structformer' must use "
+            f"configs with model.arch == {cfg['model']['arch']!r} must use "
             "`python -m renderer.training.train_temporal`, which supplies the previous-frame "
-            "history. Running them here would evaluate Model D frame-independently (KB Decision 58)."
+            "history. Running them here trains and evaluates them frame-independently (KB Decisions 58, 80)."
         )
     # Pre-flight: resolve every destination this mode will write BEFORE building a
     # model or touching the dataset (KB Decision 52).

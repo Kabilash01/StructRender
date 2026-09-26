@@ -3270,6 +3270,22 @@ Entity-pixel sharpness: F 0.8034, F0 0.8209 (-0.0175, n = 2,732).
 
 ---
 
+### Decision 80: Model B Was Never Trained With History — Decision 66 Retracted in Cause (2026-09-26)
+
+**The defect.** Model B's ladder-v2 run went through `train_baseline`, whose data path yields single frames. `TemporalUNet.forward(x)` calls `fuse` only when `prev_features` is supplied, so **the fusion was never called during training and received no gradient for the entire run.** The v2 report shows it: `val_n_frames: 1980`, the single-frame validation set. The guard added for Model D (Decision 58) refused `temporal_structformer` in `train_baseline` but not `temporal_unet`, and that gap is exactly how B went through the wrong trainer.
+
+**What this retracts.** Decision 66 measured B's history-on and history-off outputs as identical to six decimals — that measurement stands — and attributed it to "the zero-initialised fusion convolution never moved off zero". **The cause was wrong.** A zero-initialised layer that receives gradient moves; this one received none, because its input path was never exercised. B was never a temporal control, so:
+
+- "B is Model A plus 524,800 parameters that do nothing" was true of that *checkpoint*, but it says nothing about CNN temporal conditioning;
+- any B-vs-A or B-vs-D comparison drawn from ladder v2 is **void**;
+- M6's verdict is unaffected — it rests on D vs C, and D trained correctly through `train_temporal`.
+
+**Fix, verified before any GPU time was spent.** `train_temporal` now builds either temporal rung from `model.arch`, and records the arch actually trained in checkpoints and reports. `train_baseline`'s guard refuses both temporal archs. Through the correct trainer, B's `temporal_fuse` receives a **non-zero gradient at step 0** from real ladder-v3 history; through the old path it receives **none**. Both directions are asserted in `renderer/temporal/tests/test_model_b_trains_with_history.py`.
+
+**Now running:** ladder-v3 B and D (`scripts/run_m9_bd.sh`), both through `train_temporal`, on the same data, seed, objective and selection rule as A/C/E.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

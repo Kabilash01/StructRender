@@ -74,29 +74,41 @@ from renderer.training.train_baseline import (
     resolve_data,
 )
 
-ARCH = "temporal_structformer"
+ARCH = "temporal_structformer"   # default, and the arch of every pre-Decision-80 run
 
-#: Constructor keys read from `cfg["model"]`, ignoring its `*_note` prose. Same
-#: list as Model C's row in `train_baseline.ARCHITECTURES` — Model D adds no
-#: architecture knobs, which is the point of the parameter-parity check.
-MODEL_KEYS = (
-    "in_channels", "out_channels", "image_size", "embed_dim", "depths",
-    "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl",
-)
+#: Both temporal rungs train here, because both need the previous-frame history
+#: this trainer supplies. Model B used to go through `train_baseline`, which has no
+#: temporal data path, so its fusion never received an input (KB Decision 80).
+MODEL_KEYS_BY_ARCH = {
+    "temporal_structformer": (
+        "in_channels", "out_channels", "image_size", "embed_dim", "depths",
+        "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl",
+    ),
+    "temporal_unet": ("in_channels", "out_channels", "base_channels", "image_size"),
+}
+MODEL_KEYS = MODEL_KEYS_BY_ARCH[ARCH]
+
+
+def arch_of(cfg: dict) -> str:
+    a = cfg["model"].get("arch", ARCH)
+    if a not in MODEL_KEYS_BY_ARCH:
+        raise KeyError(f"{__name__} trains {sorted(MODEL_KEYS_BY_ARCH)}, not {a!r}")
+    return a
 
 
 def model_kwargs(cfg: dict) -> dict:
     m = cfg["model"]
-    if m.get("arch") != ARCH:
-        raise KeyError(f"{__name__} trains {ARCH!r}, not {m.get('arch')!r}")
-    kw = {k: m[k] for k in MODEL_KEYS if k in m}
+    kw = {k: m[k] for k in MODEL_KEYS_BY_ARCH[arch_of(cfg)] if k in m}
     for k in ("image_size", "depths", "num_heads", "window_sizes"):
         if k in kw:
             kw[k] = tuple(kw[k])
     return kw
 
 
-def build_model(cfg: dict) -> TemporalStructFormer:
+def build_model(cfg: dict):
+    if arch_of(cfg) == "temporal_unet":
+        from renderer.temporal.temporal_unet import TemporalUNet
+        return TemporalUNet(**model_kwargs(cfg))
     return TemporalStructFormer(**model_kwargs(cfg))
 
 
@@ -302,7 +314,7 @@ def run_overfit(cfg: dict, device: torch.device) -> dict:
     result = {
         "session_id": session.session_id,
         "style_id": cfg["data"]["style_id"],
-        "arch": ARCH,
+        "arch": arch_of(cfg),
         "ladder_model": cfg.get("ladder_model"),
         "objective": criterion.describe(),
         "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
@@ -447,7 +459,7 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
                 torch.save(
                     {
                         "model": model.state_dict(),
-                        "arch": ARCH,
+                        "arch": arch_of(cfg),
                         "model_kwargs": model_kwargs(cfg),
                         "epoch": epoch,
                         "config_version": cfg["config_version"],
@@ -467,7 +479,7 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
         "samples_per_epoch": len(loader) * int(t["batch_size"]),
         "wall_seconds": time.time() - started,
         "parameters": parameter_count(model),
-        "arch": ARCH,
+        "arch": arch_of(cfg),
         "ladder_model": cfg.get("ladder_model"),
         "split": split_info,
         "n_train_triples": len(train_ds),
