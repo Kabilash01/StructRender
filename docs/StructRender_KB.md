@@ -3286,6 +3286,28 @@ Entity-pixel sharpness: F 0.8034, F0 0.8209 (-0.0175, n = 2,732).
 
 ---
 
+### Decision 81: Entity-Anchored Teacher Noise Does Not Create Persistent Appearance — EPAM v2 Not Pursued (2026-09-26)
+
+**Question.** Decision 79 found EPAM memory does not help. The most consistent explanation was that the training targets carry no persistent per-entity appearance for memory to recover: the teacher draws one noise field pinned to the **screen** (one generator per style), so a moving entity passes through different noise each frame. If giving each entity **its own** noise field — seeded from its `EntityKey`, mapped through its bounding box, restored when it reappears — produced a consistent per-entity look, an EPAM v2 would have a basis. This is distinct from Decision 60's refuted approach, which chained generated outputs; here no generated pixel feeds another frame.
+
+**Probe** (`scripts/probe_anchored_noise.py`, `eval/reports/probe_anchored_noise.json`): one test session, `oil_impasto`, 10 reappearance sequences plus a 6-frame contiguous run, 46 frames each generated under both conditions with everything else identical. Run on CPU while the GPU trained. The noise override is verified to have taken effect: per-sequence differences are non-zero (-0.033 to +0.032) and flicker changed.
+
+| source | RCS across reappearance | flicker (mean abs frame diff) |
+|---|---|---|
+| native engine | 0.9278 | 0.0014 |
+| A: screen-pinned noise (today) | 0.9077 | 0.0082 |
+| B: entity-anchored noise | 0.9077 | 0.0072 |
+
+- **Reappearance consistency is unchanged:** B - A = **+0.0001, SE 0.0071, 0.0 sigma.** The per-entity look after a gap does not depend on which noise the entity carries.
+- **Flicker drops 12 %** (0.0082 -> 0.0072) but stays **5x the engine**.
+- **Alignment is unaffected:** 0 of 46 frames fail any gate under either condition.
+- **Reading, not a measurement:** at `strength 0.5` img2img, the output is dominated by the init image and the depth ControlNet, both of which change with viewpoint. Noise is a minor contributor to per-entity appearance, so anchoring it cannot make an entity look the same from a different view. That is why the RCS gap to native is untouched.
+- **Scale caveat:** 10 sequences, one session, one style. It is a probe that decides whether to build, not a population estimate; a small true effect below ~0.014 (2 SE) is not excluded. It does exclude an effect large enough to make memory worth rebuilding the teacher for.
+
+**Decision.** EPAM v2 via teacher-side appearance anchoring is **not pursued.** Four independent measurements now agree that this data offers memory nothing to recover: no residual correlation across gaps (Decision 73), no decay with time unseen (Decisions 53/72), no gain from memory in the controlled F vs F0 ablation (Decision 79), and no way to create persistent appearance by anchoring the teacher's noise (here). A future EPAM test needs targets whose per-entity appearance is **not** determined by the current view — a temporally consistent (video) teacher or authored per-entity textures — which is outside this project's hardware and scope. The project proceeds to M9 and M10.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
