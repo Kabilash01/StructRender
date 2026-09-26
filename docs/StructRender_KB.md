@@ -3241,6 +3241,35 @@ Model E at three seeds (20260905 / 20260908 / 20260909 — the **same** seeds as
 
 ---
 
+### Decision 79: M8 Criterion 4 Not Met — EPAM Memory Does Not Improve Output (2026-09-26)
+
+Model F (EPAM on, gamma 0.9) vs Model F0 (the built-in no-memory control, gamma 0), identical code, clips, styles, objective, schedule, step count and selection rule (Decision 78). Both resumed from Model E; both early-stopped at epoch 29 with best at epoch 17. Sealed test split, 3,912 clips, both styles. Evidence: `eval/reports/m8_f_vs_f0.json`, generator `scripts/eval_m8.py`. The pass threshold was written into the generator **before** the numbers existed: 2 sigma of run-to-run sharpness noise for one run each, `2*sqrt(2)*0.0073 = 0.0206`, the 0.0073 taken from the three-seed spreads of Decision 77.
+
+| subset | n | F sharpness | F0 sharpness | F - F0 | F L1 | F0 L1 | L1 |
+|---|---|---|---|---|---|---|---|
+| **all** | 3912 | 0.8829 | 0.8956 | **-0.0127** | 0.009064 | 0.009158 | -1.03 % |
+| oil_impasto | 1956 | 0.8775 | 0.8809 | -0.0034 | 0.009262 | 0.009291 | -0.31 % |
+| watercolor | 1956 | 0.8882 | 0.9101 | -0.0219 | 0.008866 | 0.009025 | -1.77 % |
+| memory can act | 2712 | 0.8634 | 0.8749 | -0.0114 | 0.010280 | 0.010360 | -0.77 % |
+
+Entity-pixel sharpness: F 0.8034, F0 0.8209 (-0.0175, n = 2,732).
+
+- **Criterion 4 ("EPAM improves over the non-memory model") is NOT met.** On the pre-registered primary metric the difference is inside seed noise, and its sign is **against** memory.
+- **The direction is the informative part, and it matches the mechanism in reverse.** Decision 72 found the model's blur comes from averaging the teacher's per-frame flicker. An EMA over an entity's descriptors *is* an average across frames. So memory plausibly pulls the entity token toward the same mean that already blurs the output: slightly lower L1, slightly softer image, both inside noise. The pre-registered hypothesis in Decision 78 — memory commits to one appearance and sharpens — is **not supported**. Stated as the most consistent reading, not a measured mechanism: nothing here isolates *why* the sign is negative.
+- **The L1 gain (-1.03 %) is not claimed.** Model E's three-seed L1 sd is ~0.72 %, so 2 sigma for one run each is ~2 %. It sits inside noise.
+- **The watercolor subset (-0.0219) crosses the threshold on its own.** It is one of four subsets looked at, so a single crossing is what chance predicts and it is **not** reported as a separate finding.
+- **Consistent with Decisions 53, 72 and 73.** Memory across a reappearance gap has no residual information to carry (correlation <= 0.037 beyond 30 ticks), and within a clip it adds averaging rather than commitment. Three independent measurements now say this scene gives EPAM nothing to recover.
+- **No tuning was done after seeing these numbers.** A different gamma, or tau, would be a new pre-registered experiment with repeat seeds, not a rescue of this one.
+
+**What M8 did deliver:**
+- **Criteria 1-3 are met** — the lifecycle rules, asserted by 17 tests.
+- **Live style switching works.** One model renders both styles through a per-style token. F0 reaches sharpness **0.9101 on watercolor**, above the 0.90 gate, the first StructFormer-family number to clear it on any style.
+- **The ablation was clean.** Resume from E was exact (max diff 0.00e+00), the F and F0 starting validation errors agreed to 0.01 %, and gamma = 0 is bit-identical to single-frame rendering. So the null is a property of memory on this data, not of the setup.
+
+**Status: M8 closes with criteria 1-3 met and criterion 4 a recorded negative result**, the same standing as M5: a finding about this data, reported as measured.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

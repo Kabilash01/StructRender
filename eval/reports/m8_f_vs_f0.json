@@ -1,0 +1,96 @@
+{
+  "purpose": "M8 criterion 4: Model F (memory) vs F0 (no-memory control) on the sealed test split.",
+  "generated_utc": "2026-09-26T02:45:09+00:00",
+  "test_sessions": [
+    "ds_1789212559_8faa6c75",
+    "ds_1789212883_c158f35c",
+    "ds_1789551269_8e6b239c",
+    "ds_1789551585_dbe828cf"
+  ],
+  "n_clips": 3912,
+  "primary_metric": "sharpness ratio (Decision 72)",
+  "noise_yardstick": {
+    "seed_sd_sharpness": 0.0073,
+    "two_sigma_for_one_run_each": 0.020647518010647188,
+    "source": "Decision 77 three-seed spreads; F and F0 have one seed each"
+  },
+  "subsets": {
+    "all": {
+      "F": {
+        "n": 3912,
+        "l1": 0.009063844040337596,
+        "sharpness": 0.8829068850456578,
+        "entity_sharpness": 0.8034056476572898,
+        "n_entity": 2732
+      },
+      "F0": {
+        "n": 3912,
+        "l1": 0.009158044905701256,
+        "sharpness": 0.8955977682310649,
+        "entity_sharpness": 0.8208528113362252,
+        "n_entity": 2732
+      },
+      "sharpness_F_minus_F0": -0.01269088318540701,
+      "l1_F_vs_F0_pct": -1.028613272086231,
+      "beyond_2sigma_seed_noise": false
+    },
+    "oil_impasto": {
+      "F": {
+        "n": 1956,
+        "l1": 0.009261857361484181,
+        "sharpness": 0.8775436636738048,
+        "entity_sharpness": 0.7944831036617639,
+        "n_entity": 1364
+      },
+      "F0": {
+        "n": 1956,
+        "l1": 0.0092906612970253,
+        "sharpness": 0.8809213848458649,
+        "entity_sharpness": 0.8170444227354937,
+        "n_entity": 1364
+      },
+      "sharpness_F_minus_F0": -0.003377721172060144,
+      "l1_F_vs_F0_pct": -0.31003105828798083,
+      "beyond_2sigma_seed_noise": false
+    },
+    "watercolor": {
+      "F": {
+        "n": 1956,
+        "l1": 0.00886583071919101,
+        "sharpness": 0.888218212360977,
+        "entity_sharpness": 0.8140321475536467,
+        "n_entity": 1368
+      },
+      "F0": {
+        "n": 1956,
+        "l1": 0.009025428514377213,
+        "sharpness": 0.9101321442262463,
+        "entity_sharpness": 0.8253884954517928,
+        "n_entity": 1368
+      },
+      "sharpness_F_minus_F0": -0.021913931865269354,
+      "l1_F_vs_F0_pct": -1.7683126616311728,
+      "beyond_2sigma_seed_noise": true
+    },
+    "memory_can_act": {
+      "F": {
+        "n": 2712,
+        "l1": 0.010279558727944924,
+        "sharpness": 0.8634338616270619,
+        "entity_sharpness": 0.80251824474169,
+        "n_entity": 2712
+      },
+      "F0": {
+        "n": 2712,
+        "l1": 0.010359762999356882,
+        "sharpness": 0.8748592179013052,
+        "entity_sharpness": 0.8200986954435927,
+        "n_entity": 2712
+      },
+      "sharpness_F_minus_F0": -0.011425356274243237,
+      "l1_F_vs_F0_pct": -0.7741902147465776,
+      "beyond_2sigma_seed_noise": false
+    }
+  },
+  "verdict": "no difference distinguishable from seed noise"
+}
