@@ -38,7 +38,7 @@
     "lr": 0.0002,
     "weight_decay": 0.0001,
     "amp_dtype": "bfloat16",
-    "num_workers": 2,
+    "num_workers": 8,
     "eval_every_epochs": 2,
     "early_stopping": {
       "patience_evals": 6,
@@ -48,7 +48,8 @@
     "batch_size": 4,
     "accum_steps": 2,
     "checkpoint_dir": "checkpoints/ladder_v3_d",
-    "gradient_checkpointing_note": "NOT ENABLED, and deliberately removed rather than left as a dead flag. An earlier version of this config carried `gradient_checkpointing: true`; NO CODE READS IT and `torch.utils.checkpoint` is never called, so the flag protected nothing while reading as though it did \u2014 the same claim-without-implementation defect KB Decisions 51/58 were written about. Model D in fact trains at full activation memory: measured 6,134 MiB of 8,151 MiB total (377 MiB free with the desktop resident), which completed 60 epochs without incident. If headroom is ever needed, implement checkpointing for real and re-measure; do not re-add the flag."
+    "gradient_checkpointing_note": "NOT ENABLED, and deliberately removed rather than left as a dead flag. An earlier version of this config carried `gradient_checkpointing: true`; NO CODE READS IT and `torch.utils.checkpoint` is never called, so the flag protected nothing while reading as though it did \u2014 the same claim-without-implementation defect KB Decisions 51/58 were written about. Model D in fact trains at full activation memory: measured 6,134 MiB of 8,151 MiB total (377 MiB free with the desktop resident), which completed 60 epochs without incident. If headroom is ever needed, implement checkpointing for real and re-measure; do not re-add the flag.",
+    "num_workers_note": "8, not the 2 used by A/C/E: temporal rungs load three frames plus motion and mask per sample, and at 2 workers the GPU idled ~half the time waiting on data. Worker count changes throughput only, not the samples, their order, or the optimisation."
   },
   "loss": {
     "l1": 1.0,

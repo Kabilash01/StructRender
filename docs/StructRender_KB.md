@@ -3308,6 +3308,18 @@ Entity-pixel sharpness: F 0.8034, F0 0.8209 (-0.0175, n = 2,732).
 
 ---
 
+### Decision 82: The Temporal Trainer Had No Early Stopping; GPU Memory Headroom for the Display (2026-09-26)
+
+**Early stopping.** Decision 62 requires one early-stopping rule for every rung, but it was only ever added to `train_baseline`. `train_temporal` — which trains Models B and D — ran every job to its epoch cap. This never changed a *selected* checkpoint (best.pt is always the lowest val_l1, the same rule for every rung), only wall time: Model D would have run all 60 epochs. `train_temporal` now applies the identical rule (patience 6 evaluations, min_rel_delta 0.001), and the ladder-v3 B and D configs carry the same `early_stopping` block as A/C/E.
+
+**Model B (ladder v3) is complete and valid.** The run was stopped by the user at epoch 48 (22:00, 26 Sep) before it wrote its report. Its best.pt is from **epoch 33, val_l1 0.009234**, written by the run itself. Applying the Decision 62 rule to its logged history, early stopping would have fired at **epoch 45**. So the checkpoint is exactly the one a completed run would have selected. `eval/reports/ladder_v3_b_train.json` is rebuilt from the per-epoch log and says so.
+
+**Display starvation.** At 22:00 the kernel logged `nvidia-drm ... Failed to allocate NVKMS memory` — training was holding ~7.5 GB of the 8 GB card, leaving the desktop unable to allocate. Model D now runs with `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, which returns freed segments instead of caching them. That drops D's footprint from ~7.4 GB to ~6.8 GB, with no display allocation errors since. This is an allocator setting: it does not change the computation.
+
+**Throughput.** The temporal rungs now use 8 dataloader workers rather than 2. At 2 workers the GPU idled roughly half the time waiting on triples (three frames plus motion and mask per sample); at 8 it holds ~96 % utilisation, and B went from ~23 to 13.7 min/epoch. Worker count changes only throughput, not the samples, their order or the optimisation.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

@@ -421,6 +421,15 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
     lp = LpipsMetric(device=device) if lpips_available() else None
     history, best = [], {"val_l1": float("inf"), "epoch": -1}
     started = time.time()
+    # Early stopping, the SAME rule every other rung trains under (KB Decision 62:
+    # patience counted in evaluations, a min_rel_delta so 1e-5 wobble does not
+    # read as progress). This trainer lacked it until Decision 82, so the temporal
+    # rungs ran to their epoch cap. It cannot change which checkpoint is selected
+    # — best.pt is still the lowest val_l1 ever seen — only how long training runs.
+    _es = t.get("early_stopping") or {}
+    _patience = int(_es.get("patience_evals", 0))
+    _min_rel = float(_es.get("min_rel_delta", 0.0))
+    stale_evals, stopped_early, _best_for_es = 0, None, float("inf")
 
     for epoch in range(epochs):
         model.train()
@@ -468,12 +477,27 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
                     },
                     ckpt_dir / "best.pt",
                 )
+        if "val_l1" in entry:
+            if entry["val_l1"] < _best_for_es * (1.0 - _min_rel):
+                _best_for_es, stale_evals = entry["val_l1"], 0
+            else:
+                stale_evals += 1
         history.append(entry)
         if not quiet:
             print(json.dumps(entry), flush=True)
+        if _patience and stale_evals >= _patience:
+            stopped_early = {"stopped_at_epoch": epoch, "best_epoch": best["epoch"],
+                             "patience_evals": _patience, "min_rel_delta": _min_rel,
+                             "reason": (f"val_l1 did not improve by >{_min_rel:.2%} for {_patience} "
+                                        f"consecutive evaluations; best was epoch {best['epoch']}")}
+            if not quiet:
+                print(json.dumps({"early_stop": stopped_early}), flush=True)
+            break
 
     return {
         "epochs": epochs,
+        "epochs_run": len(history),
+        "stopped_early": stopped_early,
         "steps_per_epoch": len(loader),
         "optimiser_steps_per_epoch": opt_steps_per_epoch,
         "samples_per_epoch": len(loader) * int(t["batch_size"]),

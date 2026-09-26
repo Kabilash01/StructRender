@@ -22,7 +22,7 @@
     "lr": 0.0002,
     "weight_decay": 0.0001,
     "amp_dtype": "bfloat16",
-    "num_workers": 2,
+    "num_workers": 8,
     "eval_every_epochs": 2,
     "early_stopping": {
       "patience_evals": 6,
@@ -31,7 +31,8 @@
     },
     "batch_size": 8,
     "accum_steps": 1,
-    "checkpoint_dir": "checkpoints/ladder_v3_b"
+    "checkpoint_dir": "checkpoints/ladder_v3_b",
+    "num_workers_note": "8, not the 2 used by A/C/E: temporal rungs load three frames plus motion and mask per sample, and at 2 workers the GPU idled ~half the time waiting on data. Worker count changes throughput only, not the samples, their order, or the optimisation."
   },
   "loss": {
     "l1": 1.0,
