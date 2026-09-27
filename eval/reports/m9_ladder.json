@@ -1,0 +1,77 @@
+{
+  "purpose": "M9 ablation ladder, sealed test split, every rung through one scoring path.",
+  "split": "configs/data/session_split_v2.json",
+  "style": "oil_impasto",
+  "n_frames": 3960,
+  "generated_utc": "2026-09-27T15:41:42+00:00",
+  "objective_note": "B and D add a temporal-consistency term; A->B and C->D mix architecture with it.",
+  "rungs": {
+    "A": {
+      "n_frames": 3960,
+      "l1": 0.008947054855525494,
+      "psnr_db": 34.040863037109375,
+      "ssim": 0.9747219681739807,
+      "lpips": 0.04585050418972969,
+      "sharpness": 0.9121732115745544,
+      "params": 7853763,
+      "inputs": "plain"
+    },
+    "B": {
+      "n_frames": 3960,
+      "l1": 0.00929601676762104,
+      "psnr_db": 33.642879486083984,
+      "ssim": 0.9734357595443726,
+      "lpips": 0.04888823255896568,
+      "sharpness": 0.8973048329353333,
+      "params": 8378563,
+      "inputs": "temporal"
+    },
+    "C": {
+      "n_frames": 3960,
+      "l1": 0.009173774160444736,
+      "psnr_db": 33.85769271850586,
+      "ssim": 0.9728106260299683,
+      "lpips": 0.04657841846346855,
+      "sharpness": 0.8531954288482666,
+      "params": 7775467,
+      "inputs": "plain"
+    },
+    "D": {
+      "n_frames": 3960,
+      "l1": 0.00933636724948883,
+      "psnr_db": 33.55527877807617,
+      "ssim": 0.9727240800857544,
+      "lpips": 0.048473551869392395,
+      "sharpness": 0.8576815128326416,
+      "params": 8236747,
+      "inputs": "temporal"
+    },
+    "E": {
+      "n_frames": 3960,
+      "l1": 0.00921863317489624,
+      "psnr_db": 33.789180755615234,
+      "ssim": 0.9725974798202515,
+      "lpips": 0.046344511210918427,
+      "sharpness": 0.8837094902992249,
+      "params": 7053547,
+      "inputs": "entity"
+    }
+  },
+  "m8_oil_subset_different_protocol": {
+    "F": {
+      "n": 1956,
+      "l1": 0.009261857361484181,
+      "sharpness": 0.8775436636738048,
+      "entity_sharpness": 0.7944831036617639,
+      "n_entity": 1364
+    },
+    "F0": {
+      "n": 1956,
+      "l1": 0.0092906612970253,
+      "sharpness": 0.8809213848458649,
+      "entity_sharpness": 0.8170444227354937,
+      "n_entity": 1364
+    },
+    "note": "two-style clip protocol, 4-frame clips, 1,956 oil clips; not the frame set above"
+  }
+}

@@ -3320,6 +3320,30 @@ Entity-pixel sharpness: F 0.8034, F0 0.8209 (-0.0175, n = 2,732).
 
 ---
 
+### Decision 83: M9 Image-Quality Ladder on One Scoring Path (2026-09-27)
+
+All rungs trained on ladder-v3 data (20,790 frames) with the same seed, early-stopping and selection rule, and scored by `scripts/eval_m9.py` on the **same 3,960 sealed-test frames** (4 held-out sessions, `oil_impasto`). Each rung gets the inputs it actually runs with: B and D their real previous frame, E its engine masks. Evidence: `eval/reports/m9_ladder.json`.
+
+| rung | L1 | PSNR | SSIM | LPIPS | sharpness | params |
+|---|---|---|---|---|---|---|
+| **A** U-Net | **0.008947** | **34.041** | **0.9747** | **0.0459** | **0.9122** | 7,853,763 |
+| B U-Net + temporal | 0.009296 | 33.643 | 0.9734 | 0.0489 | 0.8973 | 8,378,563 |
+| C StructFormer | 0.009174 | 33.858 | 0.9728 | 0.0466 | 0.8532 | 7,775,467 |
+| D StructFormer + temporal | 0.009336 | 33.555 | 0.9727 | 0.0485 | 0.8577 | 8,236,747 |
+| E StructFormer + entity | 0.009219 | 33.789 | 0.9726 | 0.0463 | 0.8837 | 7,053,547 |
+
+- **A matches its earlier independent evaluation exactly** (L1 0.008947), so this path agrees with the previous ones.
+- **Sharpness is aggregated here as a ratio of summed Sobel energies**, one definition for all rungs. It differs slightly from the per-report figures elsewhere (C 0.8532 here vs 0.8514 in `ladder_v3_test.json`). Compare within this table, not across reports.
+- **The U-Net wins every image-quality metric** (M5, Decision 71, unchanged at this scale).
+- **Temporal conditioning does not improve per-frame image quality.** B is **+3.9 % L1** behind A; D is **+1.8 % L1** behind C with equal sharpness. B-A is beyond the ~2 % two-run noise implied by Model E's three-seed L1 spread; D-C is at its edge. That is not the temporal rungs' purpose — their claim is **temporal stability** (M6: D cut temporal error 11.74 % vs C). Two caveats: B and D also carry the temporal loss term, so the gap mixes architecture with objective; and B is the **first** B ever trained with history (Decision 80).
+- **Entity conditioning is the one StructFormer addition that helps:** E is +0.031 sharpness over C here on a single seed, consistent with Decision 77's three-seed +0.0151 at 2.5 sigma. It is the best transformer rung on sharpness and the smallest model in the table.
+- **Single seed per rung, except E and C** (Decisions 67, 77). Differences under ~2 % L1 or ~0.02 sharpness are not claimed.
+- F and F0 (M8) use the two-style clip protocol and are reported in Decision 79, not mixed into this table.
+
+**Still to do for M9:** temporal error for every rung on this split — the metric B and D exist for, and the first real test of CNN temporal conditioning — and the naive raw-ID control N that §11 requires.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
