@@ -648,7 +648,12 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None, qui
     if cfg["data"].get("split_file"):
         from renderer.training.multi_session import build_splits, load_session_split, split_report
         _sp = load_session_split(cfg["data"]["split_file"])
-        if cfg.get("model", {}).get("arch") == "entity_structformer":
+        if cfg["data"].get("raw_id_control"):
+            # Model N, the naive raw-ID CONTROL (§11 row N, Decision 9 "Allowed
+            # Control"): the only path in this trainer that feeds IDs as values.
+            from renderer.controls.raw_id import build_raw_id_splits
+            train_ds, val_ds, _test_ds = build_raw_id_splits(cfg["data"]["style_id"], _sp)
+        elif cfg.get("model", {}).get("arch") == "entity_structformer":
             # Model E needs the engine's entity masks, which `build_input` omits
             # by design (Decision 9: IDs are addresses, never input channels), so
             # they cannot arrive as an eighth channel. Same sessions, same order,
