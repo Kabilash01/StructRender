@@ -13,12 +13,16 @@ const DH := preload("res://tests/dataset/dataset_harness.gd")
 func _initialize() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	var frames := int(OS.get_environment("SR_FRAMES")) if OS.has_environment("SR_FRAMES") else 300
+	printerr("LIVE stage: build_scene")
 	var sc: Dictionary = await DH.build_scene(self, true)
+	printerr("LIVE stage: scene built")
 	await process_frame
 	var adapter := H.make_adapter(self, "live_session")
 	var ex := H.make_exporter(self, sc.cam, sc.world, adapter, "live_session")
 	var r := StructRenderer.new()
+	printerr("LIVE stage: loading engine")
 	var loaded := r.load_engine(OS.get_environment("SR_ENGINE"))
+	printerr("LIVE stage: engine loaded=", loaded)
 	if not loaded:
 		printerr("LIVE engine load failed: ", r.last_error(), " — running native-only (fallback)")
 	var view := TextureRect.new()
@@ -35,7 +39,9 @@ func _initialize() -> void:
 		sc.cam.global_transform = Transform3D(Basis(Vector3.UP, deg_to_rad(yaw)) * cam_home.basis, cam_home.origin)
 		await process_frame
 		var t1 := Time.get_ticks_usec()
-		var fs: Dictionary = ex.export_frame(i)
+		if i < 3: printerr("LIVE stage: export frame ", i)
+		var fs: Dictionary = await ex.export_frame(i)
+		if i < 3: printerr("LIVE stage: exported ", i, " keys=", fs.size())
 		var t2 := Time.get_ticks_usec()
 		var img: Image = null
 		if loaded and not fs.is_empty():
