@@ -1,0 +1,78 @@
+{
+  "purpose": "M9 temporal error, ladder v3, sealed test split, every rung with its real inputs.",
+  "metric": "mask-weighted mean |I_t - W(I_{t-1}, V_t)|, pairs with >= 1 px median motion",
+  "generated_utc": "2026-09-27T17:46:21+00:00",
+  "test_sessions": [
+    "ds_1789212559_8faa6c75",
+    "ds_1789212883_c158f35c",
+    "ds_1789551269_8e6b239c",
+    "ds_1789551585_dbe828cf"
+  ],
+  "inputs": {
+    "a": "plain",
+    "b": "temporal",
+    "c": "plain",
+    "d": "temporal",
+    "e": "entity",
+    "e_seedB": "entity",
+    "e_seedC": "entity"
+  },
+  "models": {
+    "a": {
+      "n": 501,
+      "mean": 0.0031750688897241317
+    },
+    "b": {
+      "n": 501,
+      "mean": 0.00269228603529136
+    },
+    "c": {
+      "n": 501,
+      "mean": 0.00419106590886881
+    },
+    "d": {
+      "n": 501,
+      "mean": 0.0037414977088117015
+    },
+    "e": {
+      "n": 501,
+      "mean": 0.004172072332713031
+    },
+    "e_seedB": {
+      "n": 501,
+      "mean": 0.0041586980646561664
+    },
+    "e_seedC": {
+      "n": 501,
+      "mean": 0.004263739041173589
+    },
+    "native": {
+      "n": 501,
+      "mean": 0.0002407397451514737
+    },
+    "target": {
+      "n": 501,
+      "mean": 0.006265472982751722
+    }
+  },
+  "noise": {
+    "e_seeds_te": [
+      0.004172072332713031,
+      0.0041586980646561664,
+      0.004263739041173589
+    ],
+    "sd_rel": 0.013619508769245846,
+    "threshold_rel_one_run_each": 0.03852178802865355,
+    "rule": "a temporal rung improves only if TE is lower than its partner's by > threshold"
+  },
+  "d_vs_c": {
+    "rel_change": -0.10726822479831849,
+    "threshold": 0.03852178802865355,
+    "verdict": "IMPROVES"
+  },
+  "b_vs_a": {
+    "rel_change": -0.15205429274157217,
+    "threshold": 0.03852178802865355,
+    "verdict": "IMPROVES"
+  }
+}

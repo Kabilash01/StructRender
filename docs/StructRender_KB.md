@@ -3371,6 +3371,30 @@ Decision 48 recorded Model A's TensorRT build as **unresolved**: `Error Code 10:
 
 ---
 
+### Decision 85: Temporal Conditioning Cuts Flicker on Both Backbones — B Works Once Trained Correctly (2026-09-27)
+
+Temporal error on ladder v3's sealed test split, every rung with its real inputs (history for B/D, engine masks for E), 501 moving pairs across 4 sessions (one session contributes only 6 — it is mostly static). Evidence: `eval/reports/m9_temporal_error.json`, generator `scripts/eval_temporal_error_v3.py`. The verdict rule was written into the generator **before** any number existed: a temporal rung improves only if its temporal error is lower than its no-history partner's by more than `2*sqrt(2)*sd_rel`, with `sd_rel` from Model E's three seeds.
+
+| source | temporal error | vs partner |
+|---|---|---|
+| native engine | 0.000241 | |
+| teacher targets | 0.006265 | |
+| A U-Net | 0.003175 | |
+| **B U-Net + temporal** | **0.002692** | **-15.21 %, IMPROVES** |
+| C StructFormer | 0.004191 | |
+| **D StructFormer + temporal** | **0.003741** | **-10.73 %, IMPROVES** |
+| E seeds | 0.004172 / 0.004159 / 0.004264 | |
+
+Noise: E seed sd **1.36 %** relative, so the threshold is **3.85 %**. Both temporal rungs clear it by a wide margin.
+
+- **Model B is the steadiest renderer in the ladder.** Its first correctly-trained run (Decision 80) cuts flicker 15.2 % against A. The ladder-v2 verdict "B's fusion is inert" (Decision 66) is now **superseded, not just re-explained**: once B receives history in training, its temporal mechanism works — on the CNN too.
+- **D replicates M6 on the larger dataset:** -10.73 % here vs -11.74 % on ladder v2 (Decision 67). This is a second, independent confirmation on different data.
+- **The trade-off with Decision 83 is real and stated together:** B and D lose 1.8-3.9 % L1 on per-frame image quality while gaining 10.7-15.2 % temporal stability. For a live renderer, flicker is the more visible defect.
+- **Objective caveat, not hidden:** B and D train with an additional temporal-consistency loss term. The gain belongs to "history + temporal loss", not to the fusion architecture alone. Separating the two would need a history-free rung trained with the same loss, which is not in the ladder.
+- **Every model is still ~11-17x the engine's flicker** and bounded by the teacher's 26x. Temporal conditioning narrows the gap to the engine; it does not close it.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
