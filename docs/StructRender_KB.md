@@ -3344,6 +3344,33 @@ All rungs trained on ladder-v3 data (20,790 frames) with the same seed, early-st
 
 ---
 
+### Decision 84: Model A's TensorRT Failure Diagnosed and Fixed — GroupNorm's InstanceNormalization (2026-09-27)
+
+Decision 48 recorded Model A's TensorRT build as **unresolved**: `Error Code 10: Could not find any implementation for ForeignNode[...]`, an NVRTC compilation failure inside a Myelin fused region, 4/4 reproductions. Diagnosed by changing one thing per variant on the ladder-v3 checkpoint (`scripts/diagnose_trt_model_a.py`, `eval/reports/m10_trt_model_a_diagnosis.json`):
+
+| variant | builds |
+|---|---|
+| baseline | no |
+| builder_optimization_level 0, 1, 2, 3, 4, 5 | no, at every level |
+| nearest Resize rewritten as repeat_interleave | no |
+| **GroupNorm rewritten as reshape / mean / var / affine** | **yes** |
+| both rewrites | yes |
+
+**Cause:** `nn.GroupNorm` exports as ONNX `InstanceNormalization`, and on this toolchain (TensorRT 11.2.1.2, CUDA 13.2, RTX 5060 Laptop) Myelin fuses it into a region its NVRTC compiler rejects. MaxPool and Resize were suspects and are cleared: the build fails with Resize removed and succeeds with it present. Why Model C, which also uses GroupNorm in its stem, builds is **not established** — plausibly a channel/shape combination that fuses differently — and is not claimed.
+
+**Verified, not just built** (Decision 50: a green build is not evidence):
+- The engine runs and its outputs are finite.
+- With TF32 off, the max |TensorRT - PyTorch| over 5 random inputs is **4.26e-6**, far inside the 1e-3 correctness tolerance. The rewrite in PyTorch differs from the original by 2.1e-6, float rounding.
+- With TF32 on (TensorRT's default), the difference is 4.0e-3. That is TF32 precision, not an operator error.
+- The engine is 32.4 MB.
+- **Latency is not yet claimed.** It measured median 16.4 ms / p95 21.3 ms FP32+TF32, **while another job shared the GPU**. It will be re-measured on an idle GPU before it is quoted against the budget.
+
+**The fix is an export transform, not a model change:** `inference/export/trt_compat.py::for_tensorrt` returns a deep copy with every GroupNorm replaced by `ExplicitGroupNorm`, which reuses the original weight and bias. Training and checkpoints are untouched. Tests assert numerical equivalence, that the original model is unmodified, and that the exported graph contains no `InstanceNormalization`.
+
+**Consequence:** Decision 48's "Model A's TensorRT build is unresolved in this environment" is **resolved**. The CNN — the best image-quality rung at every scale (Decisions 71, 83) — is deployable, which removes M10's largest known risk.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

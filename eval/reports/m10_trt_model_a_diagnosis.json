@@ -1,0 +1,102 @@
+{
+  "purpose": "Diagnose Model A TensorRT build failure (Decision 48).",
+  "checkpoint": "/home/kabilash01/StructRender/checkpoints/ladder_v3_a/best.pt",
+  "generated_utc": "2026-09-27T17:27:28+00:00",
+  "variants": {
+    "baseline": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.5,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_0": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 3.8,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_1": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 5.5,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_2": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.3,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_3": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.1,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_4": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.0,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "opt_level_5": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.1,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "manual_gn": {
+      "ok": true,
+      "stage": "build",
+      "seconds": 12.9,
+      "errors": [],
+      "torch_max_diff_vs_original": 2.1457672119140625e-06
+    },
+    "repeat_upsample": {
+      "ok": false,
+      "stage": "build",
+      "seconds": 11.3,
+      "errors": [
+        "Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [myelin_graph.h:1259: attachExceptionMsgToGraph] MyelinCheckException: nvrtc_compile.cpp:1122: CHECK(success) failed. NVRTC Compilation failure In compileGraph at /_src/optimizer/myelin/codeGenerator.cpp:1962",
+        "IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[/enc.0/enc.0.0/Conv.../Sigmoid]}. In computeCosts at /_src/optimizer/common/tactic/optimizer.cpp:4211)"
+      ],
+      "torch_max_diff_vs_original": 0.0
+    },
+    "both": {
+      "ok": true,
+      "stage": "build",
+      "seconds": 12.2,
+      "errors": [],
+      "torch_max_diff_vs_original": 2.1457672119140625e-06
+    }
+  },
+  "tensorrt": "11.2.1.2"
+}
