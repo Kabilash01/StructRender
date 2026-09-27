@@ -76,3 +76,4 @@ Thumbs.db
 inference/cpp_runtime/third_party/
 inference/cpp_runtime/build/
 artifacts/
+game_project/bin/
