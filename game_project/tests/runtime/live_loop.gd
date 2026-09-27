@@ -50,6 +50,8 @@ func _initialize() -> void:
 			fallbacks += 1          # native frame stays on screen; the loop never stalls
 		else:
 			view.texture = ImageTexture.create_from_image(img)
+			if OS.has_environment("SR_SAVE_DIR") and i % 2 == 0:
+				img.save_png(OS.get_environment("SR_SAVE_DIR") + "/f_%04d.png" % i)
 		var t3 := Time.get_ticks_usec()
 		if i >= 10:
 			t_exp.append((t2 - t1) / 1000.0); t_ren.append((t3 - t2) / 1000.0); t_tot.append((t3 - t0) / 1000.0)
