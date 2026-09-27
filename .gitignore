@@ -71,3 +71,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Fetched C++ dependencies (TensorRT 11.2 public headers, godot-cpp) — KB Decision 85
+inference/cpp_runtime/third_party/
+inference/cpp_runtime/build/
+artifacts/

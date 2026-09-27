@@ -1,0 +1,23 @@
+{
+  "model": "a",
+  "checkpoint": "checkpoints/ladder_v3_a/best.pt",
+  "input": "ds_1789212559_8faa6c75 frame 400 (real test frame)",
+  "generated_utc": "2026-09-27T17:34:23+00:00",
+  "builds": {
+    "fp32_strict": {
+      "cpp_exit": 0,
+      "max_abs_diff_vs_torch": 1.0132789611816406e-06,
+      "finite": true,
+      "engine_mb": 56.7,
+      "stderr": ""
+    },
+    "fp32_tf32": {
+      "cpp_exit": 0,
+      "max_abs_diff_vs_torch": 0.000556647777557373,
+      "finite": true,
+      "engine_mb": 32.3,
+      "stderr": ""
+    }
+  },
+  "strict_parity_pass": true
+}
