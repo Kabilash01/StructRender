@@ -467,3 +467,29 @@ func dump_frame(fs: Dictionary, dir: String) -> void:
 	if f != null:
 		f.store_string(JSON.stringify(cam, "  "))
 		f.close()
+
+
+## LIVE path (M10, KB Decision 86). The three passes a structure-only renderer
+## reads — depth, normal, albedo — with the same camera sync and the same pass
+## materials as export_frame(), returned as raw Images for StructRenderer to
+## decode in C++. No entity-id pass, no motion, no per-pixel GDScript loop.
+## export_frame() is untouched: it remains the recording path the dataset's
+## determinism checks guard.
+func capture_live() -> Array:
+	assert(_viewport != null, "StructuralExporter.setup() not called")
+	_sync_camera()
+	var meshes := _scene_root.find_children("*", "MeshInstance3D", true, false)
+	var originals: Dictionary = {}
+	for m in meshes:
+		originals[m] = m.material_override
+	for m in meshes:
+		m.material_override = _depth_mat
+	var depth_img := await _render_pass("depth")
+	for m in meshes:
+		m.material_override = _normal_mat
+	var normal_img := await _render_pass("normal")
+	for m in meshes:
+		m.material_override = _albedo_mat_for(m)
+	var albedo_img := await _render_pass("albedo")
+	_restore(originals)
+	return [depth_img, normal_img, albedo_img]

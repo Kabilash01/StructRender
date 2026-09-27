@@ -39,13 +39,11 @@ func _initialize() -> void:
 		sc.cam.global_transform = Transform3D(Basis(Vector3.UP, deg_to_rad(yaw)) * cam_home.basis, cam_home.origin)
 		await process_frame
 		var t1 := Time.get_ticks_usec()
-		if i < 3: printerr("LIVE stage: export frame ", i)
-		var fs: Dictionary = await ex.export_frame(i)
-		if i < 3: printerr("LIVE stage: exported ", i, " keys=", fs.size())
+		var imgs: Array = await ex.capture_live()          # 3 passes, no per-pixel GDScript
 		var t2 := Time.get_ticks_usec()
 		var img: Image = null
-		if loaded and not fs.is_empty():
-			var rgb: PackedByteArray = r.render(fs["depth"], fs["normal"], fs["albedo_or_material"], 512, 288)
+		if loaded and imgs.size() == 3:
+			var rgb: PackedByteArray = r.render_images(imgs[0], imgs[1], imgs[2])
 			if not rgb.is_empty():
 				img = Image.create_from_data(512, 288, false, Image.FORMAT_RGB8, rgb)
 		if img == null:

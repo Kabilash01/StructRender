@@ -3,5 +3,5 @@
   "engine": "model_a_fp32_strict.engine",
   "max_rgb8_diff": 1,
   "pixels_diff_gt1": 0,
-  "godot_line": "PARITY ok  ms=17.89  bad_input_empty=true  err='buffer sizes do not match width*height'"
+  "godot_line": "PARITY ok  ms=16.61  bad_input_empty=true  err='buffer sizes do not match width*height'"
 }

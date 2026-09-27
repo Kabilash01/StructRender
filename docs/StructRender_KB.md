@@ -3395,6 +3395,39 @@ Noise: E seed sd **1.36 %** relative, so the threshold is **3.85 %**. Both tempo
 
 ---
 
+### Decision 86: M10 Live Loop — C++ Runtime, GDExtension, and a Live Capture Path (2026-09-27)
+
+**What exists and is verified:**
+
+- **The C++ TensorRT runtime** (`inference/cpp_runtime`, `structrender::Engine`). It links the same TensorRT 11.2.1 the Python stack uses, with headers fetched at the exact version. On a real test frame it reproduces PyTorch to **1.0e-6** (strict FP32) and **5.6e-4** (TF32). It never throws into the caller.
+- **The `StructRenderer` GDExtension.** Inside headless Godot, on a recorded test frame, it matches PyTorch within **1 RGB8 level** (0 pixels off by more). Malformed input returns an empty array — the §4 fallback — and does not crash.
+- **The live loop** (`game_project/tests/runtime/live_loop.gd`) runs the dataset's own training scene and exporter. 150 frames, **0 fallbacks**.
+
+**The bottleneck was the exporter, not the model.** `export_frame()` is the recording path: 4 sequential render passes, then a per-pixel GDScript loop over 147,456 pixels calling `get_pixel` four times each, plus motion. It cost **292 ms/frame** (3.2 fps). It is left **untouched** — the dataset's determinism checks guard it.
+
+**The live path is a separate, equivalent route:**
+- `capture_live()` renders only the three passes a structure-only renderer reads (depth, normal, albedo), with the same camera sync and pass materials, and returns the raw Images.
+- `StructRenderer.render_images()` decodes them in C++, reproducing `export_frame()`'s rule exactly (depth <= 0 is background: depth +inf, normal and albedo 0).
+- The pass images are **`FORMAT_RGBH`** (3 half-float channels). This was measured after the first implementation assumed RGBA and refused them; the reader names the formats it accepts and refuses anything else.
+
+**Equivalence is proven, not argued:** on 3 frames, the live path and the recording path produce **byte-identical** output (max byte diff 0). The live renderer sees exactly the input distribution the model was trained on.
+
+| | recording path | live path |
+|---|---|---|
+| structure export | 292 ms | **23.3 ms** |
+| decode + inference + upload | 23 ms | 25.1 ms |
+| total | 316 ms (3.2 fps) | **48.5 ms (20.6 fps)** |
+
+Measured **while Model N trained at 99 % GPU**, so these are upper bounds; they are re-measured on an idle GPU before being compared to the §10 target.
+
+**Remaining for M10's exit criteria** (~30 fps; standalone TensorRT <= ~20 ms):
+- Render the three passes in parallel SubViewports in one frame, not sequentially (each sequential pass waits ~3 engine frames).
+- An FP16 engine.
+- Idle-GPU measurements.
+- Live style switching needs the two-style model (F/F0) exported with its style and mask inputs.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
