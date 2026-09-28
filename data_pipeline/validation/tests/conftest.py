@@ -35,17 +35,9 @@ RECORDER_ROOT = Path(
 
 
 def _discover_seed_session() -> Path | None:
-    env = os.environ.get("STRUCTRENDER_SEED_SESSION")
-    if env:
-        p = Path(env)
-        return p if (p / "manifest.json").is_file() else None
-    if not RECORDER_ROOT.is_dir():
-        return None
-    cands = sorted(
-        d for d in RECORDER_ROOT.glob("ds_*")
-        if d.is_dir() and (d / "manifest.json").is_file()
-    )
-    return cands[-1] if cands else None
+    """The PINNED seed session (data_pipeline/seed_session.py), never "the newest"."""
+    from data_pipeline.seed_session import seed_session_path
+    return seed_session_path()
 
 
 REAL_SESSION = _discover_seed_session()
@@ -67,9 +59,9 @@ def _skip_reason() -> str | None:
         return "STRUCTRENDER_SKIP_VALIDATOR=1"
     if REAL_SESSION is None:
         return (
-            f"no seed session found under {RECORDER_ROOT} (data_pipeline/recorder/ is "
-            "gitignored — run scripts/record_seed_dataset.sh to generate one, or set "
-            "$STRUCTRENDER_SEED_SESSION)"
+            f"pinned seed session data_pipeline/seed_session.SEED_SESSION_ID not found under "
+            f"{RECORDER_ROOT} (data_pipeline/recorder/ is gitignored — regenerate it with "
+            "scripts/record_seed_dataset.sh, variant 0, or set $STRUCTRENDER_SEED_SESSION)"
         )
     return None
 

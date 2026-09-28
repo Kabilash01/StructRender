@@ -77,3 +77,6 @@ inference/cpp_runtime/third_party/
 inference/cpp_runtime/build/
 artifacts/
 game_project/bin/
+
+# Training evidence moved off tmpfs is committed on purpose (/tmp is RAM-backed).
+!eval/logs/**/*.log

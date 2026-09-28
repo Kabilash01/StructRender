@@ -2991,6 +2991,34 @@ Recording the 15-session set broke two calibrated tests, and the cause was not t
 
 ---
 
+### Decision 68: The Recorder Does Not Wait on the Compositor (2026-09-20; written 2026-09-28)
+
+> **Written retroactively.** This entry was cited by `seed_record.gd`, `d1_recorder.gd` and commit `1142267` from 2026-09-20 but never entered in this log; the number existed only in comments until 2026-09-28. The content below is taken from that commit and those comments, not reconstructed from memory.
+
+**Problem.** Godot's vsync defaults to ENABLED, so every recorded frame blocked on a Wayland frame callback. With the screen on, that is ~60 fps and recording ran at **~9.6 files/s**. When the screen blanked or the window was occluded, the compositor throttled those callbacks and recording collapsed to **~0.27 files/s** — a **35x** slowdown, with the GPU parked in P8 and Godot at ~1 % CPU, which reads as a hang rather than a stall. The recorder never presents to a display, so it had no reason to wait.
+
+**Decision.** Both recorders (`seed_record.gd`, and `d1_recorder.gd` for CI) call `DisplayServer.window_set_vsync_mode(VSYNC_DISABLED)` and set `Engine.max_fps = 0`.
+
+**Why this cannot change the data — verified, not asserted.** The simulation is stepped by an explicit tick counter, never by wall-clock time or delta. The fix is applied to the CI recorder specifically so that its determinism suite exercises it: **286 checks pass, including 20 bit-identical frame comparisons across two runs** (commit `1142267`).
+
+---
+
+### Decision 69: Ladder v3 — 29 Sessions, and a Projection Pre-Registered Before the Result (2026-09-20; written 2026-09-28)
+
+> **Written retroactively, and this matters for Decision 71.** Decision 71 states that "Decision 69 recorded a projection of 0.8979 before the run". This entry did not exist when that was written, so the KB cited a pre-registration that was not in the KB. The pre-registration itself is real and is verifiable from git: it is in the message of commit **`11422679f041d6643c5057f145285cf9e6bd1219`**, authored and committed **2026-09-20 23:58:15 +0530** and on `origin/main`. Model C (ladder v3) finished training at 00:18 on 2026-09-21, and the test-set sharpness that decided M5 was first reported in commit `ed661f1` at **2026-09-21 09:11:52 +0530**. The projection was therefore committed while Model C was still training, before any sharpness was measured. The quotation below is verbatim from that commit.
+
+**Data.** 30 sessions were recorded (15 new). **One was dropped:** `ds_1789549998_8973903e` failed M2 validation with non-finite motion at frame 616 — the validator rejecting a bad session before it reached training. The 29 usable sessions split **21 train / 4 val / 4 test = 20,790 training frames** (`configs/data/session_split_v2.json`) — 32x the original 644 and 1.9x ladder v2. v1's held-out sessions stay held out, so the scaling points 644 -> 10,890 -> 20,790 are measured on the same frames at every size.
+
+**Model A was retrained on the same data, deliberately:** best val_l1 0.009393 (v2) -> 0.009045 (v3), -3.7 %. The CNN improves with data too, so comparing a fresh Model C against the old Model A would have overstated the transformer by that margin.
+
+**Pre-registered projection, verbatim from commit `1142267`:**
+
+> Measured scaling: 0.8327 at 644 frames, 0.8858 at 10,890 -> +0.0188 per e-fold. At 20,790 train frames that projects 0.8979, which is 0.0021 SHORT of the 0.90 floor. The sizing exercise called for 23,198 training frames; allocating 4 val + 4 test sessions instead of 2+2 left 20,790. Better evaluation, less training data, and the target was not re-checked against it. Measured StructFormer sharpness sd across 3 seeds is 0.0079 — four times the projected gap — so the projection cannot distinguish pass from fail. Recorded here BEFORE the measurement so the prediction is on the record either way.
+
+**Outcome (Decision 71):** measured 0.8514, further below the floor than the projection. The prediction was wrong in the opposite direction, and it is on the record either way.
+
+---
+
 ### Decision 70: Product Scope — a Style Renderer, Not a Game Generator (2026-09-21)
 
 Recorded because the intended deliverable was described in conversation but never written down, and the gap between what it says and what a reader assumes is large enough to mislead.
@@ -3425,6 +3453,44 @@ Measured **while Model N trained at 99 % GPU**, so these are upper bounds; they 
 - An FP16 engine.
 - Idle-GPU measurements.
 - Live style switching needs the two-style model (F/F0) exported with its style and mask inputs.
+
+---
+
+### Decision 87: A Training Dataset From the Playable Game (2026-09-27; written 2026-09-28)
+
+> **Written retroactively.** `game_project/tests/dataset/game_record.gd` and commit `8128ac7` cited this entry as "pending" from 2026-09-27; it is entered now.
+
+**Why.** Every ladder model was trained on a scene the seed recorder builds in code. The playable arena collector (`main.tscn`: player, coins, spawned enemies) was never seen, so no model can render the actual game. The M10 live demo therefore showed the recorder's scene, not the game.
+
+**How — no game code modified.** `game_record.gd` loads `main.tscn` and records it through the **same** exporter, adapter and recorder as the dataset, so the output has the same schema and passes the same M2 validator.
+- The game's own `SimDriver` is kept out through the `structrender_no_sim` meta it already honours.
+- The player is steered by pressing the game's own input actions, with a seeded wandering route per session variant (start position, random arena points, nearest coin).
+- Each recorded frame advances the game by **exactly one physics step** (`max_physics_steps_per_frame = 1`, then unpause -> physics step -> pause). The tree stays paused while the exporter renders its passes, so depth, normal, albedo, ID and native RGB all show the same instant. Without the pause, the player and enemies move between passes and the buffers disagree.
+- **Found in testing:** the game's spawner adds enemies to `get_tree().current_scene`, which is null when the scene is loaded by script. The first test run recorded a game in which no enemy spawned. `current_scene` is now set.
+
+**Result.** **24 of 24 sessions pass the M2 validator** (990 frames each). A 240-frame test session showed 7 entities with spawn, visible, hidden and destroy events: coins collected, enemies spawned. The scene is flat, untextured grey geometry, as `main.tscn` is authored. The session list is `configs/data/game_sessions_v1.txt`. The split `configs/data/game_split_v1.json` was fixed by position before any target, model or metric existed: **18 train (17,820 frames) / 3 val / 3 test.**
+
+**A regression this caused, and its fix.** The sessions were recorded into `data_pipeline/recorder/`. The validator and teacher test fixtures chose their subject as "the newest ds_* session", so they silently moved onto a gameplay session.
+- The validator suite failed with **38 errors**: a gameplay session has no reappearance sequences.
+- The teacher suite kept passing, but against a gameplay session with no teacher targets — a guard that no longer guarded.
+
+This is the Decision 65 failure class again, and `main` carried it from `1199520` until it was fixed. Both suites now read one pinned session (`data_pipeline/seed_session.py`, `ds_1788687350_337657ea`, the committed seed session of Decisions 38-40). They **skip with a reason** if it is absent, rather than falling back to another session. A regression test plants a newer session directory and asserts the subject does not change.
+
+---
+
+### Decision 88: Selecting the Game Teacher Style by the Alignment Gates (2026-09-28)
+
+**Status: designed, NOT yet run.** No result exists; this entry fixes the selection rule before any number does.
+
+**Why.** The ladder's teacher runs at img2img strength 0.50, chosen in Decision 32 because stronger settings invented geometry. The resulting style is light enough to be hard to see (`eval/showcase/comparison_test_frame.png`). The game's flat grey geometry may leave room for a more visible style, but how far to go is decided by the four alignment gates, not by taste.
+
+**Rule, pre-registered** (`scripts/probe_game_style.py`):
+- Grid: `{oil_impasto, watercolor}` x strength `{0.50, 0.60, 0.70}`. Everything else is as committed.
+- Scored on a stride-22 subset (45 frames) of the first game **train** session, measuring:
+  - per-frame gate failures;
+  - stylisation strength as colour-histogram travel from the native frame.
+- **Pick the strongest setting with zero gate failures.** It must then pass a **full 990-frame session**, because Decision 40 recorded `cel_bold` passing an 81-frame probe and failing 36/990.
+- If no setting has zero failures, the committed strength-0.50 styles are used.
 
 ---
 
