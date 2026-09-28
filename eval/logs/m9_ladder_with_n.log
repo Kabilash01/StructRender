@@ -1,0 +1,11 @@
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+[m9] A: L1 0.008947  PSNR 34.041  SSIM 0.9747  LPIPS 0.0459  sharp 0.9122  (7,853,763 params)
+[m9] B: L1 0.009296  PSNR 33.643  SSIM 0.9734  LPIPS 0.0489  sharp 0.8973  (8,378,563 params)
+[m9] C: L1 0.009174  PSNR 33.858  SSIM 0.9728  LPIPS 0.0466  sharp 0.8532  (7,775,467 params)
+[m9] D: L1 0.009336  PSNR 33.555  SSIM 0.9727  LPIPS 0.0485  sharp 0.8577  (8,236,747 params)
+[m9] E: L1 0.009219  PSNR 33.789  SSIM 0.9726  LPIPS 0.0463  sharp 0.8837  (7,053,547 params)
+[m9] N: L1 0.009054  PSNR 33.865  SSIM 0.9732  LPIPS 0.0459  sharp 0.8796  (7,777,627 params)
+[m9] wrote eval/reports/m9_ladder.json

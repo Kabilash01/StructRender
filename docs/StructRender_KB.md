@@ -3494,6 +3494,27 @@ This is the Decision 65 failure class again, and `main` carried it from `1199520
 
 ---
 
+### Decision 89: The Naive Raw-ID Control Matches Structured Entity Use on This Scene (2026-09-28)
+
+Model N (§11 row N; Decision 9's "Allowed Control") is Model C plus one input channel, `entity_id / 8`, at 1.0003x C's parameters. It was trained with the same data, seed, objective, early stopping and selection rule, and scored on the same 3,960 sealed-test frames by `scripts/eval_m9.py`. Evidence: `eval/reports/m9_ladder.json`, `eval/logs/ladder_v3_n/`, `eval/logs/m9_ladder_with_n.log`.
+
+| rung | L1 | PSNR | LPIPS | sharpness | vs C sharpness |
+|---|---|---|---|---|---|
+| C StructFormer | 0.009174 | 33.858 | 0.0466 | 0.8532 | |
+| **E** structured (masked lookup) | 0.009219 | 33.789 | 0.0463 | **0.8837** | +0.0305 |
+| **N** raw ID as a number | **0.009054** | **33.865** | **0.0459** | **0.8796** | +0.0264 |
+
+- **The control does NOT fail the way §11 intends.** N captures about 87 % of E's sharpness gain and has *lower* L1 than both C and E. N-E sharpness is **-0.0041**, far inside the measured seed spread (E sd 0.0067). N and E are **indistinguishable** on this scene.
+- **Predicted before training, as the reason to read it this way.** Decision 83's build note and `renderer/controls/raw_id.py` recorded that only IDs 0, 1 and 2 occur in this data. That makes the "naive" channel nearly a clean two-entity label: "a strong version of the naive control". With so few, stable IDs, a numeric channel carries the same information as masked addressing.
+- **What this does and does not show.**
+  - It shows that **on this scene, exposing IDs is enough**. The entity sharpness gain of Decision 77 is real, but it does not require structured use to obtain.
+  - It does **not** show that structured use is unnecessary in general. The failure modes the raw channel should hit — recycled IDs, many entities, ID values with no meaning in magnitude — are **absent from this data**, so the control could not exercise them.
+  - Separating the two needs a scene with many entities and ID recycling. That is not in scope.
+- **Single seed each for C and N**; E has three. Differences under ~0.015 sharpness are not claimed.
+- **Decision 9 is unchanged.** The production rule (IDs are addresses, never numeric channels) rests on generalisation and lifecycle safety — a recycled `instance_id` must not look like the entity it replaced — not on this scene's image metrics. N remains a control, isolated in `renderer/controls/`, and asserted by tests to be imported by no production module.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

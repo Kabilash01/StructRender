@@ -3,7 +3,7 @@
   "split": "configs/data/session_split_v2.json",
   "style": "oil_impasto",
   "n_frames": 3960,
-  "generated_utc": "2026-09-27T15:41:42+00:00",
+  "generated_utc": "2026-09-28T07:20:06+00:00",
   "objective_note": "B and D add a temporal-consistency term; A->B and C->D mix architecture with it.",
   "rungs": {
     "A": {
@@ -55,6 +55,16 @@
       "sharpness": 0.8837094902992249,
       "params": 7053547,
       "inputs": "entity"
+    },
+    "N": {
+      "n_frames": 3960,
+      "l1": 0.009054075926542282,
+      "psnr_db": 33.86490249633789,
+      "ssim": 0.9732335805892944,
+      "lpips": 0.045943692326545715,
+      "sharpness": 0.8796418309211731,
+      "params": 7777627,
+      "inputs": "rawid"
     }
   },
   "m8_oil_subset_different_protocol": {
