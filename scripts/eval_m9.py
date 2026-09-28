@@ -41,7 +41,8 @@ from data_pipeline.teacher.structural import StructuralSession
 SPLIT = "configs/data/session_split_v2.json"
 RUNGS = {"A": ("ladder_v3_a", "plain"), "B": ("ladder_v3_b", "temporal"),
          "C": ("ladder_v3_c", "plain"), "D": ("ladder_v3_d", "temporal"),
-         "E": ("ladder_v3_e", "entity")}
+         "E": ("ladder_v3_e", "entity"),
+         "N": ("ladder_v3_n", "rawid")}   # naive raw-ID CONTROL (§11 row N)
 
 
 def temporal_test(sp):
@@ -84,6 +85,11 @@ def main() -> int:
     ds = {"plain": build_splits("oil_impasto", sp)[2],
           "entity": build_entity_splits("oil_impasto", sp, k_max=8)[2],
           "temporal": temporal_test(sp)}
+    if (ROOT / "checkpoints/ladder_v3_n/best.pt").is_file():
+        from renderer.controls.raw_id import build_raw_id_splits
+        ds["rawid"] = build_raw_id_splits("oil_impasto", sp)[2]
+    else:
+        RUNGS.pop("N", None)
     n = {k: len(v) for k, v in ds.items()}
     assert len(set(n.values())) == 1, f"rungs would be scored on different frame counts: {n}"
     out = {"purpose": "M9 ablation ladder, sealed test split, every rung through one scoring path.",
