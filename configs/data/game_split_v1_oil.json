@@ -1,0 +1,42 @@
+{
+  "policy": "session_level_holdout",
+  "version": "game_v1_oil",
+  "scene": "game_project/scenes/main.tscn (playable arena collector)",
+  "recorder": "game_project/tests/dataset/game_record.gd, variants 1-24",
+  "selection_rule": "sorted session ids; last 3 = test, 3 before = val, rest train. Fixed before any teacher target, model or metric existed. One train session dropped after target generation for an alignment failure; val/test untouched.",
+  "train_sessions": [
+    "ds_1790532989_38a03718",
+    "ds_1790533238_10a99bb8",
+    "ds_1790533479_78ea5c25",
+    "ds_1790533725_e8ec91d5",
+    "ds_1790533974_7ed06c02",
+    "ds_1790534228_bf0b8570",
+    "ds_1790534482_6d509a33",
+    "ds_1790534719_716f96e0",
+    "ds_1790534971_62b8325b",
+    "ds_1790535211_662ebed0",
+    "ds_1790535458_03992c68",
+    "ds_1790535708_c16d2ce2",
+    "ds_1790536212_9fbff551",
+    "ds_1790536469_c4cfb8b9",
+    "ds_1790536747_788283cf",
+    "ds_1790537000_85c67b3e",
+    "ds_1790537251_a7179053"
+  ],
+  "val_sessions": [
+    "ds_1790537503_9e442db6",
+    "ds_1790537747_81203cd9",
+    "ds_1790538005_ce3d303e"
+  ],
+  "test_sessions": [
+    "ds_1790538263_4815ad01",
+    "ds_1790538506_f1f9c484",
+    "ds_1790538763_8d71c460"
+  ],
+  "n_train_frames": 16830,
+  "n_val_frames": 2970,
+  "n_test_frames": 2970,
+  "dropped_sessions": {
+    "ds_1790535959_640a0d22": "oil_impasto alignment FAIL: frame 30, entity 4 silhouette support 0.511 < 0.6 (KB Decision 90)"
+  }
+}

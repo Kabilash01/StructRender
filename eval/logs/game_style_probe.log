@@ -1,0 +1,30 @@
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4301.99it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 17.51it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  8.29it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.44it/s]
+[style] oil_impasto  strength 0.50  failing 0/45  stylisation 0.754
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4000.37it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 24.55it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.87it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.86it/s]
+[style] oil_impasto  strength 0.60  failing 1/45  stylisation 1.012
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4881.70it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 25.30it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.38it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 12.40it/s]
+[style] oil_impasto  strength 0.70  failing 9/45  stylisation 1.265
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4476.53it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 24.72it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.42it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 12.42it/s]
+[style] watercolor   strength 0.50  failing 1/45  stylisation 0.441
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4165.91it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 25.47it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.76it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  9.71it/s]
+[style] watercolor   strength 0.60  failing 0/45  stylisation 0.523
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 5600.56it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00, 26.13it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.62it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 12.67it/s]
+[style] watercolor   strength 0.70  failing 1/45  stylisation 0.661
+[style] PICK: {'style': 'oil_impasto', 'strength': 0.5, 'failing_frames': 0, 'stylisation_hist_mean': 0.7544007603523663, 'seconds': 66}

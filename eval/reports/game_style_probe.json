@@ -1,0 +1,58 @@
+{
+  "purpose": "Pick the strongest teacher style that keeps all four alignment gates (Decision 88).",
+  "session": "ds_1790532989_38a03718",
+  "n_frames": 45,
+  "stride": 22,
+  "generated_utc": "2026-09-28T07:37:20+00:00",
+  "grid": [
+    {
+      "style": "oil_impasto",
+      "strength": 0.5,
+      "failing_frames": 0,
+      "stylisation_hist_mean": 0.7544007603523663,
+      "seconds": 66
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.6,
+      "failing_frames": 1,
+      "stylisation_hist_mean": 1.0117945039223253,
+      "seconds": 73
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.7,
+      "failing_frames": 9,
+      "stylisation_hist_mean": 1.264674660011574,
+      "seconds": 82
+    },
+    {
+      "style": "watercolor",
+      "strength": 0.5,
+      "failing_frames": 1,
+      "stylisation_hist_mean": 0.4408423152970678,
+      "seconds": 64
+    },
+    {
+      "style": "watercolor",
+      "strength": 0.6,
+      "failing_frames": 0,
+      "stylisation_hist_mean": 0.5226534368569958,
+      "seconds": 73
+    },
+    {
+      "style": "watercolor",
+      "strength": 0.7,
+      "failing_frames": 1,
+      "stylisation_hist_mean": 0.6610595703125,
+      "seconds": 82
+    }
+  ],
+  "pick": {
+    "style": "oil_impasto",
+    "strength": 0.5,
+    "failing_frames": 0,
+    "stylisation_hist_mean": 0.7544007603523663,
+    "seconds": 66
+  }
+}

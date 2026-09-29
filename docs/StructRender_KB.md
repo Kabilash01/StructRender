@@ -3515,6 +3515,30 @@ Model N (§11 row N; Decision 9's "Allowed Control") is Model C plus one input c
 
 ---
 
+### Decision 90: Game Teacher Targets — Oil Passes, Watercolour Does Not (2026-09-29)
+
+Decision 88's rule applied end to end. Evidence: `eval/logs/game_style_probe.log`, `eval/logs/game_style_fullgate.log`, `eval/logs/game_teacher_chain.log`, `eval/reports/game_style_probe.json`.
+
+**The 45-frame probe** (first game train session, stride 22):
+
+| style | 0.50 | 0.60 | 0.70 |
+|---|---|---|---|
+| oil_impasto | **0/45**, stylisation 0.754 | 1/45 | 9/45 |
+| watercolor | 1/45, 0.441 | 0/45, 0.523 | 1/45 |
+
+**Full-session gates (990 frames), as the rule requires:**
+- **oil_impasto 0.50: PASS, 0/990.**
+- **watercolor 0.60: FAIL, 5/990** — 2 spurious-edge, 2 not-stylised, 1 silhouette. It passed the 45-frame probe, then failed the full session: exactly the Decision 40 pattern the full-session requirement exists to catch.
+- **watercolor 0.50** (the committed setting, all 29 seed-scene sessions ALIGNED): **FAIL, 10/990** — 9 not-stylised, 1 boundary. On the game's flat grey geometry, watercolour at 0.50 often barely changes the frame.
+
+**No watercolour setting is usable on the game.** Consequence: **a two-style game model (live oil <-> watercolour switching, F0) cannot be trained on data that passes the gates.** Not trained around; recorded.
+
+**Oil generated for all 24 game sessions: 23 ALIGNED, 1 FAIL.** `ds_1790535959_640a0d22` fails on a single frame (frame 30, entity 4, silhouette support 0.511 < 0.6). It is a **train** session, so it is **dropped whole**, as Decision 69 did with a bad session. `configs/data/game_split_v1_oil.json`: **17 train (16,830 frames) / 3 val / 3 test**. Val and test are the ones fixed before any target existed, and are untouched.
+
+**Stylisation strength on the game:** oil at 0.50 reaches a mean stylisation of 0.756 on the full session, about 2.5x the seed scene's at the same setting. The flat grey geometry leaves the teacher more to paint, which answers Decision 88's motivation without raising strength.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

@@ -1,0 +1,22 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "watercolor_s060",
+  "backend": "sd15_controlnet_depth",
+  "prompt": "soft watercolor painting, translucent washes of cool blue and sage green, wet-on-wet pigment blooms, white paper showing through, delicate ink linework",
+  "negative_prompt": "photograph, photorealistic, text, watermark, signature, blurry, extra objects, cluttered background, distorted geometry, duplicated shapes, fisheye",
+  "reference_image": null,
+  "teacher": {
+    "model_id": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet_model_id": "lllyasviel/sd-controlnet-depth",
+    "controlnet_revision": "35e42a3ea49845b3c76f202f145f257b9fb1b7d4"
+  },
+  "seed": 20260923,
+  "params": {
+    "num_inference_steps": 24,
+    "guidance_scale": 7.5,
+    "strength": 0.6,
+    "controlnet_conditioning_scale": 1.6
+  },
+  "notes": "Game-dataset watercolour (KB Decision 88): the committed watercolor at strength 0.60 instead of 0.50. Chosen by applying Decision 88's rule within watercolour on 45 game frames: 0.50 failed 1/45, 0.60 failed 0/45, 0.70 failed 1/45 - a borderline-frame pattern, not a clean trend, so it must pass a FULL session before use."
+}
