@@ -3539,6 +3539,33 @@ Decision 88's rule applied end to end. Evidence: `eval/logs/game_style_probe.log
 
 ---
 
+### Decision 91: Model B on the Playable Game — Held-Out Results (2026-09-30)
+
+Model B (U-Net + temporal fusion, 8,378,563 params) trained from scratch on the playable game: `oil_impasto` 0.50, `configs/data/game_split_v1_oil.json` (17 train sessions / 16,830 frames), `configs/game/model_b_oil.json`. The first launch ran out of GPU memory because desktop applications held ~1.9 GB; it was relaunched at batch 4 x accumulation 2 (effective 8, Decision 47). Trained 11.3 h and early-stopped at epoch 51; best epoch 39, val L1 0.006442. Started with the user's explicit go-ahead. Evidence: `eval/reports/game_b_oil_train.json`, `eval/logs/game_b_oil/`.
+
+**Sealed test sessions** (3, fixed by position before any target existed; 2,970 frames, model rendered with its real previous frame), from `scripts/eval_game.py` -> `eval/reports/game_b_oil_test.json`:
+
+| metric | value |
+|---|---|
+| L1 | 0.00606 |
+| PSNR | 35.43 dB |
+| SSIM | 0.9814 |
+| LPIPS | 0.0216 |
+| **sharpness ratio** | **0.9465** (gate 0.90) |
+
+| temporal error (2,455 moving pairs) | |
+|---|---|
+| native engine | 0.000100 |
+| teacher targets | 0.010416 |
+| **Model B** | **0.005582** — 46 % below its own supervision, 56x the engine |
+
+- **First rung to clear the 0.90 sharpness gate by a wide margin on held-out data.** On the seed scene the best rung was A at 0.912.
+- **Not an architecture comparison.** The scene differs (flat grey geometry with far fewer edges), and the teacher styles it ~2.5x more strongly (Decision 90). These numbers compare with nothing in the ladder. Only one rung was trained on the game; there is no A/C/E on this data, and no seed repeats.
+- **The same pattern as Decision 85:** the model is steadier than the teacher it learns from, and still far from the engine.
+- **Oil only.** No watercolour passes the gates on this game (Decision 90), so this model cannot switch styles.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
