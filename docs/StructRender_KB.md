@@ -3611,6 +3611,44 @@ The Decision 92 full-session pass on one session did **not** generalise: roughly
 - **Model B (oil only, Decision 91) is unaffected:** its data and its held-out evaluation are complete.
 - **An open policy question for the user, not decided here.** Every failure is 1-2 frames out of 990, and the whole-session rule discards the other ~988 gate-passing frames with it. A per-frame exclusion rule would keep every frame that passes every gate, so no failing frame is ever used. That would retain all 17 train and all 3 val/test sessions, but it is a change of **data policy**, and it needs its own Decision entry if adopted. It is not a threshold change: the gates stay exactly as committed.
 
+### Decision 94: Per-Frame Exclusion for the Two-Style Game Model; Two-Style Model B Built (2026-09-30)
+
+**Data policy change, adopted by the user after seeing Decision 93's failures.** This is disclosed plainly: the rule was chosen knowing which sessions it would bring back. What makes it acceptable is what it does *not* change. The four alignment gates and their thresholds are exactly as committed; no frame that fails any gate is ever trained on or scored; the test sessions are the ones fixed by position in `game_split_v1.json` before any target existed.
+
+**Rule.** A frame that fails ANY alignment gate in EITHER style is excluded from BOTH styles, together with every temporal triple or history pair that touches it. A frame whose predecessor is excluded is scored with no history (zero mask, the existing cold-start path). The unit of exclusion changes from session (Decisions 69 and 90) to frame. Nothing else changes.
+
+**How the list is built:** `scripts/build_frame_exclusions.py` -> `configs/data/game_frame_exclusions_v1.json`, log `eval/logs/game_frame_exclusions.log`.
+- It runs the M3 validator **itself** (`validate_alignment`, default `Thresholds()`, `write_marker=False`), rather than a re-implementation of its gate loop.
+- A (session, style) without an ALIGNED marker is **admitted only if every validator error is a per-frame `align.*` gate failure**. Layout, header, frame lines and frame count must all be clean, and the target set must be complete. Per-frame exclusion can remove a bad frame; it cannot paper over a broken target set.
+- **Result: 11 frames excluded out of 23,760 (0.05 %). All 24 sessions are admitted in both styles, and none is refused.** The recomputed failures are identical to the failures logged when the targets were generated: oil 1/1, watercolour 10/10.
+
+| split | frames per style | triples per style |
+|---|---|---|
+| train (18 sessions) | 17,820 -> 17,813 | 17,784 -> 17,763 |
+| val (3) | 2,970 -> 2,968 | 2,964 -> 2,958 |
+| test (3) | 2,970 -> 2,968 | 2,964 -> 2,958 |
+
+The full pre-registered 18/3/3 split is restored for the two-style model. That includes oil session `640a0d22` (Decision 90), which loses 1 frame instead of all 990, and test session `4815ad01` (Decision 93), which loses 2.
+
+**Known bias, accepted.** The excluded frames are the ones on which the teacher was hardest to keep aligned: busy views with many edges, and thin silhouettes. Removing them under-represents those views slightly, in training AND in the test score. At 11 frames in 23,760, the effect on any mean is far below the noise yardsticks. It is recorded so a later reader does not have to rediscover it.
+
+**Model B (oil, Decision 91) is not re-scored or changed.** Its numbers stand under the whole-session rule it was trained under.
+
+**Two-style Model B — architecture.** `renderer/temporal/style_unet.py::StyleTemporalUNet` is Model B's TemporalUNet with three changes:
+- **Style-free encoder.** The encoder reads only engine structure, so the history features are identical whichever style is on screen. A live style switch cannot disturb the temporal memory.
+- **Per-style FiLM on every decoder level.** A per-channel scale and shift comes from a learned style table (16-d, one row per trained style), so style reaches colour and texture at every scale.
+- **Zero-initialised FiLM projections.** An untrained two-style B is exactly Model B, which is tested bit-for-bit for both styles, and the difference between styles is learned. The style table is trunc-normal rather than zero, so the FiLM weights receive gradient at step 0.
+
+Overhead: +16,352 parameters on 8.38 M (+0.2 %). Styles are a fixed, trained set chosen by index; there are no zero-shot styles (Decision 70). EPAM is untouched.
+
+**Training setup (not started — needs the user's explicit go-ahead).** Config: `configs/game/model_b_two_style.json`. It trains on every (session, style), with the objective, early stopping, batch 4 x accum 2 and workers identical to game B oil. Checkpoint selection is on `val_l1` averaged over both styles' val frames, and both styles have the same frame count. Plumbing:
+- `train_temporal` passes `style_idx` through `training_forward` and `eval_forward`.
+- `train_baseline` refuses the arch and registers it for `load_checkpoint`.
+
+Tests: `renderer/temporal/tests/test_two_style_b.py`.
+
+**Still to do after training:** `scripts/eval_game.py` needs a style argument and the exclusion list before it can score this model, and the scoring must apply the same exclusions.
+
 ---
 
 ---

@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from torch.utils.data import ConcatDataset
+from torch.utils.data import ConcatDataset, Dataset
 
 from data_pipeline.teacher.structural import StructuralSession
 from renderer.training.dataset import StyledFrameDataset, target_dir_for
@@ -113,6 +113,67 @@ def build_temporal_splits(style_id: str, split: dict | None = None,
                 raise RuntimeError(f"{sid} targets have no ALIGNED marker")
             kw = {"tick_delta": tick_delta} if cls is TemporalTripleDataset else {}
             parts.append(cls(session, tdir, session.frame_ids(), **kw))
+        return ConcatDataset(parts)
+
+    return _sessions("train_sessions", TemporalTripleDataset), \
+        _sessions("val_sessions", TemporalFrameDataset)
+
+
+class _StyleTagged(Dataset):
+    """A per-(session, style) dataset whose items also carry the style's index."""
+
+    def __init__(self, inner, style_idx: int):
+        self.inner, self.style_idx = inner, int(style_idx)
+
+    def __len__(self) -> int:
+        return len(self.inner)
+
+    def __getitem__(self, i: int) -> dict:
+        return {**self.inner[i], "style_idx": self.style_idx}
+
+
+def excluded_frames(exclusions: dict, session_id: str) -> set[int]:
+    """Frames of one session failing a gate in EITHER style (KB Decision 94).
+
+    The union across styles, so both styles train and are scored on exactly the
+    same frames and the style is the only thing that differs between them.
+    """
+    return {int(f) for f in exclusions["excluded"].get(session_id, {})}
+
+
+def build_two_style_temporal_splits(styles: list[str], split: dict, exclusions: dict,
+                                    dataset_root: str | None = None,
+                                    target_root: str | None = None, tick_delta: int = 1):
+    """``(train_triples, val_frames)`` over every (session, style), for two-style B.
+
+    Per-frame exclusion (KB Decision 94) replaces the whole-session drop: a
+    session enters a style only if the exclusion builder ADMITTED it — ALIGNED,
+    or its sole validator errors were per-frame gate failures — and its excluded
+    frames are removed before triples and pairs are formed, so no triple and no
+    scored pair touches a frame that failed a gate. Gates are unchanged.
+    """
+    from pathlib import Path as _P
+
+    from renderer.temporal.pair_dataset import TemporalFrameDataset, TemporalTripleDataset
+
+    if list(exclusions["styles"]) != list(styles):
+        raise RuntimeError(f"exclusion list covers {exclusions['styles']}, config trains {styles}")
+    root = _P(dataset_root or _P(ROOT) / "data_pipeline" / "recorder")
+
+    def _sessions(key, cls):
+        parts = []
+        for sid in split[key]:
+            session = StructuralSession(root / sid)
+            if not session.validated:
+                raise RuntimeError(f"{sid} has no VALIDATED marker")
+            keep = sorted(set(session.frame_ids()) - excluded_frames(exclusions, sid))
+            for idx, style in enumerate(styles):
+                if sid not in exclusions["admitted"][style]:
+                    raise RuntimeError(f"{sid} was not admitted for {style}: "
+                                       f"{exclusions['refused'][style].get(sid, 'not scanned')}")
+                tdir = target_dir_for(session.session_id, style, target_root)
+                kw = {"tick_delta": tick_delta} if cls is TemporalTripleDataset else {}
+                parts.append(_StyleTagged(cls(session, tdir, keep, **kw), idx))
         return ConcatDataset(parts)
 
     return _sessions("train_sessions", TemporalTripleDataset), \

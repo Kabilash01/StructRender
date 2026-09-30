@@ -85,6 +85,9 @@ MODEL_KEYS_BY_ARCH = {
         "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl",
     ),
     "temporal_unet": ("in_channels", "out_channels", "base_channels", "image_size"),
+    # Two-style Model B (KB Decision 94): TemporalUNet + per-style decoder FiLM.
+    "style_temporal_unet": ("in_channels", "out_channels", "base_channels", "image_size",
+                            "style_ids"),
 }
 MODEL_KEYS = MODEL_KEYS_BY_ARCH[ARCH]
 
@@ -109,6 +112,11 @@ def build_model(cfg: dict):
     if arch_of(cfg) == "temporal_unet":
         from renderer.temporal.temporal_unet import TemporalUNet
         return TemporalUNet(**model_kwargs(cfg))
+    if arch_of(cfg) == "style_temporal_unet":
+        from renderer.temporal.style_unet import StyleTemporalUNet
+        if list(cfg["model"]["style_ids"]) != list(cfg["data"]["styles"]):
+            raise ValueError("model.style_ids must equal data.styles, in order — the index IS the style")
+        return StyleTemporalUNet(**model_kwargs(cfg))
     return TemporalStructFormer(**model_kwargs(cfg))
 
 
@@ -154,6 +162,11 @@ def _to(batch: dict, device: torch.device) -> dict:
             for k, v in batch.items()}
 
 
+def _style(b: dict) -> tuple:
+    """Extra decode/forward args: the style index for two-style B, else nothing."""
+    return (b["style_idx"],) if "style_idx" in b else ()
+
+
 def training_forward(model: TemporalStructFormer, b: dict) -> tuple[torch.Tensor, torch.Tensor]:
     """``(pred_t, pred_{t-1})`` for one triple batch. See the module docstring."""
     with torch.no_grad():
@@ -161,11 +174,11 @@ def training_forward(model: TemporalStructFormer, b: dict) -> tuple[torch.Tensor
     enc_prev, skip_prev = model.encode(b["structure_prev"])
     with torch.no_grad():
         pred_prev = model.decode(
-            model.fuse(enc_prev, enc_prev2, b["motion_prev"], b["mask_prev"]), skip_prev
+            model.fuse(enc_prev, enc_prev2, b["motion_prev"], b["mask_prev"]), skip_prev, *_style(b)
         )
     enc, skip = model.encode(b["structure_curr"])
     pred = model.decode(
-        model.fuse(enc, enc_prev, b["motion_curr"], b["mask_curr"]), skip
+        model.fuse(enc, enc_prev, b["motion_curr"], b["mask_curr"]), skip, *_style(b)
     )
     return pred, pred_prev
 
@@ -173,7 +186,7 @@ def training_forward(model: TemporalStructFormer, b: dict) -> tuple[torch.Tensor
 def eval_forward(model: TemporalStructFormer, b: dict) -> torch.Tensor:
     """One frame with its own single-frame history — the M6 gate's rendering rule."""
     enc_prev, _ = model.encode(b["structure_prev"])
-    return model(b["structure_curr"], enc_prev, b["motion_curr"], b["mask_curr"])
+    return model(b["structure_curr"], enc_prev, b["motion_curr"], b["mask_curr"], *_style(b))
 
 
 @torch.no_grad()
@@ -365,7 +378,18 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
     # Session-level split (KB Decision 64) when the config declares one; the
     # single-session path is untouched so every historical config still resolves
     # exactly as it did.
-    if cfg["data"].get("split_file"):
+    if cfg["data"].get("styles"):
+        # Two-style B: every (session, style), per-frame exclusion (KB Decision 94).
+        from renderer.training.multi_session import (build_two_style_temporal_splits,
+                                                     load_session_split, split_report)
+        _sp = load_session_split(cfg["data"]["split_file"])
+        _ex = json.loads((ROOT / cfg["data"]["frame_exclusions"]).read_text(encoding="utf-8"))
+        train_ds, val_ds = build_two_style_temporal_splits(cfg["data"]["styles"], _sp, _ex)
+        split_info = {**split_report(_sp), "styles": cfg["data"]["styles"],
+                      "frame_exclusions": cfg["data"]["frame_exclusions"],
+                      "n_frames_excluded": _ex["n_frames_excluded"]}
+        session = None
+    elif cfg["data"].get("split_file"):
         from renderer.training.multi_session import (build_temporal_splits,
                                                      load_session_split, split_report)
         _sp = load_session_split(cfg["data"]["split_file"])
@@ -509,7 +533,8 @@ def run_training(cfg: dict, device: torch.device, epochs: int | None = None,
         "n_train_triples": len(train_ds),
         "n_val_frames": len(val_ds),
         "session_id": (session.session_id if session is not None else f"session_split:{cfg['data']['split_file']}"),
-        "style_id": cfg["data"]["style_id"],
+        "style_id": cfg["data"].get("style_id"),
+        "styles": cfg["data"].get("styles"),
         "objective": criterion.describe(),
         "init": init_note,
         "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),

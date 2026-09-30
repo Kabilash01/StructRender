@@ -1,0 +1,21 @@
+{
+ "n_frames_excluded": 11,
+ "cross_check_vs_validator_logs": {
+  "oil_impasto": {
+   "recomputed": 1,
+   "logged": 1,
+   "identical": true
+  },
+  "watercolor_bold_s055": {
+   "recomputed": 10,
+   "logged": 10,
+   "identical": true
+  }
+ },
+ "refused": {
+  "oil_impasto": {},
+  "watercolor_bold_s055": {}
+ }
+}
+{'oil_impasto': 24, 'watercolor_bold_s055': 24} sessions admitted per style
+EXIT 0

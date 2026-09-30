@@ -1,0 +1,64 @@
+{
+  "config_version": "game-b-two-style-v1",
+  "ladder_model": "B two-style (game)",
+  "notes": "Two-style Model B on the PLAYABLE game (KB Decision 94): TemporalUNet with a style-free encoder and per-style decoder FiLM (zero-initialised, so it starts as exactly Model B). Styles: oil_impasto 0.50 (Decision 90) and watercolor_bold 0.55 (Decisions 92, 93). Data: the pre-registered game_split_v1 (18/3/3), every (session, style), with per-frame exclusion: frames failing any alignment gate in either style, and every triple touching one, are removed (game_frame_exclusions_v1.json). Everything else - objective, early stopping, selection rule, batch 4 x accum 2, workers - identical to game B oil (Decision 91). Selection is on val_l1 averaged over BOTH styles' val frames.",
+  "data": {
+    "styles": [
+      "oil_impasto",
+      "watercolor_bold_s055"
+    ],
+    "split_file": "configs/data/game_split_v1.json",
+    "frame_exclusions": "configs/data/game_frame_exclusions_v1.json"
+  },
+  "model": {
+    "in_channels": 7,
+    "out_channels": 3,
+    "base_channels": 32,
+    "image_size": [
+      288,
+      512
+    ],
+    "arch": "style_temporal_unet",
+    "style_ids": [
+      "oil_impasto",
+      "watercolor_bold_s055"
+    ]
+  },
+  "train": {
+    "seed": 20260905,
+    "epochs": 60,
+    "lr": 0.0002,
+    "weight_decay": 0.0001,
+    "amp_dtype": "bfloat16",
+    "num_workers": 8,
+    "eval_every_epochs": 2,
+    "early_stopping": {
+      "patience_evals": 6,
+      "min_rel_delta": 0.001,
+      "note": "Identical rule for EVERY rung, so each is trained to its own convergence rather than to an arbitrary shared epoch count. Patience is counted in EVALUATIONS so it means the same at any eval_every_epochs; min_rel_delta exists because val_l1 wobbles at 1e-5 between evals and without it noise reads as improvement. It cannot change which checkpoint is selected - best.pt is still the lowest val_l1 ever seen - so it can only cost time. KB Decision 62."
+    },
+    "batch_size": 4,
+    "accum_steps": 2,
+    "checkpoint_dir": "checkpoints/game_b_two_style",
+    "num_workers_note": "8, not the 2 used by A/C/E: temporal rungs load three frames plus motion and mask per sample, and at 2 workers the GPU idled ~half the time waiting on data. Worker count changes throughput only, not the samples, their order, or the optimisation.",
+    "batch_note": "batch 4 x accum 2 = effective 8, as ladder-v3 B. Changed from 8x1 after an immediate OOM: desktop apps (Chrome GPU process 820 MB, VS Code) left ~5.6 GB. Accumulation keeps the optimisation at batch 8 (Decision 47); TemporalUNet uses GroupNorm, which does not depend on batch size."
+  },
+  "loss": {
+    "l1": 1.0,
+    "perceptual": 0.5,
+    "perceptual_net": "alex",
+    "temporal": 0.5
+  },
+  "style_acquisition": {
+    "notes": "Exit-criterion 3 ('recognizable styled output') thresholds. UNLIKE the overfit block these were fixed AFTER the model existed, so they are stated as calibrated-against-a-failure-mode rather than pre-registered \u2014 see min_sharpness_ratio_rationale.",
+    "min_hist_travel_fraction_of_target": 0.8,
+    "min_hist_travel_rationale": "'Comparable colour-histogram travel away from the native palette' \u2014 the M3 gate-4 quantity (Decision 32, Finding 1) that rejects a passthrough. The floor is one-sided on purpose: a model that restyles HARDER than the teacher is not the failure mode this criterion guards against. 0.8 makes 'comparable' mean comparable; the earlier 0.5 admitted a prediction that travelled half as far, which the prose did not say.",
+    "min_sharpness_ratio": 0.9,
+    "min_sharpness_ratio_rationale": "grad_energy(pred) / grad_energy(target), high-pass (squared Sobel) energy. The histogram term CANNOT distinguish restyling from smoothing \u2014 a blurred frame keeps its shifted palette and scores higher on histogram travel, not lower. M3's gate 4 was calibrated against a teacher whose failure mode was doing nothing; a trained regressor's failure mode is blur. Threshold calibrated against the failure mode, not against the model's score: Gaussian-blurring the teacher targets gives ratios 0.977 / 0.897 / 0.761 / 0.654 at sigma 0.5 / 1.0 / 1.5 / 2.0, so 0.9 means 'no softer than a ~1 px blur of the target'."
+  },
+  "reports": {
+    "train": "eval/reports/game_b_two_style_train.json",
+    "metrics": "eval/reports/game_b_two_style_metrics.json",
+    "qualitative_dir": "eval/reports/game_b_two_style_qualitative"
+  }
+}

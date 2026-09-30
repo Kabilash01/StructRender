@@ -565,6 +565,12 @@ def _temporal_unet_cls(**kwargs):
     return TemporalUNet(**kwargs)
 
 
+def _style_temporal_unet_cls(**kwargs):
+    """Two-style Model B (KB Decision 94). Late import, as Model B."""
+    from renderer.temporal.style_unet import StyleTemporalUNet
+    return StyleTemporalUNet(**kwargs)
+
+
 def _entity_structformer_cls(**kwargs):
     """Model E (KB Decision 74). Late import, same rationale as B and D."""
     from renderer.entity.model import EntityAwareSingleStyle
@@ -606,6 +612,10 @@ ARCHITECTURES: dict[str, tuple[type, tuple[str, ...]]] = {
         _temporal_structformer_cls,
         ("in_channels", "out_channels", "image_size", "embed_dim", "depths",
          "num_heads", "window_sizes", "style_dim", "attn_impl", "shift_impl"),
+    ),
+    "style_temporal_unet": (
+        _style_temporal_unet_cls,
+        ("in_channels", "out_channels", "base_channels", "image_size", "style_ids"),
     ),
 }
 
@@ -893,7 +903,8 @@ def main() -> int:
     # M6 evaluator needs to load it; only this CLI refuses. KB Decision 58.
     # Model B too. It was missing from this guard, went through this CLI, and so
     # trained with its temporal fusion never receiving an input (KB Decision 80).
-    if cfg.get("model", {}).get("arch") in ("temporal_structformer", "temporal_unet"):
+    if cfg.get("model", {}).get("arch") in ("temporal_structformer", "temporal_unet",
+                                              "style_temporal_unet"):
         raise SystemExit(
             f"configs with model.arch == {cfg['model']['arch']!r} must use "
             "`python -m renderer.training.train_temporal`, which supplies the previous-frame "

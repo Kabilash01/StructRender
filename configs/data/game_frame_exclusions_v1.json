@@ -1,0 +1,154 @@
+{
+  "purpose": "Frames failing any alignment gate in either style; excluded with every triple/pair touching them (Decision 94).",
+  "generated_utc": "2026-09-30T17:22:15+00:00",
+  "styles": [
+    "oil_impasto",
+    "watercolor_bold_s055"
+  ],
+  "thresholds": "data_pipeline.teacher.metrics.Thresholds() defaults, as the validator",
+  "n_sessions": 24,
+  "admitted": {
+    "oil_impasto": [
+      "ds_1790532989_38a03718",
+      "ds_1790533238_10a99bb8",
+      "ds_1790533479_78ea5c25",
+      "ds_1790533725_e8ec91d5",
+      "ds_1790533974_7ed06c02",
+      "ds_1790534228_bf0b8570",
+      "ds_1790534482_6d509a33",
+      "ds_1790534719_716f96e0",
+      "ds_1790534971_62b8325b",
+      "ds_1790535211_662ebed0",
+      "ds_1790535458_03992c68",
+      "ds_1790535708_c16d2ce2",
+      "ds_1790535959_640a0d22",
+      "ds_1790536212_9fbff551",
+      "ds_1790536469_c4cfb8b9",
+      "ds_1790536747_788283cf",
+      "ds_1790537000_85c67b3e",
+      "ds_1790537251_a7179053",
+      "ds_1790537503_9e442db6",
+      "ds_1790537747_81203cd9",
+      "ds_1790538005_ce3d303e",
+      "ds_1790538263_4815ad01",
+      "ds_1790538506_f1f9c484",
+      "ds_1790538763_8d71c460"
+    ],
+    "watercolor_bold_s055": [
+      "ds_1790532989_38a03718",
+      "ds_1790533238_10a99bb8",
+      "ds_1790533479_78ea5c25",
+      "ds_1790533725_e8ec91d5",
+      "ds_1790533974_7ed06c02",
+      "ds_1790534228_bf0b8570",
+      "ds_1790534482_6d509a33",
+      "ds_1790534719_716f96e0",
+      "ds_1790534971_62b8325b",
+      "ds_1790535211_662ebed0",
+      "ds_1790535458_03992c68",
+      "ds_1790535708_c16d2ce2",
+      "ds_1790535959_640a0d22",
+      "ds_1790536212_9fbff551",
+      "ds_1790536469_c4cfb8b9",
+      "ds_1790536747_788283cf",
+      "ds_1790537000_85c67b3e",
+      "ds_1790537251_a7179053",
+      "ds_1790537503_9e442db6",
+      "ds_1790537747_81203cd9",
+      "ds_1790538005_ce3d303e",
+      "ds_1790538263_4815ad01",
+      "ds_1790538506_f1f9c484",
+      "ds_1790538763_8d71c460"
+    ]
+  },
+  "refused": {
+    "oil_impasto": {},
+    "watercolor_bold_s055": {}
+  },
+  "n_frames_excluded": 11,
+  "cross_check_vs_validator_logs": {
+    "oil_impasto": {
+      "recomputed": 1,
+      "logged": 1,
+      "identical": true
+    },
+    "watercolor_bold_s055": {
+      "recomputed": 10,
+      "logged": 10,
+      "identical": true
+    }
+  },
+  "excluded": {
+    "ds_1790534482_6d509a33": {
+      "119": {
+        "watercolor_bold_s055": [
+          "align.entity_silhouette"
+        ]
+      }
+    },
+    "ds_1790534719_716f96e0": {
+      "270": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      },
+      "285": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      }
+    },
+    "ds_1790534971_62b8325b": {
+      "110": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      }
+    },
+    "ds_1790535959_640a0d22": {
+      "30": {
+        "oil_impasto": [
+          "align.entity_silhouette"
+        ]
+      }
+    },
+    "ds_1790536212_9fbff551": {
+      "153": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      }
+    },
+    "ds_1790537000_85c67b3e": {
+      "846": {
+        "watercolor_bold_s055": [
+          "align.boundary_f"
+        ]
+      }
+    },
+    "ds_1790537747_81203cd9": {
+      "879": {
+        "watercolor_bold_s055": [
+          "align.boundary_f"
+        ]
+      },
+      "901": {
+        "watercolor_bold_s055": [
+          "align.boundary_f"
+        ]
+      }
+    },
+    "ds_1790538263_4815ad01": {
+      "86": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      },
+      "845": {
+        "watercolor_bold_s055": [
+          "align.spurious_edges"
+        ]
+      }
+    }
+  }
+}
