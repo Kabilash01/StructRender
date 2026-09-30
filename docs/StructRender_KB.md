@@ -3566,6 +3566,28 @@ Model B (U-Net + temporal fusion, 8,378,563 params) trained from scratch on the 
 
 ---
 
+### Decision 92: A Bold Watercolour Passes on the Game at Strength 0.55 (2026-09-30)
+
+The committed watercolour failed the game's full-session gate (Decision 90), mostly as "not stylised": pale washes over large flat grey surfaces barely change the frame (`eval/showcase/watercolor_failure_frame440.png`). This is a **prompt** change, not a threshold change — the gates are exactly as committed. `configs/teacher/watercolor_bold*.json` asks for saturated pigment, a tinted paper ground and colour blooms across every surface, with seed 20260930 and other parameters as committed.
+
+**Probe** (45 frames, first game train session; `eval/reports/game_style_probe_watercolor_bold.json`):
+
+| strength | failing | stylisation |
+|---|---|---|
+| 0.50 | 0/45 | 0.822 |
+| 0.55 | 0/45 | 0.912 |
+| 0.60 | 0/45 | 0.972 |
+
+For comparison, the old watercolour at 0.50 scored 1/45 and 0.441 — the bold prompt changes the frame about twice as much.
+
+**Full-session gate** (990 frames, strongest first, stopping at the first pass; `eval/logs/game_style_fullgate_bold.log`):
+- **0.60: FAIL, 2/990** — spurious edges at frames 433-434, the same floor-dominated view that defeated the old watercolour. A 45-frame probe again missed what the full session found (the Decision 40 pattern).
+- **0.55: PASS, 0/990.**
+
+**Consequence:** oil 0.50 (Decision 90) plus **watercolour_bold 0.55** gives two gate-passing styles on the game, so a two-style game model with live oil <-> watercolour switching is possible again. It needs watercolour_bold_s055 targets for the remaining 23 game sessions (one is done) and a two-style model trained on both. Neither has been started. Training requires the user's explicit go-ahead.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones

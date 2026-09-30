@@ -1,0 +1,37 @@
+{
+  "purpose": "Pick the strongest teacher style that keeps all four alignment gates (Decision 88).",
+  "session": "ds_1790532989_38a03718",
+  "n_frames": 45,
+  "stride": 22,
+  "generated_utc": "2026-09-30T02:32:59+00:00",
+  "grid": [
+    {
+      "style": "watercolor_bold",
+      "strength": 0.5,
+      "failing_frames": 0,
+      "stylisation_hist_mean": 0.8223754380465534,
+      "seconds": 76
+    },
+    {
+      "style": "watercolor_bold",
+      "strength": 0.55,
+      "failing_frames": 0,
+      "stylisation_hist_mean": 0.9118472503536523,
+      "seconds": 71
+    },
+    {
+      "style": "watercolor_bold",
+      "strength": 0.6,
+      "failing_frames": 0,
+      "stylisation_hist_mean": 0.9724670661329733,
+      "seconds": 76
+    }
+  ],
+  "pick": {
+    "style": "watercolor_bold",
+    "strength": 0.6,
+    "failing_frames": 0,
+    "stylisation_hist_mean": 0.9724670661329733,
+    "seconds": 76
+  }
+}

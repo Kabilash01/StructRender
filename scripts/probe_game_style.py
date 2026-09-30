@@ -21,8 +21,9 @@ from data_pipeline.teacher.structural import StructuralSession
 from data_pipeline.teacher.styles import load_style
 from renderer.training.train_baseline import ROOT
 
-STRENGTHS = (0.50, 0.60, 0.70)
-STYLES = ("oil_impasto", "watercolor")
+STRENGTHS = tuple(float(x) for x in __import__("os").environ.get("SR_STRENGTHS", "0.50,0.60,0.70").split(","))
+import os
+STYLES = tuple(os.environ.get("SR_STYLES", "oil_impasto,watercolor").split(","))
 STRIDE = 22   # 45 frames from a 990-frame session
 
 
@@ -55,7 +56,7 @@ def main() -> int:
             del be
     ok = [r for r in rep["grid"] if r["failing_frames"] == 0]
     rep["pick"] = max(ok, key=lambda r: r["stylisation_hist_mean"]) if ok else None
-    (ROOT / "eval/reports/game_style_probe.json").write_text(json.dumps(rep, indent=2) + "\n")
+    (ROOT / os.environ.get("SR_REPORT", "eval/reports/game_style_probe.json")).write_text(json.dumps(rep, indent=2) + "\n")
     print("[style] PICK:", rep["pick"])
     return 0
 

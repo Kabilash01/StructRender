@@ -1,0 +1,22 @@
+{
+  "schema_version": "t1.0",
+  "style_id": "watercolor_bold_s060",
+  "backend": "sd15_controlnet_depth",
+  "prompt": "bold watercolor painting on warm cream paper, saturated ultramarine and viridian pigment washes, strong wet-on-wet colour blooms across every surface, visible paper texture, crisp ink outlines",
+  "negative_prompt": "photograph, photorealistic, text, watermark, signature, blurry, extra objects, cluttered background, distorted geometry, duplicated shapes, fisheye",
+  "reference_image": null,
+  "teacher": {
+    "model_id": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "revision": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet_model_id": "lllyasviel/sd-controlnet-depth",
+    "controlnet_revision": "35e42a3ea49845b3c76f202f145f257b9fb1b7d4"
+  },
+  "seed": 20260930,
+  "params": {
+    "num_inference_steps": 24,
+    "guidance_scale": 7.5,
+    "strength": 0.6,
+    "controlnet_conditioning_scale": 1.6
+  },
+  "notes": "Game watercolour, second attempt (KB Decision 92). The committed watercolour failed the full-session gate on the game at strength 0.50 (10/990, 9 'not stylised') and 0.60 (5/990): pale washes barely change large flat grey surfaces (eval/showcase/watercolor_failure_frame440.png). This prompt asks for saturated pigment and a tinted paper ground so flat areas change too. Parameters otherwise as committed; the gates decide, thresholds unchanged. This file: strength 0.6, for the full-session gate (Decision 92)."
+}

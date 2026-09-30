@@ -1,0 +1,20 @@
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:02<00:04,  1.02s/it]Loading pipeline components...:  50%|█████     | 3/6 [00:02<00:02,  1.38it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][A
+Loading weights:  34%|███▎      | 66/196 [00:00<00:00, 640.46it/s][A
+Loading weights:  85%|████████▌ | 167/196 [00:00<00:00, 830.42it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 832.53it/s]
+Loading pipeline components...:  83%|████████▎ | 5/6 [00:02<00:00,  2.20it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:02<00:00,  2.13it/s]
+[style] watercolor_bold strength 0.50  failing 0/45  stylisation 0.822
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  4.11it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  6.89it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3164.46it/s]
+Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  7.32it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.93it/s]
+[style] watercolor_bold strength 0.55  failing 0/45  stylisation 0.912
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  4.44it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  7.71it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3247.70it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.17it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.59it/s]
+[style] watercolor_bold strength 0.60  failing 0/45  stylisation 0.972
+[style] PICK: {'style': 'watercolor_bold', 'strength': 0.6, 'failing_frames': 0, 'stylisation_hist_mean': 0.9724670661329733, 'seconds': 76}
