@@ -1,0 +1,610 @@
+=== watercolor_bold_s055 generation: 24 game sessions Wed 11:09 ===
+skip ds_1790532989_38a03718 (already ALIGNED)
+--- ds_1790533238_10a99bb8 11:09
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3197.24it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  9.24it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  6.22it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.23it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790533238_10a99bb8
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790533238_10a99bb8
+planned=990  cache_hits=0  generated=990  complete=True  1173.7s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790533238_10a99bb8  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.661 p05=0.765 median=0.921 mean=0.904 max=0.998
+  boundary_recall          n= 990 min=0.503 p05=0.642 median=0.997 mean=0.920 max=1.000
+  boundary_precision       n= 990 min=0.684 p05=0.790 median=0.901 mean=0.902 max=0.997
+  spurious_edge_ratio      n= 990 min=0.003 p05=0.019 median=0.099 mean=0.098 max=0.316
+  min_silhouette_support   n= 990 min=0.841 p05=0.982 median=1.000 mean=0.996 max=1.000
+  stylisation_hist         n= 990 min=0.226 p05=0.589 median=0.937 mean=0.918 max=1.376
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790533479_78ea5c25 11:31
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:00,  5.24it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  2.76it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3392.25it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  4.74it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.09it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790533479_78ea5c25
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790533479_78ea5c25
+planned=990  cache_hits=0  generated=990  complete=True  1274.9s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790533479_78ea5c25  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.636 p05=0.763 median=0.933 mean=0.913 max=0.998
+  boundary_recall          n= 990 min=0.473 p05=0.648 median=0.996 mean=0.931 max=1.000
+  boundary_precision       n= 990 min=0.679 p05=0.811 median=0.909 mean=0.906 max=0.997
+  spurious_edge_ratio      n= 990 min=0.003 p05=0.031 median=0.091 mean=0.094 max=0.321
+  min_silhouette_support   n= 990 min=0.707 p05=0.966 median=1.000 mean=0.994 max=1.000
+  stylisation_hist         n= 990 min=0.220 p05=0.522 median=0.995 mean=0.953 max=1.392
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790533725_e8ec91d5 11:55
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:02,  1.99it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  5.61it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3372.06it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  5.56it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.30it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790533725_e8ec91d5
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790533725_e8ec91d5
+planned=990  cache_hits=0  generated=990  complete=True  1298.8s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790533725_e8ec91d5  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.671 p05=0.822 median=0.934 mean=0.918 max=0.995
+  boundary_recall          n= 990 min=0.513 p05=0.740 median=0.998 mean=0.952 max=1.000
+  boundary_precision       n= 990 min=0.715 p05=0.802 median=0.895 mean=0.894 max=0.995
+  spurious_edge_ratio      n= 990 min=0.005 p05=0.025 median=0.105 mean=0.106 max=0.285
+  min_silhouette_support   n= 990 min=0.815 p05=0.966 median=1.000 mean=0.995 max=1.000
+  stylisation_hist         n= 990 min=0.217 p05=0.525 median=0.923 mean=0.921 max=1.397
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790533974_7ed06c02 12:19
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  3.46it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3524.23it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  5.76it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.29it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790533974_7ed06c02
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790533974_7ed06c02
+planned=990  cache_hits=0  generated=990  complete=True  1245.5s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790533974_7ed06c02  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.620 p05=0.830 median=0.947 mean=0.935 max=0.995
+  boundary_recall          n= 990 min=0.462 p05=0.780 median=0.999 mean=0.975 max=1.000
+  boundary_precision       n= 990 min=0.701 p05=0.817 median=0.906 mean=0.903 max=0.990
+  spurious_edge_ratio      n= 990 min=0.010 p05=0.041 median=0.094 mean=0.097 max=0.299
+  min_silhouette_support   n= 990 min=0.837 p05=0.962 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.238 p05=0.490 median=0.804 mean=0.828 max=1.364
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790534228_bf0b8570 12:41
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  5.85it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3451.64it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  5.77it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.24it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.31it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790534228_bf0b8570
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790534228_bf0b8570
+planned=990  cache_hits=0  generated=990  complete=True  1410.1s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790534228_bf0b8570  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.632 p05=0.770 median=0.935 mean=0.917 max=0.999
+  boundary_recall          n= 990 min=0.474 p05=0.645 median=0.999 mean=0.945 max=1.000
+  boundary_precision       n= 990 min=0.731 p05=0.810 median=0.904 mean=0.900 max=0.999
+  spurious_edge_ratio      n= 990 min=0.001 p05=0.027 median=0.096 mean=0.100 max=0.269
+  min_silhouette_support   n= 990 min=0.857 p05=0.960 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.225 p05=0.465 median=0.868 mean=0.840 max=1.397
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790534482_6d509a33 13:07
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  3.96it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3351.19it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  6.27it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.48it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.22it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790534482_6d509a33
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790534482_6d509a33
+planned=990  cache_hits=0  generated=990  complete=True  1494.6s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790534482_6d509a33  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.entity_silhouette: frame 119: entity 7 (200 px) silhouette support 0.510 < 0.6 — the entity's outline is not present in the target
+  boundary_f               n= 990 min=0.604 p05=0.755 median=0.924 mean=0.903 max=0.997
+  boundary_recall          n= 990 min=0.439 p05=0.625 median=0.996 mean=0.919 max=1.000
+  boundary_precision       n= 990 min=0.656 p05=0.796 median=0.907 mean=0.903 max=0.997
+  spurious_edge_ratio      n= 990 min=0.003 p05=0.019 median=0.093 mean=0.097 max=0.344
+  min_silhouette_support   n= 990 min=0.510 p05=0.963 median=1.000 mean=0.992 max=1.000
+  stylisation_hist         n= 990 min=0.239 p05=0.525 median=0.925 mean=0.912 max=1.434
+stats: frames_measured=990 failing=1 by_gate={'align.entity_silhouette': 1}
+ALIGNMENT RESULT: FAIL  [1 error(s), 0 warning(s)]
+--- ds_1790534719_716f96e0 13:34
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:02,  1.97it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  5.50it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3458.75it/s]
+Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  7.36it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.24it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790534719_716f96e0
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790534719_716f96e0
+planned=990  cache_hits=0  generated=990  complete=True  1501.4s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790534719_716f96e0  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.spurious_edges: frame 270: spurious-edge ratio 0.352 > 0.35 (3220 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  [ERROR] align.spurious_edges: frame 285: spurious-edge ratio 0.353 > 0.35 (3496 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  boundary_f               n= 990 min=0.620 p05=0.745 median=0.926 mean=0.902 max=0.997
+  boundary_recall          n= 990 min=0.462 p05=0.624 median=0.998 mean=0.921 max=1.000
+  boundary_precision       n= 990 min=0.647 p05=0.797 median=0.904 mean=0.897 max=0.996
+  spurious_edge_ratio      n= 990 min=0.004 p05=0.025 median=0.096 mean=0.103 max=0.353
+  min_silhouette_support   n= 990 min=0.672 p05=0.962 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.218 p05=0.540 median=0.953 mean=0.927 max=1.368
+stats: frames_measured=990 failing=2 by_gate={'align.spurious_edges': 2}
+ALIGNMENT RESULT: FAIL  [2 error(s), 0 warning(s)]
+--- ds_1790534971_62b8325b 14:01
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  4.16it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  3.70it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3419.82it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.97it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.04it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790534971_62b8325b
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790534971_62b8325b
+planned=990  cache_hits=0  generated=990  complete=True  817.2s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790534971_62b8325b  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.spurious_edges: frame 110: spurious-edge ratio 0.401 > 0.35 (2935 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  boundary_f               n= 990 min=0.710 p05=0.854 median=0.924 mean=0.923 max=0.994
+  boundary_recall          n= 990 min=0.569 p05=0.794 median=1.000 mean=0.978 max=1.000
+  boundary_precision       n= 990 min=0.599 p05=0.820 median=0.859 mean=0.878 max=0.993
+  spurious_edge_ratio      n= 990 min=0.007 p05=0.042 median=0.141 mean=0.122 max=0.401
+  min_silhouette_support   n= 990 min=0.810 p05=0.980 median=1.000 mean=0.997 max=1.000
+  stylisation_hist         n= 990 min=0.239 p05=0.710 median=0.921 mean=0.937 max=1.363
+stats: frames_measured=990 failing=1 by_gate={'align.spurious_edges': 1}
+ALIGNMENT RESULT: FAIL  [1 error(s), 0 warning(s)]
+--- ds_1790535211_662ebed0 14:17
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:02,  1.94it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3611.70it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  3.15it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.11it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.23it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790535211_662ebed0
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790535211_662ebed0
+planned=990  cache_hits=0  generated=990  complete=True  1214.2s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790535211_662ebed0  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.657 p05=0.845 median=0.946 mean=0.929 max=0.990
+  boundary_recall          n= 990 min=0.496 p05=0.790 median=1.000 mean=0.976 max=1.000
+  boundary_precision       n= 990 min=0.692 p05=0.786 median=0.905 mean=0.892 max=0.995
+  spurious_edge_ratio      n= 990 min=0.005 p05=0.043 median=0.095 mean=0.108 max=0.308
+  min_silhouette_support   n= 990 min=0.714 p05=0.941 median=1.000 mean=0.988 max=1.000
+  stylisation_hist         n= 990 min=0.228 p05=0.557 median=0.954 mean=0.897 max=1.388
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790535458_03992c68 14:40
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  4.12it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  5.61it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3425.09it/s]
+Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  5.60it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.07it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790535458_03992c68
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790535458_03992c68
+planned=990  cache_hits=0  generated=990  complete=True  1257.6s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790535458_03992c68  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.645 p05=0.781 median=0.951 mean=0.929 max=0.991
+  boundary_recall          n= 990 min=0.489 p05=0.670 median=0.997 mean=0.948 max=1.000
+  boundary_precision       n= 990 min=0.693 p05=0.836 median=0.927 mean=0.920 max=0.999
+  spurious_edge_ratio      n= 990 min=0.001 p05=0.029 median=0.073 mean=0.080 max=0.307
+  min_silhouette_support   n= 990 min=0.784 p05=0.937 median=1.000 mean=0.985 max=1.000
+  stylisation_hist         n= 990 min=0.195 p05=0.509 median=0.927 mean=0.916 max=1.375
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790535708_c16d2ce2 15:03
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:02,  1.98it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3592.87it/s]
+Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  4.58it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.32it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790535708_c16d2ce2
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790535708_c16d2ce2
+planned=990  cache_hits=0  generated=990  complete=True  1288.5s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790535708_c16d2ce2  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.661 p05=0.780 median=0.949 mean=0.930 max=0.987
+  boundary_recall          n= 990 min=0.500 p05=0.683 median=0.997 mean=0.959 max=1.000
+  boundary_precision       n= 990 min=0.693 p05=0.818 median=0.918 mean=0.909 max=0.992
+  spurious_edge_ratio      n= 990 min=0.008 p05=0.041 median=0.082 mean=0.091 max=0.307
+  min_silhouette_support   n= 990 min=0.740 p05=0.948 median=1.000 mean=0.987 max=1.000
+  stylisation_hist         n= 990 min=0.207 p05=0.465 median=0.905 mean=0.888 max=1.483
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790535959_640a0d22 15:26
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00, 13.04it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3734.06it/s]
+Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  4.41it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.28it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790535959_640a0d22
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790535959_640a0d22
+planned=990  cache_hits=0  generated=990  complete=True  1501.7s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790535959_640a0d22  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.641 p05=0.757 median=0.940 mean=0.917 max=0.998
+  boundary_recall          n= 990 min=0.482 p05=0.629 median=0.999 mean=0.939 max=1.000
+  boundary_precision       n= 990 min=0.737 p05=0.814 median=0.914 mean=0.907 max=0.999
+  spurious_edge_ratio      n= 990 min=0.001 p05=0.024 median=0.086 mean=0.093 max=0.263
+  min_silhouette_support   n= 990 min=0.647 p05=0.949 median=1.000 mean=0.991 max=1.000
+  stylisation_hist         n= 990 min=0.220 p05=0.410 median=0.941 mean=0.909 max=1.430
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790536212_9fbff551 15:54
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3423.48it/s]
+Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  4.94it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  3.82it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.19it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790536212_9fbff551
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790536212_9fbff551
+planned=990  cache_hits=0  generated=990  complete=True  1307.2s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790536212_9fbff551  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.spurious_edges: frame 153: spurious-edge ratio 0.361 > 0.35 (3473 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  boundary_f               n= 990 min=0.666 p05=0.776 median=0.944 mean=0.922 max=0.996
+  boundary_recall          n= 990 min=0.513 p05=0.655 median=0.999 mean=0.957 max=1.000
+  boundary_precision       n= 990 min=0.639 p05=0.809 median=0.899 mean=0.900 max=0.994
+  spurious_edge_ratio      n= 990 min=0.006 p05=0.025 median=0.101 mean=0.100 max=0.361
+  min_silhouette_support   n= 990 min=0.760 p05=0.931 median=1.000 mean=0.987 max=1.000
+  stylisation_hist         n= 990 min=0.231 p05=0.576 median=0.934 mean=0.893 max=1.345
+stats: frames_measured=990 failing=1 by_gate={'align.spurious_edges': 1}
+ALIGNMENT RESULT: FAIL  [1 error(s), 0 warning(s)]
+--- ds_1790536469_c4cfb8b9 16:18
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3652.89it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  9.86it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00, 15.75it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.28it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790536469_c4cfb8b9
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790536469_c4cfb8b9
+planned=990  cache_hits=0  generated=990  complete=True  1497.4s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790536469_c4cfb8b9  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.664 p05=0.777 median=0.935 mean=0.920 max=0.997
+  boundary_recall          n= 990 min=0.521 p05=0.663 median=0.999 mean=0.950 max=1.000
+  boundary_precision       n= 990 min=0.666 p05=0.814 median=0.904 mean=0.901 max=0.998
+  spurious_edge_ratio      n= 990 min=0.002 p05=0.021 median=0.096 mean=0.099 max=0.334
+  min_silhouette_support   n= 990 min=0.844 p05=0.964 median=1.000 mean=0.994 max=1.000
+  stylisation_hist         n= 990 min=0.234 p05=0.513 median=0.897 mean=0.861 max=1.377
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790536747_788283cf 16:44
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00, 19.89it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  7.12it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3498.99it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.29it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790536747_788283cf
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790536747_788283cf
+planned=990  cache_hits=0  generated=990  complete=True  1320.2s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790536747_788283cf  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.650 p05=0.810 median=0.940 mean=0.929 max=0.999
+  boundary_recall          n= 990 min=0.495 p05=0.725 median=1.000 mean=0.969 max=1.000
+  boundary_precision       n= 990 min=0.685 p05=0.814 median=0.899 mean=0.899 max=0.998
+  spurious_edge_ratio      n= 990 min=0.002 p05=0.032 median=0.101 mean=0.101 max=0.315
+  min_silhouette_support   n= 990 min=0.702 p05=0.953 median=1.000 mean=0.992 max=1.000
+  stylisation_hist         n= 990 min=0.200 p05=0.533 median=0.918 mean=0.869 max=1.280
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790537000_85c67b3e 17:08
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  3.93it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3583.81it/s]
+Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  7.13it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.25it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790537000_85c67b3e
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790537000_85c67b3e
+planned=990  cache_hits=0  generated=990  complete=True  1182.9s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790537000_85c67b3e  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.boundary_f: frame 846: boundary F=0.591 < 0.6 (recall=0.427, precision=0.956) — the target no longer reproduces the engine's scene layout
+  boundary_f               n= 990 min=0.591 p05=0.779 median=0.944 mean=0.929 max=0.997
+  boundary_recall          n= 990 min=0.427 p05=0.666 median=1.000 mean=0.968 max=1.000
+  boundary_precision       n= 990 min=0.654 p05=0.808 median=0.907 mean=0.901 max=1.000
+  spurious_edge_ratio      n= 990 min=0.000 p05=0.028 median=0.093 mean=0.099 max=0.346
+  min_silhouette_support   n= 990 min=0.774 p05=0.966 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.243 p05=0.537 median=0.853 mean=0.857 max=1.286
+stats: frames_measured=990 failing=1 by_gate={'align.boundary_f': 1}
+ALIGNMENT RESULT: FAIL  [1 error(s), 0 warning(s)]
+--- ds_1790537251_a7179053 17:30
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3529.51it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  9.83it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  3.82it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.05it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.22it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790537251_a7179053
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790537251_a7179053
+planned=990  cache_hits=0  generated=990  complete=True  1436.5s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790537251_a7179053  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.640 p05=0.766 median=0.931 mean=0.914 max=0.992
+  boundary_recall          n= 990 min=0.477 p05=0.652 median=0.999 mean=0.937 max=1.000
+  boundary_precision       n= 990 min=0.681 p05=0.814 median=0.909 mean=0.902 max=0.998
+  spurious_edge_ratio      n= 990 min=0.002 p05=0.030 median=0.091 mean=0.098 max=0.319
+  min_silhouette_support   n= 990 min=0.688 p05=0.940 median=1.000 mean=0.990 max=1.000
+  stylisation_hist         n= 990 min=0.208 p05=0.527 median=0.941 mean=0.905 max=1.387
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790537503_9e442db6 17:56
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3379.72it/s]
+Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  4.82it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:01,  2.69it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  8.97it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.22it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790537503_9e442db6
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790537503_9e442db6
+planned=990  cache_hits=0  generated=990  complete=True  244.8s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790537503_9e442db6  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.741 p05=0.947 median=0.961 mean=0.957 max=0.990
+  boundary_recall          n= 990 min=0.608 p05=0.997 median=0.999 mean=0.993 max=1.000
+  boundary_precision       n= 990 min=0.750 p05=0.919 median=0.925 mean=0.926 max=0.986
+  spurious_edge_ratio      n= 990 min=0.014 p05=0.055 median=0.075 mean=0.074 max=0.250
+  min_silhouette_support   n= 990 min=0.809 p05=0.984 median=0.984 mean=0.985 max=1.000
+  stylisation_hist         n= 990 min=0.581 p05=0.793 median=0.793 mean=0.817 max=1.303
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790537747_81203cd9 18:03
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3471.84it/s]
+Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  2.78it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  4.92it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.93it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.02it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790537747_81203cd9
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790537747_81203cd9
+planned=990  cache_hits=0  generated=990  complete=True  1365.5s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790537747_81203cd9  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.boundary_f: frame 879: boundary F=0.594 < 0.6 (recall=0.426, precision=0.983) — the target no longer reproduces the engine's scene layout
+  [ERROR] align.boundary_f: frame 901: boundary F=0.599 < 0.6 (recall=0.449, precision=0.902) — the target no longer reproduces the engine's scene layout
+  boundary_f               n= 990 min=0.594 p05=0.779 median=0.951 mean=0.932 max=0.995
+  boundary_recall          n= 990 min=0.426 p05=0.670 median=1.000 mean=0.965 max=1.000
+  boundary_precision       n= 990 min=0.673 p05=0.829 median=0.919 mean=0.910 max=0.991
+  spurious_edge_ratio      n= 990 min=0.009 p05=0.029 median=0.081 mean=0.090 max=0.327
+  min_silhouette_support   n= 990 min=0.833 p05=0.952 median=1.000 mean=0.992 max=1.000
+  stylisation_hist         n= 990 min=0.203 p05=0.440 median=0.888 mean=0.867 max=1.414
+stats: frames_measured=990 failing=2 by_gate={'align.boundary_f': 2}
+ALIGNMENT RESULT: FAIL  [2 error(s), 0 warning(s)]
+--- ds_1790538005_ce3d303e 18:28
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:02,  1.96it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  5.51it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3403.17it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  9.12it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.17it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790538005_ce3d303e
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790538005_ce3d303e
+planned=990  cache_hits=0  generated=990  complete=True  1069.3s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790538005_ce3d303e  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.646 p05=0.870 median=0.952 mean=0.939 max=0.990
+  boundary_recall          n= 990 min=0.490 p05=0.797 median=0.999 mean=0.965 max=1.000
+  boundary_precision       n= 990 min=0.738 p05=0.828 median=0.934 mean=0.920 max=0.991
+  spurious_edge_ratio      n= 990 min=0.009 p05=0.036 median=0.066 mean=0.080 max=0.262
+  min_silhouette_support   n= 990 min=0.673 p05=0.956 median=1.000 mean=0.983 max=1.000
+  stylisation_hist         n= 990 min=0.237 p05=0.343 median=0.931 mean=0.825 max=1.369
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790538263_4815ad01 18:48
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  3.83it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3349.63it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00,  4.65it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:01,  2.96it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.03it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790538263_4815ad01
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790538263_4815ad01
+planned=990  cache_hits=0  generated=990  complete=True  1315.3s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790538263_4815ad01  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  [ERROR] align.spurious_edges: frame 86: spurious-edge ratio 0.431 > 0.35 (2628 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  [ERROR] align.spurious_edges: frame 845: spurious-edge ratio 0.352 > 0.35 (3473 strong target edges, that fraction with no structural support within tolerance) — hallucinated geometry (KB §12)
+  boundary_f               n= 990 min=0.661 p05=0.773 median=0.930 mean=0.902 max=0.996
+  boundary_recall          n= 990 min=0.504 p05=0.638 median=0.997 mean=0.911 max=1.000
+  boundary_precision       n= 990 min=0.569 p05=0.811 median=0.918 mean=0.913 max=0.995
+  spurious_edge_ratio      n= 990 min=0.005 p05=0.019 median=0.082 mean=0.087 max=0.431
+  min_silhouette_support   n= 990 min=0.849 p05=0.964 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.242 p05=0.602 median=0.902 mean=0.892 max=1.352
+stats: frames_measured=990 failing=2 by_gate={'align.spurious_edges': 2}
+ALIGNMENT RESULT: FAIL  [2 error(s), 0 warning(s)]
+--- ds_1790538506_f1f9c484 19:12
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00, 19.29it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00,  7.15it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3446.56it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  7.22it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790538506_f1f9c484
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790538506_f1f9c484
+planned=990  cache_hits=0  generated=990  complete=True  1157.7s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790538506_f1f9c484  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.637 p05=0.763 median=0.923 mean=0.887 max=0.997
+  boundary_recall          n= 990 min=0.469 p05=0.623 median=0.998 mean=0.888 max=1.000
+  boundary_precision       n= 990 min=0.657 p05=0.805 median=0.914 mean=0.914 max=0.995
+  spurious_edge_ratio      n= 990 min=0.005 p05=0.014 median=0.086 mean=0.086 max=0.343
+  min_silhouette_support   n= 990 min=0.759 p05=0.955 median=1.000 mean=0.992 max=1.000
+  stylisation_hist         n= 990 min=0.245 p05=0.519 median=0.920 mean=0.882 max=1.284
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+--- ds_1790538763_8d71c460 19:33
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  4.10it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:00<00:00,  5.52it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4020.24it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.37it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00,  6.03it/s]
+  [495/990] generated=495 hits=0
+  [990/990] generated=990 hits=0
+teacher m3-teacher-1  style=watercolor_bold_s055  session=ds_1790538763_8d71c460
+teacher_version=sd15-controlnet-depth-1/1d28cbe26de3
+target_dir=/home/kabilash01/StructRender/data_pipeline/teacher_targets/watercolor_bold_s055/ds_1790538763_8d71c460
+planned=990  cache_hits=0  generated=990  complete=True  1417.7s
+TEACHER RESULT: PASS
+alignment m3-alignment-1  style=watercolor_bold_s055  session=ds_1790538763_8d71c460  frames=990
+checks: layout, header, structural_reference, frame_lines, alignment_metrics
+  boundary_f               n= 990 min=0.601 p05=0.767 median=0.945 mean=0.925 max=0.996
+  boundary_recall          n= 990 min=0.451 p05=0.661 median=0.999 mean=0.957 max=1.000
+  boundary_precision       n= 990 min=0.711 p05=0.813 median=0.915 mean=0.904 max=0.998
+  spurious_edge_ratio      n= 990 min=0.002 p05=0.027 median=0.085 mean=0.096 max=0.289
+  min_silhouette_support   n= 990 min=0.841 p05=0.965 median=1.000 mean=0.993 max=1.000
+  stylisation_hist         n= 990 min=0.223 p05=0.522 median=0.906 mean=0.891 max=1.372
+stats: frames_measured=990 failing=0 by_gate={}
+ALIGNMENT RESULT: PASS (ALIGNED marker written)  [0 warning(s)]
+watercolor_bold aligned: 17/24
+=== DATA READY - no training started (needs the user's go-ahead) Wed 19:59 ===
+WC_BOLD_DONE

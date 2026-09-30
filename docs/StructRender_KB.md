@@ -3588,6 +3588,31 @@ For comparison, the old watercolour at 0.50 scored 1/45 and 0.441 — the bold p
 
 ---
 
+### Decision 93: Bold Watercolour Across All Game Sessions — 17/24 ALIGNED (2026-09-30)
+
+`watercolor_bold_s055` was generated for all 24 game sessions (23 new plus the gate session), 11:09 -> 19:59. Evidence: `eval/logs/game_teacher_watercolor_bold.log`. No training was started.
+
+**17 of 24 sessions ALIGNED; 7 FAIL, each on only 1-2 of 990 frames:**
+- spurious-edge failures in 4 sessions;
+- boundary-F failures in 3 sessions (one of them — val `81203cd9` — at 2 frames);
+- one entity-silhouette failure.
+
+The Decision 92 full-session pass on one session did **not** generalise: roughly 30 % of sessions fail somewhere. This is the Decision 40 pattern again, now at the level of sessions rather than frames.
+
+**Sessions with BOTH styles ALIGNED** (what a two-style model can use under the whole-session rule of Decisions 69 and 90):
+
+| split | both styles | lost to watercolour |
+|---|---|---|
+| train | 12 / 17 | 6d509a33, 716f96e0, 62b8325b, 9fbff551, 85c67b3e |
+| val | 2 / 3 | 81203cd9 |
+| **test** | **2 / 3** | **4815ad01** |
+
+- **The held-out test set is hit.** The test sessions were fixed by position before any target existed, so losing one cannot be repaired by substitution — only by shrinking the test set (1,980 frames instead of 2,970) or by changing the exclusion policy. Neither is decided here.
+- **Model B (oil only, Decision 91) is unaffected:** its data and its held-out evaluation are complete.
+- **An open policy question for the user, not decided here.** Every failure is 1-2 frames out of 990, and the whole-session rule discards the other ~988 gate-passing frames with it. A per-frame exclusion rule would keep every frame that passes every gate, so no failing frame is ever used. That would retain all 17 train and all 3 val/test sessions, but it is a change of **data policy**, and it needs its own Decision entry if adopted. It is not a threshold change: the gates stay exactly as committed.
+
+---
+
 ---
 
 ## 10. Roadmap & Milestones
