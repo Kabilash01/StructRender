@@ -3682,6 +3682,39 @@ This is a sampled check, not a full-set metric; the numbers are in this entry on
 
 **What this does not show.** Colour-histogram travel ("style acquisition", the M4 criterion) was not computed by this scorer. The live in-game switch has not yet been exported or run; that is the next step (M10 path: ONNX -> TensorRT -> GDExtension).
 
+### Decision 96: Live Style Switching in the Playable Game — Working, Without Frame History (2026-10-02)
+
+**What runs.** `game_project/tests/runtime/live_game.gd` plays `main.tscn` normally (WASD/arrows + Space). Every frame it is captured with `StructuralExporter.capture_live()`, rendered by two-style B through the C++ runtime and GDExtension, and shown full-screen. Keys: **1** oil, **2** watercolour, **0** native.
+
+**One engine per style.** `scripts/m10_two_style_engines.py` builds both from the ONE two-style checkpoint: each engine is the model with its style index fixed as a graph constant. Every engine is therefore 1-input/1-output, the contract the runtime already had (Decision 86), so no C++ change was needed. Both engines are loaded once; switching style just chooses which engine renders the next frame.
+
+**C++ parity, both styles.** On a real game test frame (`eval/reports/m10_two_style_engines.json`):
+- **Strict FP32:** max |C++ - PyTorch| = 1.4e-06 (oil) and 1.4e-06 (watercolour); PASS at 1e-3.
+- **TF32 (what ships):** about 1.1e-3.
+- **The styles differ through C++:** mean |oil - watercolour| = 0.0161.
+
+**Live check.** `SR_FRAMES=300`: a scripted walk through the game, cycling oil -> watercolour -> native every 100 frames. Log: `eval/logs/live_game_check.log`; screenshots: `eval/reports/live_game_check/`.
+- Median frame time **19.9 ms (50 fps) for oil, 21.9 ms (46 fps) for watercolour**, including capture, inference and display. That is above the 30 fps M10 target.
+- **0 fallbacks** in 300 frames.
+
+**The cost — stated plainly.** These engines run **without frame history**: every frame is a cold start, because the live loop does not yet supply the previous frame's features, motion or confidence mask. Scored on the same test frames as Decision 95 (`game_b_two_style_test_*_nohistory.json`):
+
+| style | PSNR with -> without history | LPIPS | sharpness | flicker |
+|---|---|---|---|---|
+| oil | 35.33 -> 33.58 | 0.0225 -> 0.0334 | 0.946 -> 0.930 | 0.00566 -> 0.00509 |
+| watercolour | 34.79 -> 32.82 | 0.0243 -> 0.0359 | 0.937 -> 0.918 | 0.00614 -> 0.00571 |
+
+- **History is worth about 1.8-2.0 dB and about 33 % of LPIPS.** The model was trained almost entirely with history, so a cold start is off its training distribution.
+- **Flicker does not get worse without history.** It is slightly lower, consistent with the cold-start output being a little softer.
+- **The live demo is therefore below the Decision 95 numbers.** Matching them needs the temporal live path:
+  - the previous frame's bottleneck features fed back;
+  - the engine motion pass;
+  - the confidence mask (depth/normal reprojection plus spawned-entity masks) computed per frame in the runtime.
+
+**Display notes.**
+- The model renders 512x288 (16:9). With a non-16:9 window the native view (0) is cropped differently, so it frames wider or narrower than the styled views. This is a display difference, not a model one.
+- The styles are deliberately subtle. The game is grey with plain materials, and the teacher strengths that pass the alignment gates are about 0.5 (Decisions 90, 92), so the targets themselves are mild.
+
 ---
 
 ---

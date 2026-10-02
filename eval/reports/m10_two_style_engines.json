@@ -1,0 +1,46 @@
+{
+  "checkpoint": "checkpoints/game_b_two_style/best.pt",
+  "input": "ds_1790538506_f1f9c484 frame 400 (real game test frame)",
+  "history": "none (cold start)",
+  "generated_utc": "2026-10-02T04:37:03+00:00",
+  "styles": {
+    "oil_impasto": {
+      "fp32_strict": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": 1.430511474609375e-06,
+        "engine": "artifacts/engines/game_b2_oil_impasto_fp32_strict.engine",
+        "engine_mb": 56.8,
+        "stdout": "tensor structure  in     [1,7,288,512]\ntensor rgb        out    [1,3,288,512]\nok\n",
+        "stderr": ""
+      },
+      "fp32_tf32": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": 0.0010443329811096191,
+        "engine": "artifacts/engines/game_b2_oil_impasto_fp32_tf32.engine",
+        "engine_mb": 32.4,
+        "stdout": "tensor structure  in     [1,7,288,512]\ntensor rgb        out    [1,3,288,512]\nok\n",
+        "stderr": ""
+      }
+    },
+    "watercolor_bold_s055": {
+      "fp32_strict": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": 1.3709068298339844e-06,
+        "engine": "artifacts/engines/game_b2_watercolor_bold_s055_fp32_strict.engine",
+        "engine_mb": 56.8,
+        "stdout": "tensor structure  in     [1,7,288,512]\ntensor rgb        out    [1,3,288,512]\nok\n",
+        "stderr": ""
+      },
+      "fp32_tf32": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": 0.0011028647422790527,
+        "engine": "artifacts/engines/game_b2_watercolor_bold_s055_fp32_tf32.engine",
+        "engine_mb": 32.5,
+        "stdout": "tensor structure  in     [1,7,288,512]\ntensor rgb        out    [1,3,288,512]\nok\n",
+        "stderr": ""
+      }
+    }
+  },
+  "cpp_style_difference_mean_abs": 0.01611495390534401,
+  "strict_parity_pass": true
+}
