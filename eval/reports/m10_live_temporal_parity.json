@@ -1,0 +1,6 @@
+{
+  "style": 1,
+  "max_abs_diff_uint8": 1,
+  "pixels_diff_gt1": 0,
+  "mean_abs_diff_uint8": 4.521122685185185e-05
+}

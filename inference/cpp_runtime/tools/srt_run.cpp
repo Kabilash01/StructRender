@@ -1,6 +1,6 @@
 // srt_run <engine> <in0.bin> [in1.bin ...] --out <out.bin> [--bench N]
-// Runs one inference on raw float32 inputs (tensor order), writes the first
-// output, optionally benchmarks. Exit 0 on success, 1 on any failure.
+// Runs one inference on raw float32 inputs (tensor order), writes output 0 to
+// <out.bin> and output k>0 to <out.bin>.k, optionally benchmarks. Exit 0 on success, 1 on any failure.
 #include "structrender/engine.hpp"
 
 #include <algorithm>
@@ -46,8 +46,10 @@ int main(int argc, char** argv) {
     for (auto& b : out_bufs) op.push_back(b.data());
     if (!e.infer(ip, op)) { std::fprintf(stderr, "infer: %s\n", e.last_error().c_str()); return 1; }
     if (!out.empty()) {
-        std::ofstream f(out, std::ios::binary);
-        f.write(reinterpret_cast<const char*>(out_bufs[0].data()), out_bufs[0].size() * sizeof(float));
+        for (size_t o = 0; o < out_bufs.size(); ++o) {
+            std::ofstream f(o ? out + "." + std::to_string(o) : out, std::ios::binary);
+            f.write(reinterpret_cast<const char*>(out_bufs[o].data()), out_bufs[o].size() * sizeof(float));
+        }
     }
     if (bench > 0) {
         std::vector<float> ms;

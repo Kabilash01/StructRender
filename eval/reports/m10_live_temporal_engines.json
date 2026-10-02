@@ -1,0 +1,70 @@
+{
+  "checkpoint": "checkpoints/game_b_two_style/best.pt",
+  "input": "ds_1790538506_f1f9c484 frames 399->400 (real game test pair)",
+  "inputs": [
+    "x_t",
+    "x_prev",
+    "feat_prev",
+    "motion",
+    "no_prev",
+    "motion_valid"
+  ],
+  "outputs": [
+    "rgb",
+    "feat"
+  ],
+  "feat_shape": [
+    1,
+    512,
+    18,
+    32
+  ],
+  "generated_utc": "2026-10-02T04:59:45+00:00",
+  "styles": {
+    "oil_impasto": {
+      "fp32_strict": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": {
+          "rgb": 1.6093254089355469e-06,
+          "feat": 7.331371307373047e-06
+        },
+        "engine": "artifacts/engines/game_b2_live_oil_impasto_fp32_strict.engine",
+        "bench": "bench n=100 median 6.152 ms  p95 6.183 ms  min 6.135 ms",
+        "stderr": ""
+      },
+      "fp32_tf32": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": {
+          "rgb": 0.0010448992252349854,
+          "feat": 0.0024350732564926147
+        },
+        "engine": "artifacts/engines/game_b2_live_oil_impasto_fp32_tf32.engine",
+        "bench": "bench n=100 median 9.373 ms  p95 9.404 ms  min 9.341 ms",
+        "stderr": ""
+      }
+    },
+    "watercolor_bold_s055": {
+      "fp32_strict": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": {
+          "rgb": 1.6987323760986328e-06,
+          "feat": 7.331371307373047e-06
+        },
+        "engine": "artifacts/engines/game_b2_live_watercolor_bold_s055_fp32_strict.engine",
+        "bench": "bench n=100 median 6.150 ms  p95 6.166 ms  min 6.131 ms",
+        "stderr": ""
+      },
+      "fp32_tf32": {
+        "cpp_exit": 0,
+        "max_abs_diff_vs_torch": {
+          "rgb": 0.0013752877712249756,
+          "feat": 0.0024350732564926147
+        },
+        "engine": "artifacts/engines/game_b2_live_watercolor_bold_s055_fp32_tf32.engine",
+        "bench": "bench n=100 median 9.364 ms  p95 9.391 ms  min 9.333 ms",
+        "stderr": ""
+      }
+    }
+  },
+  "strict_parity_pass": true
+}

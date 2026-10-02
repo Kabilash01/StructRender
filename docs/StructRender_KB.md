@@ -3715,6 +3715,36 @@ This is a sampled check, not a full-set metric; the numbers are in this entry on
 - The model renders 512x288 (16:9). With a non-16:9 window the native view (0) is cropped differently, so it frames wider or narrower than the styled views. This is a display difference, not a model one.
 - The styles are deliberately subtle. The game is grey with plain materials, and the teacher strengths that pass the alignment gates are about 0.5 (Decisions 90, 92), so the targets themselves are mild.
 
+### Decision 97: Live Temporal Path — the Playable Game Now Renders With the Scored Model's History (2026-10-02)
+
+Closes the gap Decision 96 left open: the live game ran two-style B without frame history, about 2 dB below its scored quality. **The live path now supplies exactly the inputs the scored model was evaluated with.** No training was involved.
+
+**Graph.** `renderer/temporal/live_step.py::LiveStep` is one exported step per style:
+- **Six inputs:** x_t, x_prev, feat_prev, motion, no_prev (spawned-entity pixels), motion_valid.
+- **Two outputs:** the frame, and this frame's encoder features, which are fed back as next frame's `feat_prev`. That is identical to `encode(structure_prev)`, which `eval_forward` recomputes, so the encoder is not paid for twice.
+- **The confidence mask M_t is built inside the graph** with the same `confidence_mask` the training data and the scorer use, so no second implementation can drift. Its depth, finite flag and normals are recovered from the structure channels (depth = 1/x0 - 1; the round trip is about 1e-6 m against the 0.175 m mask scale).
+
+**C++.** New `StructRenderer` methods; the single-frame methods are untouched:
+- `load_temporal_engines` / `set_style` / `reset_history` / `render_temporal`;
+- `StructuralExporter.capture_live_temporal()` adds the entity-id pass, the camera and the entity transforms. `export_frame` and `capture_live` are untouched.
+
+Motion and the spawned-entity mask are ported line for line from `_compute_motion`, using Godot's own `Transform3D` / `Projection` types. All styles share one history, which is valid because the encoder is style-free (Decision 94): a style switch keeps it. Native mode resets it.
+
+**Verification — every link in the chain:**
+1. **LiveStep == the scorer.** On real test frames in both styles, max |diff| vs `eval_forward` is 2.4e-6 on RGB and 2.1e-5 on M_t vs `engine_confidence`. Unit tests: `renderer/temporal/tests/test_live_step.py`; with no history the step equals the cold-start model exactly.
+2. **TensorRT == PyTorch** (`eval/reports/m10_live_temporal_engines.json`, real game test pair): strict FP32 max |diff| is 1.6e-06 on RGB and 7.3e-06 on the fed-back features.
+   - Engine time: **6.15 ms strict FP32 vs 9.37 ms TF32**. Strict is both exact and faster on this GPU, so **strict ships**.
+3. **C++ motion == GDScript motion** (`game_project/tests/runtime/live_temporal_parity.gd`, log `eval/logs/m10_live_temporal_parity.log`): 120 lockstep frames of the playable game, with `export_frame` and the live path on the same instant and the style alternating every frame. Max |motion difference| = 7.5e-8 UV; motion_valid agreed on all 120; 0 failures.
+4. **Live C++ frame == scored model** (`scripts/m10_live_temporal_parity.py`, `eval/reports/m10_live_temporal_parity.json`). The last two parity frames are rebuilt in PyTorch from the dumped structure and motion: **max difference 1/255 (rounding), 0 pixels off by more.**
+
+Together these mean the live frame IS the Decision 95 model's frame for the same game state.
+
+**Not exercised: the spawned-entity branch (KB S7).** The game spawns its one enemy on frame 1, before the first captured pair, so `no_prev` was 0 pixels throughout. The C++ branch mirrors `_compute_motion`'s skip exactly and the in-graph mask's handling is unit-tested, but it has not been seen live.
+
+**Live check** (`SR_FRAMES=300`; log `eval/logs/live_game_temporal_check.log`; screenshots in `eval/reports/live_game_temporal_check/`): **42.6 fps oil, 43.3 fps watercolour** (median 23.1-23.5 ms per frame, including the 4-pass capture, motion, inference and display); **0 fallbacks**. That is about 7 fps below the no-history path because of the entity-id pass and the motion computation, and still above the 30 fps M10 target.
+
+**Free play is not lockstep.** The tree is not paused during the 4-pass capture, so a physics tick can occasionally fall between passes. The parity test ran lockstep, as recording does. This is a deliberate choice for real-time gameplay; any artefact from it is limited to moving entities on the frames where it happens.
+
 ---
 
 ---

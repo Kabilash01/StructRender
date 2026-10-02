@@ -1,0 +1,15 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+{"event":"game_start","headless":false,"t_wall_s":0.000168,"tick":0,"total_coins":5}
+{"event":"enemy_spawned","name":"Enemy_0","t_wall_s":0.002129,"tick":1}
+LIVE_GAME ready — 1 oil, 2 watercolour, 0 native
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":1.325879,"tick":60}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":2.338977,"tick":120}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":3.335943,"tick":180}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":4.369161,"tick":240}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":5.328348,"tick":300}
+LIVE_GAME oil: frames=90  median 23.5 ms  (42.6 fps)
+LIVE_GAME watercolour: frames=90  median 23.1 ms  (43.3 fps)
+LIVE_GAME fallbacks=0
+{"event":"game_end","reason":"exit_tree","score":0,"t_wall_s":5.675348,"tick":320,"won":false}

@@ -1,20 +1,22 @@
 ## M10 live demo: the PLAYABLE game (main.tscn), rendered live by two-style B,
 ## with the style switchable while you play (KB Decisions 94, 95).
 ##
-## Per frame: StructuralExporter.capture_live() (the same exporter and camera the
-## game dataset was recorded with) -> StructRenderer.render_images() -> shown
-## full-screen over the native view. One engine per style, built from the ONE
-## two-style checkpoint (scripts/m10_two_style_engines.py); both are loaded once,
-## and switching style just picks which renders the next frame.
+## Per frame: StructuralExporter.capture_live_temporal() (the same exporter and
+## camera the game dataset was recorded with, plus the entity-id pass) ->
+## StructRenderer.render_temporal(), which computes motion and the spawned-entity
+## mask in C++ and feeds the previous frame's features back (KB Decision 97) ->
+## shown full-screen over the native view. One engine per style, built from the
+## ONE two-style checkpoint (scripts/m10_live_temporal_engines.py), all sharing
+## one history: the encoder is style-free, so a style switch keeps it.
 ##
 ## Keys: WASD / arrows + Space play the game as normal. 1 = oil, 2 = watercolour,
 ## 0 = native Godot render. If a render fails the native frame shows (§4
 ## fallback); gameplay never waits on the renderer.
 ##
-## The engines run without frame history (cold start every frame) — see
-## eval/reports/game_b_two_style_test_*_nohistory.json for what that costs.
+## Native mode (0) skips frames, so the history is reset there; the first styled
+## frame after it is a cold start, as the first frame of any session.
 ##
-## Env: SR_ENGINE_OIL, SR_ENGINE_WATERCOLOR (engine paths, required).
+## Env: SR_ENGINE_OIL, SR_ENGINE_WATERCOLOR (LiveStep engine paths, required).
 ## SR_FRAMES=N runs a scripted check instead of free play: the player walks a
 ## fixed route, the style cycles oil -> watercolour -> native every 100 frames,
 ## a frame of each is saved to SR_SAVE_DIR, timing is printed, then it quits.
@@ -47,13 +49,11 @@ func _initialize() -> void:
 	var adapter := H.make_adapter(self, "live_game")
 	var ex := H.make_exporter(self, cam, main, adapter, "live_game")
 
-	var renderers := []
-	for env in ["SR_ENGINE_OIL", "SR_ENGINE_WATERCOLOR"]:
-		var r := StructRenderer.new()
-		if not r.load_engine(OS.get_environment(env)):
-			printerr("LIVE_GAME engine ", env, " failed: ", r.last_error(), " — that style shows native")
-			r = null
-		renderers.append(r)
+	var r := StructRenderer.new()
+	var loaded := r.load_temporal_engines(PackedStringArray([
+		OS.get_environment("SR_ENGINE_OIL"), OS.get_environment("SR_ENGINE_WATERCOLOR")]))
+	if not loaded:
+		printerr("LIVE_GAME engines failed: ", r.last_error(), " — showing native only")
 
 	var layer := CanvasLayer.new()
 	root.add_child(layer)
@@ -85,15 +85,16 @@ func _initialize() -> void:
 			if _pressed_once(KEY_2): _style = 1
 			if _pressed_once(KEY_0): _style = 2
 		var img: Image = null
-		if _style < 2 and renderers[_style] != null:
-			var imgs: Array = await ex.capture_live()
-			if imgs.size() == 3:
-				var rgb: PackedByteArray = renderers[_style].render_images(imgs[0], imgs[1], imgs[2])
-				if not rgb.is_empty():
-					img = Image.create_from_data(512, 288, false, Image.FORMAT_RGB8, rgb)
-			if img == null:
+		if _style < 2 and loaded:
+			r.set_style(_style)
+			var c: Array = await ex.capture_live_temporal(i)
+			var rgb: PackedByteArray = r.render_temporal(c[0], c[1], c[2], c[3], c[4], c[5], c[6])
+			if not rgb.is_empty():
+				img = Image.create_from_data(512, 288, false, Image.FORMAT_RGB8, rgb)
+			else:
 				fallbacks += 1
 		else:
+			r.reset_history()
 			await process_frame
 		view.visible = img != null
 		if img != null:

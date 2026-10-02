@@ -493,3 +493,37 @@ func capture_live() -> Array:
 	var albedo_img := await _render_pass("albedo")
 	_restore(originals)
 	return [depth_img, normal_img, albedo_img]
+
+
+## LIVE TEMPORAL path (KB Decision 97): capture_live()'s three passes plus the
+## entity-id pass, with the camera and every registered entity's transform at
+## this instant — everything StructRenderer.render_temporal() needs to compute
+## motion and the spawned-entity mask in C++, as _compute_motion does here.
+## Returns [depth, normal, albedo, ids, cam_xform, cam_proj, {iid: Transform3D}].
+## export_frame() and capture_live() are untouched.
+func capture_live_temporal(frame_id: int) -> Array:
+	assert(_viewport != null, "StructuralExporter.setup() not called")
+	_adapter.scan(frame_id)
+	_sync_camera()
+	var meshes := _scene_root.find_children("*", "MeshInstance3D", true, false)
+	var originals: Dictionary = {}
+	var mesh_ids: Dictionary = {}
+	for m in meshes:
+		originals[m] = m.material_override
+		mesh_ids[m] = maxi(int(_adapter.instance_id_for(m)), 0)
+	for m in meshes:
+		m.material_override = _depth_mat
+	var depth_img := await _render_pass("depth")
+	for m in meshes:
+		m.material_override = _normal_mat
+	var normal_img := await _render_pass("normal")
+	for m in meshes:
+		m.material_override = _albedo_mat_for(m)
+	var albedo_img := await _render_pass("albedo")
+	for m in meshes:
+		m.material_override = _id_mat_for(m, mesh_ids[m])
+	var id_img := await _render_pass("entity_id")
+	_restore(originals)
+	_collect_entity_transforms()
+	return [depth_img, normal_img, albedo_img, id_img, _vcam.global_transform,
+		_vcam.get_camera_projection(), _curr_entity_xforms.duplicate()]
