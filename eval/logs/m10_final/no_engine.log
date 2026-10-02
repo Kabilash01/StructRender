@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+{"event":"game_start","headless":false,"t_wall_s":0.000219,"tick":0,"total_coins":5}
+{"event":"enemy_spawned","name":"Enemy_0","t_wall_s":0.002402,"tick":1}
+LIVE_GAME engines failed: cannot open engine /nonexistent.engine — showing native only
+LIVE_GAME ready — 1 oil, 2 watercolour, 0 native
+LIVE_GAME oil: frames=90  median 0.6 ms  (1569.9 fps)
+LIVE_GAME watercolour: frames=90  median 0.6 ms  (1555.2 fps)
+LIVE_GAME fallbacks=0 injected_failures=0 recovered_next_frame=0
+LIVE_GAME gameplay: physics_frames=15 player_travelled=1.4 m
+{"event":"game_end","reason":"exit_tree","score":0,"t_wall_s":0.248166,"tick":18,"won":false}

@@ -1,0 +1,56 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+{"event":"game_start","headless":false,"t_wall_s":0.000826,"tick":0,"total_coins":5}
+{"event":"enemy_spawned","name":"Enemy_0","t_wall_s":0.003073,"tick":1}
+LIVE_GAME ready — 1 oil, 2 watercolour, 0 native
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":1.192124,"tick":60}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":2.197509,"tick":120}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":3.199931,"tick":180}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":4.183013,"tick":240}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":5.186421,"tick":300}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":6.189399,"tick":360}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":7.189979,"tick":420}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":8.191507,"tick":480}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":9.19823,"tick":540}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":10.191988,"tick":600}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":11.201084,"tick":660}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":12.189184,"tick":720}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":13.190695,"tick":780}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":14.19261,"tick":840}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":15.197915,"tick":900}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":16.18882,"tick":960}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":17.1921,"tick":1020}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":18.188999,"tick":1080}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":19.189665,"tick":1140}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":20.189937,"tick":1200}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":21.189495,"tick":1260}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":22.19773,"tick":1320}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":23.190518,"tick":1380}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":24.196187,"tick":1440}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":25.19135,"tick":1500}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":26.191748,"tick":1560}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":27.191332,"tick":1620}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":28.197843,"tick":1680}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":29.189993,"tick":1740}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":30.191601,"tick":1800}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":31.199289,"tick":1860}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":32.193961,"tick":1920}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":33.190696,"tick":1980}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":34.196449,"tick":2040}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":35.191302,"tick":2100}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":36.191175,"tick":2160}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":37.194698,"tick":2220}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":38.197803,"tick":2280}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":39.189682,"tick":2340}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":40.189952,"tick":2400}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":41.199668,"tick":2460}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":42.188428,"tick":2520}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":43.186659,"tick":2580}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":44.201208,"tick":2640}
+{"coins_remaining":5,"enemy_alive":true,"event":"frame_tick","score":0,"t_wall_s":45.188062,"tick":2700}
+LIVE_GAME oil: frames=900  median 22.4 ms  (44.6 fps)
+LIVE_GAME watercolour: frames=900  median 22.4 ms  (44.7 fps)
+LIVE_GAME fallbacks=0 injected_failures=0 recovered_next_frame=0
+LIVE_GAME gameplay: physics_frames=2755 player_travelled=17.9 m
+{"event":"game_end","reason":"exit_tree","score":0,"t_wall_s":46.164737,"tick":2758,"won":false}

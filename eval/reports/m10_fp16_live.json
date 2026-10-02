@@ -1,0 +1,33 @@
+{
+  "tolerance_preregistered": {
+    "mean_abs_dpsnr_db": 0.05,
+    "mean_abs_pixel_diff": 0.00392156862745098,
+    "pairs_per_style": "every 30th frame of the 3 test sessions"
+  },
+  "generated_utc": "2026-10-02T05:52:28+00:00",
+  "styles": {
+    "oil_impasto": {
+      "n_pairs": 99,
+      "mean_abs_dpsnr_db": 0.043916220616812655,
+      "max_abs_dpsnr_db": 0.7394866943359375,
+      "mean_abs_pixel_diff": 0.0004186919856389674,
+      "max_abs_pixel_diff": 0.4134202003479004,
+      "pass": true,
+      "bench_fp16": "bench n=500 median 4.534 ms  p95 5.284 ms  min 4.490 ms",
+      "bench_fp32_strict": "bench n=500 median 6.232 ms  p95 7.067 ms  min 6.127 ms",
+      "engine_fp16": "artifacts/engines/game_b2_live_oil_impasto_fp16.engine"
+    },
+    "watercolor_bold_s055": {
+      "n_pairs": 99,
+      "mean_abs_dpsnr_db": 0.03870052761501736,
+      "max_abs_dpsnr_db": 0.6311683654785156,
+      "mean_abs_pixel_diff": 0.0004238786748075397,
+      "max_abs_pixel_diff": 0.5168604850769043,
+      "pass": true,
+      "bench_fp16": "bench n=500 median 4.545 ms  p95 4.969 ms  min 4.511 ms",
+      "bench_fp32_strict": "bench n=500 median 6.174 ms  p95 6.573 ms  min 6.150 ms",
+      "engine_fp16": "artifacts/engines/game_b2_live_watercolor_bold_s055_fp16.engine"
+    }
+  },
+  "fp16_tolerance_pass": true
+}

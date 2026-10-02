@@ -3745,6 +3745,40 @@ Together these mean the live frame IS the Decision 95 model's frame for the same
 
 **Free play is not lockstep.** The tree is not paused during the 4-pass capture, so a physics tick can occasionally fall between passes. The parity test ran lockstep, as recording does. This is a deliberate choice for real-time gameplay; any artefact from it is limited to moving entities on the frames where it happens.
 
+### Decision 98: M10 Closed — FP16 Engine, Idle Measurements, Failure Injection, Runtime Log (2026-10-02)
+
+**M10 exit criteria (§10), each checked explicitly.** All runs are on the playable game, with two-style B live with history (Decision 97), the GPU otherwise idle (0 % utilisation before each run; only desktop GPU processes present), and the window on the real display. Evidence: `eval/logs/m10_final/`.
+
+| criterion | result | evidence |
+|---|---|---|
+| stable live loop | **3,000 frames, 0 fallbacks.** Median styled frame 22.4 ms in the first half vs 22.3 ms in the second (no drift); p95 24.5 ms, p99 25.2 ms. The only frame over 38 ms is frame 0 (131 ms, warm-up). Gameplay advanced 2,755 physics frames. | `stability_fp16.log`, `stability_fp16_frames.csv` |
+| ~30 fps | **44.6 fps oil, 44.7 fps watercolour** (FP16); strict FP32 41.8 / 41.0 fps | `stability_fp16.log`, `fp32_strict_live.log` |
+| TensorRT standalone <= ~20 ms | **4.53 ms FP16, 6.23 ms strict FP32** per live step (median of 500, idle GPU) | `eval/reports/m10_fp16_live.json` |
+| renderer failure does not break gameplay | see the failure tests below | `failure_injection*.{log,csv}`, `no_engine.log` |
+
+**Failure tests:**
+- **Injected failure.** Every 50th styled frame's render is made to fail on purpose (no entity-id pass). All 8 failures fell back to the native frame; the game kept running (561 physics frames, 14.5 m travelled). Each failure was followed by a successful render on the next styled frame, which starts with no history (`motion_valid` 0); history resumes on the frame after. 7 of 8 are observable in the log; the 8th was followed only by native-mode frames until the run ended.
+- **Missing engine.** The game runs native-only and logs the error.
+
+**FP16 engine (deliverable).** Built per Decision 45: an FP16 ONNX graph in a STRONGLY_TYPED network. The confidence mask stays FP32, because depth in metres needs it; engine I/O stays float32. The FP16 tolerance Decision 45 deferred to M10 was **fixed in `scripts/m10_fp16_live.py` before any FP16 number existed**. It is measured on 99 real test pairs per style against the strict-FP32 engine:
+
+| criterion | limit | oil | watercolour |
+|---|---|---|---|
+| mean \|dPSNR\| vs teacher | < 0.05 dB | 0.044 dB | 0.039 dB |
+| mean \|pixel difference\| | < 1/255 | 0.0004 | 0.0004 |
+
+**PASS in both styles** — not by a wide margin on dPSNR (0.044 against 0.05).
+
+**What the tolerance does not cover, stated.** The **maximum** single-pixel difference is 0.41 (oil) / 0.52 (watercolour), and the worst single frame moves 0.74 dB. Investigated: 16 of 99 frames have any pixel off by more than 0.1, at most about 200 pixels per frame, and **all lie on one-pixel object outlines**. FP16 shifts an edge by a fraction of a pixel, and an edge pixel is either surface or background. Side by side, the frames are indistinguishable. This was found after the tolerance was set; it does not change the verdict, and it is recorded so the "PASS" is not read as "pixel-identical".
+
+**Shipping.** The pre-registered rule was: ship FP16 if it passes AND is faster. It passes, and it is 27 % faster standalone and about 3 fps faster live, so **FP16 ships**. The live-equivalence chain of Decision 97 was proven on strict FP32. FP16 inherits it within the tolerance above, not bit-for-bit.
+
+**Runtime log (deliverable).** `live_game.gd` with `SR_LOG=path` writes one CSV line per frame: frame, style, ms, rendered, injected, motion_valid, error.
+
+**Decision 86's other open item** — rendering the passes in parallel SubViewports — was not needed: the target is met with sequential passes.
+
+**Verdict: M10's exit criteria are met** on this hardware, at the development resolution (512x288).
+
 ---
 
 ---

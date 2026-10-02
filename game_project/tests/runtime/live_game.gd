@@ -20,6 +20,10 @@
 ## SR_FRAMES=N runs a scripted check instead of free play: the player walks a
 ## fixed route, the style cycles oil -> watercolour -> native every 100 frames,
 ## a frame of each is saved to SR_SAVE_DIR, timing is printed, then it quits.
+## SR_LOG=path writes one CSV line per frame (the M10 runtime log).
+## SR_INJECT_FAIL_EVERY=N (scripted only) makes every N-th styled frame's render
+## fail on purpose (no entity-id pass), to show a renderer failure falls back to
+## the native frame, gameplay continues, and the next frame renders again.
 extends SceneTree
 
 const STYLE_NAMES := ["oil", "watercolour", "native"]
@@ -70,6 +74,19 @@ func _initialize() -> void:
 
 	var t_tot := {0: PackedFloat64Array(), 1: PackedFloat64Array()}
 	var fallbacks := 0
+	var inject := int(OS.get_environment("SR_INJECT_FAIL_EVERY")) if scripted and OS.has_environment("SR_INJECT_FAIL_EVERY") else 0
+	var injected := 0
+	var recovered := 0
+	var pending_recovery := false
+	var log: FileAccess = null
+	if OS.has_environment("SR_LOG"):
+		log = FileAccess.open(OS.get_environment("SR_LOG"), FileAccess.WRITE)
+		log.store_line("frame,style,ms,rendered,injected,motion_valid,error")
+	var player: Node3D = main.get_node("Player")
+	var start_pos := player.global_position
+	var travelled := 0.0
+	var last_pos := start_pos
+	var phys0 := Engine.get_physics_frames()
 	var i := 0
 	while frames < 0 or i < frames:
 		var t0 := Time.get_ticks_usec()
@@ -85,14 +102,22 @@ func _initialize() -> void:
 			if _pressed_once(KEY_2): _style = 1
 			if _pressed_once(KEY_0): _style = 2
 		var img: Image = null
+		var inj := false
 		if _style < 2 and loaded:
 			r.set_style(_style)
 			var c: Array = await ex.capture_live_temporal(i)
-			var rgb: PackedByteArray = r.render_temporal(c[0], c[1], c[2], c[3], c[4], c[5], c[6])
+			inj = inject > 0 and i % inject == inject - 1
+			var rgb: PackedByteArray = r.render_temporal(c[0], c[1], c[2], null if inj else c[3], c[4], c[5], c[6])
 			if not rgb.is_empty():
 				img = Image.create_from_data(512, 288, false, Image.FORMAT_RGB8, rgb)
+				if pending_recovery:
+					recovered += 1
+				pending_recovery = false
 			else:
 				fallbacks += 1
+				if inj:
+					injected += 1
+					pending_recovery = true
 		else:
 			r.reset_history()
 			await process_frame
@@ -100,6 +125,11 @@ func _initialize() -> void:
 		if img != null:
 			view.texture = ImageTexture.create_from_image(img)
 		var dt := (Time.get_ticks_usec() - t0) / 1000.0
+		travelled += player.global_position.distance_to(last_pos)
+		last_pos = player.global_position
+		if log != null:
+			log.store_line("%d,%s,%.3f,%d,%d,%d,%s" % [i, STYLE_NAMES[_style], dt, int(img != null), int(inj),
+				int(r.last_motion_valid()), "" if img != null or _style == 2 else r.last_error().replace(",", ";")])
 		label.text = "%s   %.0f fps   [1 oil  2 watercolour  0 native]" % [STYLE_NAMES[_style], 1000.0 / maxf(dt, 0.001)]
 		if scripted:
 			if _style < 2 and i % 100 >= 10:
@@ -115,5 +145,8 @@ func _initialize() -> void:
 		a.sort()
 		if a.size() > 0:
 			print("LIVE_GAME %s: frames=%d  median %.1f ms  (%.1f fps)" % [STYLE_NAMES[s], a.size(), a[a.size() / 2], 1000.0 / a[a.size() / 2]])
-	print("LIVE_GAME fallbacks=%d" % fallbacks)
+	print("LIVE_GAME fallbacks=%d injected_failures=%d recovered_next_frame=%d" % [fallbacks, injected, recovered])
+	print("LIVE_GAME gameplay: physics_frames=%d player_travelled=%.1f m" % [Engine.get_physics_frames() - phys0, travelled])
+	if log != null:
+		log.close()
 	quit(0)
