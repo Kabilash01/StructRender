@@ -1,0 +1,34 @@
+{
+  "checkpoint": "checkpoints/game_b_two_style/best.pt",
+  "split": "configs/data/game_split_v1.json",
+  "style": "watercolor_bold_s055",
+  "test_sessions": [
+    "ds_1790538263_4815ad01",
+    "ds_1790538506_f1f9c484",
+    "ds_1790538763_8d71c460"
+  ],
+  "frame_exclusions": "configs/data/game_frame_exclusions_v1.json",
+  "generated_utc": "2026-10-02T03:44:50+00:00",
+  "image_quality": {
+    "n_frames": 2968,
+    "l1": 0.008053128607571125,
+    "psnr_db": 34.79325485229492,
+    "ssim": 0.9785630106925964,
+    "lpips": 0.024277009069919586,
+    "sharpness": 0.9369152784347534
+  },
+  "temporal_error": {
+    "native": {
+      "mean": 0.00010046911652710802,
+      "n": 2451
+    },
+    "target": {
+      "mean": 0.012697884847338968,
+      "n": 2451
+    },
+    "model": {
+      "mean": 0.006142218365162605,
+      "n": 2451
+    }
+  }
+}

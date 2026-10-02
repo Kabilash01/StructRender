@@ -1,0 +1,34 @@
+{
+  "checkpoint": "checkpoints/game_b_oil/best.pt",
+  "split": "configs/data/game_split_v1.json",
+  "style": "oil_impasto",
+  "test_sessions": [
+    "ds_1790538263_4815ad01",
+    "ds_1790538506_f1f9c484",
+    "ds_1790538763_8d71c460"
+  ],
+  "frame_exclusions": "configs/data/game_frame_exclusions_v1.json",
+  "generated_utc": "2026-10-02T03:58:00+00:00",
+  "image_quality": {
+    "n_frames": 2968,
+    "l1": 0.006057313177734613,
+    "psnr_db": 35.43183517456055,
+    "ssim": 0.9813953638076782,
+    "lpips": 0.021633965894579887,
+    "sharpness": 0.946435809135437
+  },
+  "temporal_error": {
+    "native": {
+      "mean": 0.00010046911652710802,
+      "n": 2451
+    },
+    "target": {
+      "mean": 0.010405087241464455,
+      "n": 2451
+    },
+    "model": {
+      "mean": 0.005580852981937973,
+      "n": 2451
+    }
+  }
+}

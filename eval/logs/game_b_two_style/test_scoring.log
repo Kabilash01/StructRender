@@ -1,0 +1,25 @@
+=== two-style B, oil
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+{"n_frames": 2968, "l1": 0.006103261839598417, "psnr_db": 35.333587646484375, "ssim": 0.9806706309318542, "lpips": 0.02248380519449711, "sharpness": 0.9458114504814148}
+{'native': 0.0001, 'target': 0.010405, 'model': 0.005661} n = 2451
+wrote /home/kabilash01/StructRender/eval/reports/game_b_two_style_test_oil.json
+=== two-style B, watercolour
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+{"n_frames": 2968, "l1": 0.008053128607571125, "psnr_db": 34.79325485229492, "ssim": 0.9785630106925964, "lpips": 0.024277009069919586, "sharpness": 0.9369152784347534}
+{'native': 0.0001, 'target': 0.012698, 'model': 0.006142} n = 2451
+wrote /home/kabilash01/StructRender/eval/reports/game_b_two_style_test_watercolor.json
+=== oil-only B, same frames
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+{"n_frames": 2968, "l1": 0.006057313177734613, "psnr_db": 35.43183517456055, "ssim": 0.9813953638076782, "lpips": 0.021633965894579887, "sharpness": 0.946435809135437}
+{'native': 0.0001, 'target': 0.010405, 'model': 0.005581} n = 2451
+wrote /home/kabilash01/StructRender/eval/reports/game_b_oil_test_d94frames.json
+SCORING_DONE

@@ -3649,6 +3649,39 @@ Tests: `renderer/temporal/tests/test_two_style_b.py`.
 
 **Still to do after training:** `scripts/eval_game.py` needs a style argument and the exclusion list before it can score this model, and the scoring must apply the same exclusions.
 
+### Decision 95: Two-Style Model B on the Game — Held-Out Test Results (2026-10-02)
+
+**Training.** Trained under Decision 94, on the user's explicit go-ahead for this run. It ran all 60 epochs (no early stop) in 29.2 h, with the best checkpoint at epoch 49 (val_l1 0.007435, over both styles). Evidence:
+- `eval/logs/game_b_two_style/train.log`
+- `eval/reports/game_b_two_style_train.json`
+- checkpoint `checkpoints/game_b_two_style/best.pt`
+
+**Test scoring.** The sealed test sessions (4815ad01, f1f9c484, 8d71c460) were scored once with `scripts/eval_game.py`, which gained a style argument and the Decision 94 exclusion list. 2,968 frames per style; flicker (temporal error) on 2,451 moving pairs. Log: `eval/logs/game_b_two_style/test_scoring.log`.
+
+Oil-only B was **re-scored on the same 2,968 frames**, so the comparison is like-for-like. That report is `game_b_oil_test_d94frames.json`. Its Decision 91 numbers in `game_b_oil_test.json` are unchanged: removing the 2 frames moved nothing at 4 significant figures.
+
+| model, style | L1 | PSNR | SSIM | LPIPS | sharpness | flicker: model / teacher |
+|---|---|---|---|---|---|---|
+| oil-only B, oil | 0.00606 | 35.43 | 0.9814 | 0.0216 | 0.946 | 0.00558 / 0.01041 |
+| **two-style B, oil** | 0.00610 | 35.33 | 0.9807 | 0.0225 | 0.946 | 0.00566 / 0.01041 |
+| **two-style B, watercolour** | 0.00805 | 34.79 | 0.9786 | 0.0243 | 0.937 | 0.00614 / 0.01270 |
+
+**Findings:**
+- **One model now renders both styles.** Both clear the 0.9 sharpness floor. In both, flicker is about half the teacher's (0.54x oil, 0.48x watercolour).
+- **Sharing costs oil almost nothing:** PSNR -0.10 dB, LPIPS +0.0009, sharpness identical, flicker +1.4 %. Whether even that small cost is real cannot be said. There is one run of each model and no game-level seed variance has been measured, so it is reported as a measurement, not as a significant difference.
+- **The style switch is real, not a blend.** On test session f1f9c484 (99 frames, every 10th), each style's output was compared with each style's targets:
+
+  | output | vs oil targets | vs watercolour targets |
+  |---|---|---|
+  | oil style | 0.0058 | 0.0257 |
+  | watercolour style | 0.0247 | 0.0079 |
+
+  The two outputs differ from each other by L1 0.0242, against 0.0260 between the two teachers' images. The model reproduces about 93 % of the inter-style gap from a 16-d style vector, while the encoder and temporal memory are shared and style-free.
+
+This is a sampled check, not a full-set metric; the numbers are in this entry only.
+
+**What this does not show.** Colour-histogram travel ("style acquisition", the M4 criterion) was not computed by this scorer. The live in-game switch has not yet been exported or run; that is the next step (M10 path: ONNX -> TensorRT -> GDExtension).
+
 ---
 
 ---
