@@ -1,0 +1,64 @@
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+[match] native correspondence mean|diff| (0-255): {'mean': 0.3790941779996142, 'max': 0.7811075846354166}
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00, 11.36it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3561.79it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.80it/s]
+[W1023 11:42:35.131533993 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 32178176, total: 8096645120).
+[W1023 11:42:35.284098308 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.296135597 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.298475510 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.299944729 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.302163514 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.303358157 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.305147476 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 36372480, total: 8096645120).
+[W1023 11:42:35.310089735 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 46858240, total: 8096645120).
+[match] oil_impasto            0.50  failing 0/45  LPIPS->512 0.0936  hist->512 0.922  stylisation 0.489
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00, 12.12it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4456.63it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 12.06it/s]
+[match] oil_impasto            0.55  failing 0/45  LPIPS->512 0.0959  hist->512 0.930  stylisation 0.597
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  83%|████████▎ | 5/6 [00:00<00:00, 11.77it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4862.16it/s]
+Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.89it/s]
+[W1023 11:49:25.664479894 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 56229888, total: 8096645120).
+[W1023 11:49:25.664534506 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 56229888, total: 8096645120).
+Traceback (most recent call last):
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/kabilash01/StructRender/scripts/probe_hr_style_match.py", line 107, in <module>
+    raise SystemExit(main())
+  File "/home/kabilash01/StructRender/scripts/probe_hr_style_match.py", line 81, in main
+    out = be.generate(nat, stc, style).styled_rgb
+  File "/home/kabilash01/StructRender/data_pipeline/teacher/backends/sd15_controlnet.py", line 124, in generate
+    pipe = self._load()
+  File "/home/kabilash01/StructRender/data_pipeline/teacher/backends/sd15_controlnet.py", line 95, in _load
+    pipe = pipe.to(device)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/pipelines/pipeline_utils.py", line 583, in to
+    module.to(device, dtype)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/models/modeling_utils.py", line 1550, in to
+    return super().to(*args, **kwargs)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1383, in to
+    return self._apply(convert)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 933, in _apply
+    module._apply(fn)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 933, in _apply
+    module._apply(fn)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 933, in _apply
+    module._apply(fn)
+  [Previous line repeated 1 more time]
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 964, in _apply
+    param_applied = fn(param)
+  File "/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1369, in convert
+    return t.to(
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 30.00 MiB. GPU 0 has a total capacity of 7.54 GiB of which 53.62 MiB is free. Process 5711 has 4.28 MiB memory in use. Including non-PyTorch memory, this process has 2.78 GiB memory in use. Process 69043 has 3.79 GiB memory in use. Of the allocated memory 2.48 GiB is allocated by PyTorch, and 20.10 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+EXIT 1

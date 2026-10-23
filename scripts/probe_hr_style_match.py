@@ -72,9 +72,11 @@ def main() -> int:
         ref_dir = target_dir_for(REF_SESSION, style_id)
         rel = {json.loads(l)["frame_id"]: json.loads(l)["target_rgb_path"]
                for l in (ref_dir / "manifest.jsonl").read_text().splitlines() if l.strip()}
+        # One pipeline per style: strength is a per-call parameter of generate(),
+        # so reloading the model for every strength only churns GPU memory.
+        be = SD15ControlNetDepthBackend(base)
         for st in strengths:
             style = dataclasses.replace(base, params={**base.params, "strength": st})
-            be = SD15ControlNetDepthBackend(style)
             fails, lps, hdist, styl, t0 = 0, [], [], [], time.time()
             for f in frames:
                 nat, stc = hr.load_native_rgb(f), hr.load_structure(f)
@@ -94,8 +96,8 @@ def main() -> int:
             rep["grid"].append(row)
             print(f"[match] {style_id:<22} {st:.2f}  failing {fails}/{len(frames)}  LPIPS->512 {row['lpips_to_512_look']:.4f}"
                   f"  hist->512 {row['hist_to_512_look']:.3f}  stylisation {row['stylisation_768']:.3f}", flush=True)
-            del be
-            torch.cuda.empty_cache()
+        del be
+        torch.cuda.empty_cache()
         ok = [r for r in rep["grid"] if r["style"] == style_id and r["failing_frames"] == 0]
         rep["pick"][style_id] = min(ok, key=lambda r: r["lpips_to_512_look"]) if ok else None
         print(f"[match] PICK {style_id}: {rep['pick'][style_id]}", flush=True)
