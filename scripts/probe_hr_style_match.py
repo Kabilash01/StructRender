@@ -47,7 +47,7 @@ def _down(a: np.ndarray) -> np.ndarray:
 
 
 def _t(a: np.ndarray) -> torch.Tensor:
-    return torch.from_numpy(a.astype(np.float32) / 255).permute(2, 0, 1)[None].cuda()
+    return torch.from_numpy(a.astype(np.float32) / 255).permute(2, 0, 1)[None]
 
 
 def main() -> int:
@@ -56,7 +56,9 @@ def main() -> int:
     assert hr.resolution == [768, 432] or tuple(hr.resolution) == (768, 432), hr.resolution
     frames = sorted(hr.frame_ids())[::STRIDE]
     th = Thresholds().scaled_for((768, 432))
-    lp = LpipsMetric(device=torch.device("cuda"))
+    # LPIPS on the CPU: it is tiny, and the GPU is shared with the desktop (a
+    # first run hit a cuSOLVER handle failure with Chrome holding 2.5 GB).
+    lp = LpipsMetric(device=torch.device("cpu"))
     sanity = {f: float(np.abs(_down(hr.load_native_rgb(f)).astype(float) - lo.load_native_rgb(f)).mean()) for f in frames}
     rep = {"purpose": "Strength per style whose 768x432 look best matches the committed 512x288 look (Decision 102).",
            "hr_session": str(hr.session_id), "ref_session": REF_SESSION, "frames": frames,
