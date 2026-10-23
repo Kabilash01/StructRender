@@ -1,0 +1,10 @@
+{
+  "oil_impasto": {
+    "lpips_native512_vs_target512": 0.09882398570577304,
+    "hist_native512_vs_target512": 0.7544007603523663
+  },
+  "watercolor_bold_s055": {
+    "lpips_native512_vs_target512": 0.11688514492577977,
+    "hist_native512_vs_target512": 0.9118472503536523
+  }
+}

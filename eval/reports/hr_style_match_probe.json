@@ -1,0 +1,183 @@
+{
+  "purpose": "Strength per style whose 768x432 look best matches the committed 512x288 look (Decision 102).",
+  "hr_session": "ds_1792735343_77168a50",
+  "ref_session": "ds_1790532989_38a03718",
+  "frames": [
+    0,
+    22,
+    44,
+    66,
+    88,
+    110,
+    132,
+    154,
+    176,
+    198,
+    220,
+    242,
+    264,
+    286,
+    308,
+    330,
+    352,
+    374,
+    396,
+    418,
+    440,
+    462,
+    484,
+    506,
+    528,
+    550,
+    572,
+    594,
+    616,
+    638,
+    660,
+    682,
+    704,
+    726,
+    748,
+    770,
+    792,
+    814,
+    836,
+    858,
+    880,
+    902,
+    924,
+    946,
+    968
+  ],
+  "thresholds_768": {
+    "boundary_f": 0.6,
+    "spurious_ratio": 0.35,
+    "silhouette_support": 0.6,
+    "min_entity_px": 450,
+    "min_stylisation": 0.15,
+    "tolerance_px": 3,
+    "edge_threshold": 0.008,
+    "strong_edge_threshold": 0.04,
+    "depth_rel_jump": 0.05,
+    "normal_angle_deg": 30.0,
+    "albedo_jump": 0.05
+  },
+  "rule": "eligible = 0 gate failures on all frames; pick = lowest mean LPIPS",
+  "native_correspondence_mean_abs_0_255": {
+    "mean": 0.3790941779996142,
+    "max": 0.7811075846354166
+  },
+  "generated_utc": "2026-10-23T06:19:53+00:00",
+  "grid": [
+    {
+      "style": "oil_impasto",
+      "strength": 0.5,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.09361155894067552,
+      "hist_to_512_look": 0.9224553112139915,
+      "stylisation_768": 0.48855653613683125,
+      "seconds": 181
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.55,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.09594904176063007,
+      "hist_to_512_look": 0.9298668378665124,
+      "stylisation_768": 0.5969087577160493,
+      "seconds": 189
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.6,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.10077770426869392,
+      "hist_to_512_look": 0.9267449524176955,
+      "stylisation_768": 0.6768884227109053,
+      "seconds": 200
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.65,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.1094777622156673,
+      "hist_to_512_look": 0.9212072804140946,
+      "stylisation_768": 0.7318130304783951,
+      "seconds": 188
+    },
+    {
+      "style": "oil_impasto",
+      "strength": 0.7,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.12263673543930054,
+      "hist_to_512_look": 0.930057428305041,
+      "stylisation_768": 0.7927758487654321,
+      "seconds": 202
+    },
+    {
+      "style": "watercolor_bold_s055",
+      "strength": 0.35,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.1004571012324757,
+      "hist_to_512_look": 0.9476846828382202,
+      "stylisation_768": 0.7603704507458848,
+      "seconds": 113
+    },
+    {
+      "style": "watercolor_bold_s055",
+      "strength": 0.4,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.10006077918741438,
+      "hist_to_512_look": 0.9588077498070989,
+      "stylisation_768": 0.7947128986625513,
+      "seconds": 123
+    },
+    {
+      "style": "watercolor_bold_s055",
+      "strength": 0.45,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.0999233830306265,
+      "hist_to_512_look": 0.9947073728459362,
+      "stylisation_768": 0.8155562789351852,
+      "seconds": 136
+    },
+    {
+      "style": "watercolor_bold_s055",
+      "strength": 0.5,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.10097934818930096,
+      "hist_to_512_look": 1.0113930282278807,
+      "stylisation_768": 1.0767465599279835,
+      "seconds": 159
+    },
+    {
+      "style": "watercolor_bold_s055",
+      "strength": 0.55,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.10432572745614582,
+      "hist_to_512_look": 1.0050618489583334,
+      "stylisation_768": 1.0883648405349793,
+      "seconds": 173
+    }
+  ],
+  "pick": {
+    "oil_impasto": {
+      "style": "oil_impasto",
+      "strength": 0.5,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.09361155894067552,
+      "hist_to_512_look": 0.9224553112139915,
+      "stylisation_768": 0.48855653613683125,
+      "seconds": 181
+    },
+    "watercolor_bold_s055": {
+      "style": "watercolor_bold_s055",
+      "strength": 0.45,
+      "failing_frames": 0,
+      "lpips_to_512_look": 0.0999233830306265,
+      "hist_to_512_look": 0.9947073728459362,
+      "stylisation_768": 0.8155562789351852,
+      "seconds": 136
+    }
+  }
+}

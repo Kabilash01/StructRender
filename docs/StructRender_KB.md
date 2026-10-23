@@ -3862,6 +3862,34 @@ Visually, oil at 768x432 is milder, with less stroke texture. Watercolour takes 
 2. **Accept the new look**, run as configured, and judge the high-resolution model on its own targets only. It would be a different-looking product, not a sharper version of today's.
 3. **Drop higher resolution.**
 
+### Decision 102: Re-Tuning Strength Cannot Recover Today's Look at 768x432 — Higher Resolution Stopped Before the Bulk Run (2026-10-23)
+
+Option 1 of Decision 101, run as pre-registered (`scripts/probe_hr_style_match.py`, committed before any result).
+- **Setup.** A full 768x432 recording of variant 1 (`artifacts/hr_probe`, scratch; it passes M2 validation). Its native frames match the 512x288 route `ds_1790532989_38a03718` to 0.38/255 on average, so the frames correspond.
+- **Probe.** 45 frames; strength grid per style; look match = mean LPIPS between the 768x432 target, downscaled, and the committed 512x288 target of the same frame. Evidence: `eval/reports/hr_style_match_probe.json`, `eval/logs/hr/style_match_probe.log`.
+- **Failed attempts, logs kept.** Two hit cuSOLVER handle failures, and one ran out of memory, while other processes held 2.5-3.8 GB of the shared GPU. `expandable_segments` fixed the first cause and was verified to give bit-identical images. The rule did not change between attempts.
+
+| strength | oil LPIPS->512 look | watercolour LPIPS->512 look |
+|---|---|---|
+| 0.35 / 0.40 / 0.45 | | 0.1005 / 0.1001 / **0.0999** |
+| 0.50 | **0.0936** | 0.1010 |
+| 0.55 / 0.60 / 0.65 / 0.70 | 0.0959 / 0.1008 / 0.1095 / 0.1226 | 0.1043 (0.55) |
+
+Every setting passes all gates on all 45 frames. **The rule's picks are oil 0.50 (the committed value) and watercolour 0.45.** Watercolour across 0.35-0.50 is flat, within 0.001, so that pick carries no real preference.
+
+**The picks do not reproduce today's look.** Reference distances, measured afterwards on the same 45 frames and labelled as context, not a criterion (`eval/reports/hr_style_match_context.json`):
+- **The unstyled native frame is about as close to the committed look** as the best 768 setting: LPIPS 0.099 for oil and 0.117 for watercolour, against 0.094 and 0.100.
+- **By colour histogram it is closer:** 0.75 and 0.91, against 0.92 and 0.99.
+
+At 768x432 the teacher renders a different look at every strength tried; one knob cannot bring the committed one back. SD 1.5 was trained at 512 px, and the look is a property of that operating point.
+
+**Consequence.** Decision 100's aim, today's styles at higher resolution, is **not achievable with this teacher by re-tuning**. The 2-day teacher run, the full-session gate and the 24-session recording were **not started**. What exists stays as built: the m3.0 code path (tested) and the two scratch recordings. The 512x288 two-style model stays the shipped one.
+
+**Remaining choices for the user:**
+- accept a new, different look at 768x432, judged only on its own targets;
+- upscale today's 512x288 targets (no new detail, so little benefit);
+- stop the higher-resolution work.
+
 ---
 
 ---

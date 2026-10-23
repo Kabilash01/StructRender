@@ -1,0 +1,55 @@
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:207: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/torchvision/models/_utils.py:222: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+[match] native correspondence mean|diff| (0-255): {'mean': 0.3790941779996142, 'max': 0.7811075846354166}
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py:205: UserWarning: The `local_dir_use_symlinks` argument is deprecated and ignored in `hf_hub_download`. Downloading to a local directory does not use symlinks anymore.
+  warnings.warn(
+/home/kabilash01/miniconda3/envs/dl/lib/python3.10/site-packages/diffusers/utils/deprecation_utils.py:23: FutureWarning: `torch_dtype` is deprecated and will be removed in version 1.0.0. Please use `dtype` instead.
+  deprecate("torch_dtype", "1.0.0", _TORCH_DTYPE_DEPRECATION_MESSAGE)
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 4452.02it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00, 11.87it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.19it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 10.33it/s]
+[W1023 11:50:01.967804137 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 55181312, total: 8096645120).
+[W1023 11:50:02.110148546 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.112484732 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.115144215 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.115715347 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.118915966 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.119451522 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.121104014 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.121615514 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.123113877 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.123629976 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.125101870 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.125628408 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.127117343 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.129070270 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.131115400 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.131626229 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.133099344 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.133613560 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.136085500 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.136599205 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.138103249 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.138603197 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 48627712, total: 8096645120).
+[W1023 11:50:02.148151834 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 46202880, total: 8096645120).
+[W1023 11:50:02.151139653 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 65536000, total: 8096645120).
+[W1023 11:50:02.153190784 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 65536000, total: 8096645120).
+[match] oil_impasto            0.50  failing 0/45  LPIPS->512 0.0936  hist->512 0.922  stylisation 0.489
+[match] oil_impasto            0.55  failing 0/45  LPIPS->512 0.0959  hist->512 0.930  stylisation 0.597
+[match] oil_impasto            0.60  failing 0/45  LPIPS->512 0.1008  hist->512 0.927  stylisation 0.677
+[match] oil_impasto            0.65  failing 0/45  LPIPS->512 0.1095  hist->512 0.921  stylisation 0.732
+[match] oil_impasto            0.70  failing 0/45  LPIPS->512 0.1226  hist->512 0.930  stylisation 0.793
+[match] PICK oil_impasto: {'style': 'oil_impasto', 'strength': 0.5, 'failing_frames': 0, 'lpips_to_512_look': 0.09361155894067552, 'hist_to_512_look': 0.9224553112139915, 'stylisation_768': 0.48855653613683125, 'seconds': 181}
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]
+Loading weights:   0%|          | 0/196 [00:00<?, ?it/s][ALoading weights: 100%|██████████| 196/196 [00:00<00:00, 3597.80it/s]
+Loading pipeline components...:  33%|███▎      | 2/6 [00:00<00:00, 14.95it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.26it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 11.54it/s]
+[match] watercolor_bold_s055   0.35  failing 0/45  LPIPS->512 0.1005  hist->512 0.948  stylisation 0.760
+[match] watercolor_bold_s055   0.40  failing 0/45  LPIPS->512 0.1001  hist->512 0.959  stylisation 0.795
+[match] watercolor_bold_s055   0.45  failing 0/45  LPIPS->512 0.0999  hist->512 0.995  stylisation 0.816
+[match] watercolor_bold_s055   0.50  failing 0/45  LPIPS->512 0.1010  hist->512 1.011  stylisation 1.077
+[match] watercolor_bold_s055   0.55  failing 0/45  LPIPS->512 0.1043  hist->512 1.005  stylisation 1.088
+[match] PICK watercolor_bold_s055: {'style': 'watercolor_bold_s055', 'strength': 0.45, 'failing_frames': 0, 'lpips_to_512_look': 0.0999233830306265, 'hist_to_512_look': 0.9947073728459362, 'stylisation_768': 0.8155562789351852, 'seconds': 136}
+EXIT 0
