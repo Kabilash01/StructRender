@@ -116,11 +116,11 @@ static func make_camera(parent: Node3D, from: Vector3, look_at: Vector3 = Vector
 
 
 static func make_exporter(tree: SceneTree, cam: Camera3D, scene_root: Node3D,
-		adapter: Node, session_id: String = "session_test") -> Node:
+		adapter: Node, session_id: String = "session_test", res: Vector2i = Vector2i(512, 288)) -> Node:
 	var ex := Exporter.new()
 	tree.root.add_child(ex)
 	ex.session_id = session_id
-	ex.setup(cam, scene_root, adapter)
+	ex.setup(cam, scene_root, adapter, res)
 	return ex
 
 

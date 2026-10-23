@@ -31,6 +31,7 @@ const KB_DECISIONS_IN_FORCE := ["9", "22", "23", "24", "25", "26", "27", "28", "
 var session_id: String = ""
 var dataset_root: String = ""          # absolute dir; <root>/<session_id>/ is the session dir
 var resolution: Vector2i = Vector2i(512, 288)
+var schema_version: String = SCHEMA_VERSION    # m3.0 for the 768x432 dataset (KB Decision 100)
 var tick_rate: int = 60
 var git_commit: String = "unknown"
 
@@ -54,7 +55,8 @@ var _sequences: Array[Dictionary] = []
 
 
 func configure(p_session_id: String, p_root: String, exporter: Node, adapter: Node,
-		src_cam: Camera3D, res: Vector2i = Vector2i(512, 288), p_tick_rate: int = 60) -> void:
+		src_cam: Camera3D, res: Vector2i = Vector2i(512, 288), p_tick_rate: int = 60,
+		p_schema_version: String = SCHEMA_VERSION) -> void:
 	session_id = p_session_id
 	dataset_root = p_root
 	_exporter = exporter
@@ -62,6 +64,7 @@ func configure(p_session_id: String, p_root: String, exporter: Node, adapter: No
 	_src_cam = src_cam
 	resolution = res
 	tick_rate = p_tick_rate
+	schema_version = p_schema_version
 	var env_commit := OS.get_environment("STRUCTRENDER_GIT_COMMIT")
 	if env_commit != "":
 		git_commit = env_commit
@@ -136,7 +139,7 @@ func record_frame(tick: int) -> Dictionary:
 
 	var rel := "frames/%s.npz" % stem
 	var record := {
-		"schema_version": SCHEMA_VERSION,
+		"schema_version": schema_version,
 		"session_id": session_id,
 		"frame_id": frame_id,
 		"timestamp_s": timestamp_s,
@@ -246,7 +249,7 @@ func finish() -> void:
 
 	var header := {
 		"session_id": session_id,
-		"schema_version": SCHEMA_VERSION,
+		"schema_version": schema_version,
 		"resolution": [resolution.x, resolution.y],
 		"frame_count": _frame_count,
 		"tick_rate": tick_rate,

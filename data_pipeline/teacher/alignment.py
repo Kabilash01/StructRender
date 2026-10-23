@@ -192,6 +192,11 @@ def validate_alignment(
     if session is None:
         return report
 
+    # Pixel-unit thresholds are stated at the reference resolution; rescale them
+    # to this session's (KB Decision 100). The identity at 512x288.
+    th = th.scaled_for(session.resolution)
+    report.thresholds = th.as_dict()
+
     # -- per-frame manifest lines -------------------------------------------
     report.check("frame_lines")
     rows = _read_jsonl(jsonl_path, report)

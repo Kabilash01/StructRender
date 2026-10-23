@@ -60,10 +60,21 @@ func _initialize() -> void:
 	await physics_frame
 	await process_frame
 
+	# Resolution and schema travel together (KB Decision 100): 768x432 is the m3.0
+	# dataset; the default stays the m2 512x288 one. Anything else is refused.
+	var res := Vector2i(512, 288)
+	var schema := "m2.0"
+	if OS.has_environment("SR_RES"):
+		var wh := OS.get_environment("SR_RES").split("x")
+		res = Vector2i(int(wh[0]), int(wh[1]))
+		if res != Vector2i(768, 432):
+			printerr("GAME_RECORD FAIL SR_RES %s is not a pinned resolution (512x288 or 768x432)" % OS.get_environment("SR_RES"))
+			quit(1); return
+		schema = "m3.0"
 	var sid := DH.new_session_id()
 	var adapter := H.make_adapter(self, sid)
-	var ex := H.make_exporter(self, cam, main, adapter, sid)
-	var rec := DH.make_recorder(self, sid, DH.dataset_root(), ex, adapter, cam)
+	var ex := H.make_exporter(self, cam, main, adapter, sid, res)
+	var rec := DH.make_recorder(self, sid, DH.dataset_root(), ex, adapter, cam, res, schema)
 	for n in [adapter, ex, rec]:
 		n.process_mode = Node.PROCESS_MODE_ALWAYS
 	if not rec.begin():

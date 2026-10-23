@@ -29,7 +29,10 @@ VALIDATOR_VERSION = "m2-validator-1"
 
 # --- pinned conventions (dataset_manifest.md §0, frame_structure.md §0) --------
 SCHEMA_MIN = (2, 0)
-EXPECT_RESOLUTION = [512, 288]          # [W, H]
+EXPECT_RESOLUTION = [512, 288]          # [W, H] — schema m2
+#: Resolution is pinned PER MAJOR schema version: changing it is a major bump
+#: (dataset_manifest.md §0), so m3 is the 768x432 game dataset (KB Decision 100).
+EXPECT_RESOLUTION_BY_MAJOR = {2: [512, 288], 3: [768, 432]}
 EXPECT_TICK_RATE = 60
 
 # manifest structure key -> (npz member, numpy dtype str, channel count / None=2D)
@@ -235,7 +238,8 @@ def validate_session(
 
     # -- buffer contents (dtype/shape/range/dropout/consistency) --
     report.check("frame_buffers")
-    _check_frame_buffers(frames, session_dir, report, dropout_tolerance, frame_limit)
+    _check_frame_buffers(frames, session_dir, report, dropout_tolerance, frame_limit,
+                         header.get("resolution") if isinstance(header.get("resolution"), list) else EXPECT_RESOLUTION)
 
     # -- events --
     report.check("events")
@@ -317,8 +321,12 @@ def _check_header(header: dict, session_dir: Path, report: ValidationReport) -> 
         report.error("header.schema_too_old", f"schema_version {sv!r} < m{SCHEMA_MIN[0]}.{SCHEMA_MIN[1]}")
 
     res = header.get("resolution")
-    if res != EXPECT_RESOLUTION:
-        report.error("header.resolution", f"resolution {res!r} != {EXPECT_RESOLUTION} (a change is a major schema bump)")
+    sv = header.get("schema_version")
+    major = int(sv[1:].split(".")[0]) if isinstance(sv, str) and sv[1:].split(".")[0].isdigit() else 2
+    want = EXPECT_RESOLUTION_BY_MAJOR.get(major, EXPECT_RESOLUTION)
+    if res != want:
+        report.error("header.resolution", f"resolution {res!r} != {want} for schema major {major} "
+                     "(a change is a major schema bump)")
 
     fc = header.get("frame_count")
     if not isinstance(fc, int) or fc <= 0:
@@ -746,7 +754,9 @@ def _check_frame_buffers(
     report: ValidationReport,
     dropout_tolerance: int,
     frame_limit: int | None,
+    resolution: list = EXPECT_RESOLUTION,
 ) -> None:
+    # `resolution` is the header's, itself pinned per schema major by _check_header.
     res_frames = frames if frame_limit is None else frames[:frame_limit]
     dropout_hits = 0
     for f in res_frames:
@@ -781,7 +791,7 @@ def _check_frame_buffers(
             if arr.dtype.str != dtype_str:
                 report.error("buf.dtype",
                              f"{tag}: {member} dtype {arr.dtype.str} != {dtype_str}")
-            H, W = EXPECT_RESOLUTION[1], EXPECT_RESOLUTION[0]
+            H, W = resolution[1], resolution[0]
             want = (H, W) if chans is None else (H, W, chans)
             if arr.shape != want:
                 report.error("buf.shape", f"{tag}: {member} shape {arr.shape} != {want}")

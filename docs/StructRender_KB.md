@@ -3837,6 +3837,31 @@ All other parameters are unit-free. At 512x288 the scale factor is exactly 1, wh
 - Live, the capture, decode, motion and engine all scale with pixel count. The prediction is **about 20-25 fps**, below M10's ~30 fps target.
 - If measured below 30 fps, a high-resolution model would ship as an optional *quality mode*; the 512x288 model remains the real-time default. M10's verdict (Decision 98) is about the 512x288 path and is not revisited.
 
+### Decision 101: The Teacher's Look Changes With Resolution — Decision 100 Paused Before the Full Run (2026-10-23)
+
+**The pipeline works at 768x432.** A 30-frame trial session (variant 1, the same route as `ds_1790532989_38a03718`) went through the whole chain:
+- recording as m3.0 and M2 validation: PASS;
+- the teacher at native 768x432, about 5 s per frame including model load, about 3x the 512x288 rate (so about 2-2.5 days of GPU for the full dataset);
+- the alignment gates with the scaled pixel parameters: all 10 frames pass in both styles.
+
+Code: the recorder and exporter take resolution and schema as parameters (old defaults); the M2 validator pins resolution per schema major and checks buffer shapes against the header; `Thresholds.scaled_for` is the identity at 512x288. Tests: `data_pipeline/tests/test_resolution_m3.py`. The data-pipeline suite (128) and the Godot dataset (286 checks) and structural (7/7) tests pass.
+
+**But the same style settings do not give the same style.** On the same frames of the same route (`eval/reports/hr_trial/`):
+
+| stylisation (median, frames 0-9) | oil | watercolour |
+|---|---|---|
+| 512x288 | 0.510 | 0.271 |
+| 768x432 | 0.239 | **1.199** |
+
+Visually, oil at 768x432 is milder, with less stroke texture. Watercolour takes on a warm pink-brown cast across the walls and loses the coins' distinct colours. SD 1.5 was trained at 512 px, and img2img at another size is a different operating point. **"The same styles at higher resolution" is not what this data would be.**
+
+**Consequence for Decision 100's adoption test.** It compared the 768 model with the 512 model upscaled, both against the 768 targets. When the targets have a different look, that comparison is biased toward the 768 model by construction. The test is **withdrawn as written**, not run; a replacement must be decided before any training.
+
+**Paused for the user's decision before the 2-day teacher run.** Options:
+1. **Re-tune the styles at 768x432** to match today's look. This is a new pre-registered probe like Decision 88: pick, per style, the strength whose stylisation is closest to the 512x288 reference while passing every gate. About 1-2 h of GPU.
+2. **Accept the new look**, run as configured, and judge the high-resolution model on its own targets only. It would be a different-looking product, not a sharper version of today's.
+3. **Drop higher resolution.**
+
 ---
 
 ---

@@ -47,11 +47,11 @@ static func dataset_root() -> String:
 
 
 static func make_recorder(tree: SceneTree, session_id: String, root: String,
-		exporter: Node, adapter: Node, src_cam: Camera3D) -> Node:
+		exporter: Node, adapter: Node, src_cam: Camera3D,
+		res: Vector2i = Vector2i(W_RES, H_RES), schema: String = Recorder.SCHEMA_VERSION) -> Node:
 	var rec := Recorder.new()
 	tree.root.add_child(rec)
-	rec.configure(session_id, root, exporter, adapter, src_cam,
-		Vector2i(W_RES, H_RES), TICK_RATE)
+	rec.configure(session_id, root, exporter, adapter, src_cam, res, TICK_RATE, schema)
 	return rec
 
 

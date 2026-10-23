@@ -1,0 +1,13 @@
+{
+  "purpose": "KB Decision 101: 30-frame 768x432 (m3.0) trial of the Decision 100 pipeline, variant 1, frames 0-9 for teacher/alignment; compared with the 512x288 recording of the same route (ds_1790532989_38a03718).",
+  "trial_session": "artifacts/hr_trial (scratch, not committed)",
+  "m2_validator": "PASS (m3.0, 768x432, 30 frames)",
+  "teacher_seconds_for_10_frames_incl_model_load": {"oil_impasto": 54.0, "watercolor_bold_s055": 46.9},
+  "alignment_frames_0_9": {
+    "768x432": {"oil_impasto": {"boundary_f_min": 0.956, "spurious_max": 0.085, "silhouette_min": 1.0, "stylisation_median": 0.239},
+                "watercolor_bold_s055": {"boundary_f_min": 0.966, "spurious_max": 0.065, "silhouette_min": 0.935, "stylisation_median": 1.199}},
+    "512x288": {"oil_impasto": {"boundary_f_min": 0.937, "stylisation_median": 0.510},
+                "watercolor_bold_s055": {"boundary_f_min": 0.928, "stylisation_median": 0.271}}
+  },
+  "image": "same_frame_512_vs_768.png (top 512x288, bottom 768x432; native / oil / watercolour, frame 5)"
+}

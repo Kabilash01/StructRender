@@ -30,7 +30,7 @@ the *strong* target edge set (are the confident edges explained by the scene).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -38,6 +38,10 @@ from .adapter import FrameStructure
 from .imageops import dilate, gradient_magnitude, luma, nms_thin, shift, valid_shift_mask
 
 _NBRS = ((0, 1), (1, 0), (0, -1), (-1, 0))
+
+
+#: The resolution every pixel-unit threshold below was fixed at (KB Decisions 32, 100).
+REFERENCE_RESOLUTION = (512, 288)
 
 
 @dataclass(frozen=True)
@@ -121,6 +125,24 @@ class Thresholds:
 
     def as_dict(self) -> dict:
         return dict(self.__dict__)
+
+    def scaled_for(self, resolution) -> "Thresholds":
+        """The pixel-unit parameters rescaled to `resolution` (KB Decision 100).
+
+        `tolerance_px` and `min_entity_px` are stated at REFERENCE_RESOLUTION,
+        where every threshold was fixed (Decision 32). At a higher resolution the
+        same number of pixels is a smaller physical distance, so leaving them fixed
+        would silently tighten gates 1-3. Length scales linearly, area
+        quadratically; every other field is unit-free and is not touched. At the
+        reference resolution this is the identity.
+        """
+        w, h = int(resolution[0]), int(resolution[1])
+        rw, rh = REFERENCE_RESOLUTION
+        if w * rh != h * rw:
+            raise ValueError(f"resolution {w}x{h} is not the reference aspect {rw}x{rh}")
+        f = w / rw
+        return replace(self, tolerance_px=int(round(self.tolerance_px * f)),
+                       min_entity_px=int(round(self.min_entity_px * f * f)))
 
 
 # --------------------------------------------------------------------------- #
