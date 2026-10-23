@@ -3802,6 +3802,41 @@ Two items left open by Decisions 95 and 97/98, closed by measurement. No trainin
 
 The live path's S7 handling now matches the recording path's.
 
+### Decision 100: Higher-Resolution Game Dataset (768x432, schema m3.0) — Pre-Registered Before Any Data (2026-10-23)
+
+**Requested by the user** (2026-10-23, "best results", higher resolution; coding, recording and teacher generation only, **no training**). Written before any 768x432 frame exists, so that nothing below can be fitted to the data.
+
+**Resolution: 768x432** — 1.5x linear, 2.25x pixels, still 16:9. It divides by 8 (the SD 1.5 VAE; the current 288 is not a multiple of 64 either and works) and by 16 (the renderer's four 2x poolings: 432/16 = 27).
+
+**Schema.** Resolution is a pinned convention (`frame_structure.md` §0, `dataset_manifest.md` §0), and a shape change is a **major bump** by the manifest's own rule.
+- The new dataset is **m3.0**. Validated m2 datasets are immutable and untouched (KB §5).
+- Resolution and schema become explicit recorder/exporter parameters, **defaulting to today's values**, so every existing path behaves identically.
+- The M2 validator pins resolution **per major version** (m2 -> 512x288, m3 -> 768x432), instead of accepting any.
+
+**Data.**
+- The same 24 recorder variants (`STRUCTRENDER_SESSION_VARIANT` 1-24, the same seeds and so the same routes), 990 frames each.
+- The same split rule: sorted session ids, last 3 test, 3 before them val. It is applied mechanically to the new ids.
+- The same teacher styles and parameters: `oil_impasto` 0.50 (Decision 90) and `watercolor_bold_s055` (Decision 92), with the same seeds. SD runs at the target's native 768x432.
+
+**Alignment gates.** The four thresholds are **unchanged** (boundary_f 0.60, spurious 0.35, silhouette 0.60, stylisation 0.15). Two parameters are in **pixels**, and leaving them fixed would silently tighten the gates at higher resolution. They scale linearly with resolution relative to 512x288, as a rule fixed here:
+- `tolerance_px` 2 -> **3** (the same physical tolerance);
+- `min_entity_px` 200 -> **450** (area, x2.25).
+
+All other parameters are unit-free. At 512x288 the scale factor is exactly 1, which is tested. The per-frame exclusion rule of Decision 94 applies unchanged.
+
+**Adoption test for a high-resolution model** (written now, run only if the user later approves training):
+- On the new dataset's sealed test sessions, the 768x432 two-style B is compared with the current 512x288 two-style B, whose output is bicubic-upscaled to 768x432 and scored against the same 768x432 targets with the same history rule.
+- It is **adopted** only if **both styles** show:
+  - LPIPS lower by more than 2 sigma (one run each, `2*sqrt(2)*sd_rel`, with sd_rel taken from Model E's three seeds as in Decision 85);
+  - sharpness higher;
+  - flicker not higher by more than that same noise threshold.
+- Otherwise the 512x288 model stays the shipped one.
+
+**Expected costs, stated up front:**
+- Teacher generation is about 2.25x or more per frame, roughly 2 days of GPU for both styles (generation, not training).
+- Live, the capture, decode, motion and engine all scale with pixel count. The prediction is **about 20-25 fps**, below M10's ~30 fps target.
+- If measured below 30 fps, a high-resolution model would ship as an optional *quality mode*; the 512x288 model remains the real-time default. M10's verdict (Decision 98) is about the 512x288 path and is not revisited.
+
 ---
 
 ---
