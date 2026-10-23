@@ -10,6 +10,10 @@
 ## model (scripts/m10_live_temporal_parity.py).
 ##
 ## Env: SR_ENGINE_OIL, SR_ENGINE_WATERCOLOR, SR_DUMP_DIR, SR_FRAMES (default 120).
+## SR_SPAWN_AT=k spawns a second enemy in front of the camera at frame k (the game
+## itself spawns its only enemy on frame 1, before any pair exists), exercising
+## KB scenario S7 live: on frame k exactly that entity's pixels must have no
+## history in C++, matching export_frame's own entity-id map.
 extends SceneTree
 
 const H := preload("res://tests/structural/structural_harness.gd")
@@ -46,7 +50,16 @@ func _initialize() -> void:
 	var valid_mismatch := 0
 	var no_prev_total := 0
 	var failures := 0
+	var spawn_at := int(OS.get_environment("SR_SPAWN_AT")) if OS.has_environment("SR_SPAWN_AT") else -1
+	var spawned: Node3D = null
 	for i in frames:
+		if i == spawn_at:
+			spawned = load("res://scenes/enemy.tscn").instantiate()
+			spawned.name = "Enemy_spawn_test"
+			spawned.add_to_group(&"structrender_entity")
+			main.add_child(spawned)
+			var fwd := -cam.global_transform.basis.z
+			spawned.global_position = Vector3(cam.global_position.x + fwd.x * 5.0, 1.0, cam.global_position.z + fwd.z * 5.0)
 		var dir := Vector2(sin(i * 0.05), cos(i * 0.031))
 		for a in ["move_right", "move_left", "move_back", "move_forward"]:
 			Input.action_release(a)
@@ -68,6 +81,14 @@ func _initialize() -> void:
 		if bool(fs.motion_valid) != r.last_motion_valid():
 			valid_mismatch += 1
 		no_prev_total += r.last_no_prev_pixels()
+		if spawned != null and (i == spawn_at or i == spawn_at + 1):
+			var eid := int(adapter.instance_id_for(spawned))
+			var in_map := 0
+			for v in (fs.entity_id_map as PackedInt32Array):
+				if v == eid:
+					in_map += 1
+			print("SPAWN frame %d (%s): eid=%d pixels_in_export_id_map=%d cpp_no_prev_pixels=%d" % [
+				i, "spawn" if i == spawn_at else "next", eid, in_map, r.last_no_prev_pixels()])
 		var mc: PackedFloat32Array = r.last_motion()
 		var mg: PackedFloat32Array = fs.motion
 		var d := 0.0

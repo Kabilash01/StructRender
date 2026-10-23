@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #1: NVIDIA - NVIDIA GeForce RTX 5060 Laptop GPU
+
+{"event":"game_start","headless":false,"t_wall_s":0.000092,"tick":0,"total_coins":5}
+{"event":"enemy_spawned","name":"Enemy_0","t_wall_s":0.001708,"tick":1}
+SPAWN frame 60 (spawn): eid=8 pixels_in_export_id_map=998 cpp_no_prev_pixels=998
+SPAWN frame 61 (next): eid=8 pixels_in_export_id_map=998 cpp_no_prev_pixels=0
+PARITY frames=90 failures=0 motion_valid_mismatch=0 no_prev_pixels=998 max|motion C++ - GDScript|=0.00000032782555 (frame 61)
+{"event":"game_end","reason":"exit_tree","score":0,"t_wall_s":10.401174,"tick":1,"won":false}

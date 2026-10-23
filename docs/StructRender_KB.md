@@ -3779,6 +3779,29 @@ Together these mean the live frame IS the Decision 95 model's frame for the same
 
 **Verdict: M10's exit criteria are met** on this hardware, at the development resolution (512x288).
 
+### Decision 99: Last Two Open Checks Closed — Game Style Acquisition, and S7 Live (2026-10-23)
+
+Two items left open by Decisions 95 and 97/98, closed by measurement. No training was involved.
+
+**1. Style acquisition for the game models** (the M4 criterion, never computed for them). Script: `scripts/eval_game_style_acquisition.py`; report: `eval/reports/game_style_acquisition.json`.
+- **Setup.** The same quantities and the same gate as M4/M5, imported unchanged (Decisions 35, 41): colour-histogram travel off the native render, prediction against teacher target, gate >= 0.80. The models run with their one-frame history, on the Decision 95 test frames (2,968 per style).
+
+| model, style | hist travel ratio (gate >= 0.80) | PSNR vs target | do-nothing PSNR | gain |
+|---|---|---|---|---|
+| two-style B, oil | **0.995** PASS | 35.33 | 28.06 | +7.27 dB |
+| two-style B, watercolour | **0.987** PASS | 34.79 | 26.96 | +7.83 dB |
+| oil-only B, oil | 0.980 PASS | 35.43 | 28.06 | +7.37 dB |
+
+- **Both styles reproduce essentially all of the teacher's palette shift.** Sharpness (Decision 95: 0.946 / 0.937) confirms the shift was not bought by blurring.
+- **Consistency check:** the PSNRs reproduce Decision 95's exactly.
+
+**2. KB scenario S7 (spawned entity) live.** Decision 97 could not exercise it, because the game's only enemy spawns on frame 1. `live_temporal_parity.gd` gained `SR_SPAWN_AT`, which spawns a second enemy in front of the camera at frame 60 of a 90-frame lockstep run. Log: `eval/logs/m10_spawn_parity.log`.
+- **Frame 60:** the C++ runtime flagged **998** no-history pixels, exactly the **998** pixels `export_frame`'s own entity-id map gives that entity.
+- **Frame 61:** 0 such pixels, so the entity is tracked from its first transform on.
+- **Over the run:** motion parity C++ vs GDScript max 3.3e-7 UV, 0 failures, motion_valid agreed on all frames.
+
+The live path's S7 handling now matches the recording path's.
+
 ---
 
 ---
