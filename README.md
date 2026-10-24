@@ -1,10 +1,29 @@
 # StructRender
 
-Engine-grounded neural game rendering. Godot owns world truth; a lightweight
-CNN + window-transformer renderer (StructFormer) owns appearance; **EPAM**
-(Engine-Keyed Persistent Appearance Memory) — the headline research
-contribution — remembers a live entity's generated appearance and retrieves it
-when that same entity re-enters view.
+**Live demo: [structrender.vercel.app](https://structrender.vercel.app/)**
+
+A Spider-Man web-swinging game that runs in the browser (Three.js, WebGL2), with
+16 visual themes you can switch during play (hold **T**; press **H** in game for
+the controls). Its source is the separate repository
+[`Kabilash01/StructRender-Unity-`](https://github.com/Kabilash01/StructRender-Unity-).
+The game draws its themes with its own rendering pipeline in the browser; the
+web build does not run the neural renderer in this repository.
+
+![Street scene: the original look (top left) and the 16 themes](docs/lab_report/figures/collage_street.jpg)
+
+Unofficial fan project, not affiliated with Marvel, Disney, Sony or Insomniac
+Games. Spider-Man is a trademark of its owners.
+
+## This repository: neural rendering research
+
+Engine-grounded neural game rendering. Godot owns world truth; a small neural
+renderer owns appearance. The shipped renderer is a U-Net with two styles, oil
+and watercolour, running live in the Godot game through TensorRT at about 44 fps
+on an RTX 5060 Laptop GPU; the window-transformer design (StructFormer) never
+beat it, even at 32x the data. **EPAM** (Engine-Keyed Persistent Appearance
+Memory) — the headline research contribution — remembers a live entity's
+generated appearance and retrieves it when that same entity re-enters view; on
+this data it did not improve the output. Both negatives are reported as measured.
 
 ## Source of truth
 
@@ -38,7 +57,9 @@ checkpoints/    model artifacts (git-ignored)
 
 ## Current status
 
-**Milestone 4 — CNN/U-Net Baseline.** M0–M4 complete; see KB §10.
+**Complete.** M0–M10 done; see KB §10. Results, including the negative findings,
+are in [`docs/REPORT.md`](docs/REPORT.md); the lab report is in
+[`docs/lab_report/`](docs/lab_report/).
 
 ## Development
 
