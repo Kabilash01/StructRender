@@ -565,7 +565,7 @@ function appendices() {
       ["M10 ONNX → TensorRT → C++ → Godot", "Passes all exit criteria"],
     ], [55, 45], { size: 18 });
   h2("Appendix C: Supplementary Screenshots");
-  p("Figures C.1 and C.2 are collages of the screenshots in `docs/screenshots/`: one original frame and 16 visual themes, each shown for a street scene and a swinging scene. The scene is not the StructRender Godot game, and the themed images are not outputs of the StructRender model evaluated in Chapter 4, which renders only the oil and watercolour styles. Source of the screenshots and the method used to produce the themes: [DETAILS REQUIRED].");
+  p("Figures C.1 and C.2 show screenshots of https://structrender.vercel.app/, a separate project: a Spider-Man web-swinging game for the browser (Three.js), and an unofficial fan project not affiliated with Marvel, Disney, Sony or Insomniac Games. Its 16 themes are drawn by its own rendering pipeline, not by the StructRender model of Chapter 4. The originals are in `docs/screenshots/`.");
   figure(FIG("collage_street.jpg"), "Figure C.1: Street scene: the original frame (top left) and 16 visual themes", 6.2);
   figure(FIG("collage_swing.jpg"), "Figure C.2: Swinging scene: the original frame (top left) and 16 visual themes", 6.2);
 }
