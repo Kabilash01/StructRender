@@ -84,3 +84,10 @@ revisions recorded in `configs/teacher/*.json`.
 
 Generated targets inherit the CreativeML OpenRAIL-M use restrictions. They are
 gitignored, regenerable, and used only as offline supervision.
+
+## Contributors
+
+| Name | Contact |
+|---|---|
+| Kabilash S | [kabilash0108@gmail.com](mailto:kabilash0108@gmail.com) |
+| Pavitra P | [fspavitra11@gmail.com](mailto:fspavitra11@gmail.com) |
