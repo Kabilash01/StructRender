@@ -15,7 +15,6 @@ const ROOT = path.resolve(__dirname, "../../..");
 const FIG = (f) => path.join(ROOT, "docs/lab_report/figures", f);
 const TEXT_W = 9026; // A4 width 11906 - 2 x 1440 margins, in DXA
 const FONT = "Times New Roman";
-const TBD = "[DETAILS REQUIRED]";
 
 // ------------------------------------------------------------------ references (IEEE)
 // Each entry was checked against Crossref (DOI) or the arXiv API record before use.
@@ -77,7 +76,7 @@ function runs(text, base = {}) {
     if (m.index > last) out.push(new TextRun({ text: text.slice(last, m.index), ...base }));
     const t = m[0];
     if (t.startsWith("**")) out.push(...runs(t.slice(2, -2), { ...base, bold: true }));
-    else if (t.startsWith("`")) out.push(new TextRun({ text: t.slice(1, -1), ...base, font: "Courier New", size: base.size ? base.size - 2 : 21 }));
+    else if (t.startsWith("`")) out.push(new TextRun({ text: t.slice(1, -1), ...base, font: FONT }));
     else if (t.startsWith("[@")) out.push(new TextRun({ text: cite(t.slice(1, -1)), ...base }));
     else if (t.startsWith("*")) out.push(...runs(t.slice(1, -1), { ...base, italics: true }));
     else if (t.startsWith("_{")) out.push(new TextRun({ text: t.slice(2, -1), ...base, subScript: true }));
@@ -167,22 +166,62 @@ function table(caption, headers, rows, widths, opts = {}) {
 const pageBreak = () => add(new Paragraph({ children: [new PageBreak()] }));
 
 // =================================================================== CONTENT
-// ------------------------------------------------------------------ title page
+// ------------------------------------------------------------------ title pages (SRIHER template: H5_Project_Report.docx)
+// Cover, inner title page and Bonafide Certificate, with the template's logo, fonts, sizes and 1.5 line spacing.
+const REPORT_TITLE = "StructRender: Engine-Grounded Real-Time Neural Rendering of a Game in Learned Painterly Styles";
+const STUDENTS = ["KABILASH.S-E0323036", "PAVITRA.P-E0323038"];
 const title = [];
-const tp = (t, o = {}, r = {}) => title.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120, line: 300 }, ...o,
-  children: [new TextRun({ text: t, font: FONT, ...r })] }));
-tp(TBD + " — Name of the University / Institute", { spacing: { before: 600, after: 80 } }, { size: 28, bold: true });
-tp(TBD + " — Department", {}, { size: 24 });
-tp("LABORATORY PROJECT REPORT", { spacing: { before: 900, after: 240 } }, { size: 26, bold: true });
-tp("StructRender: Engine-Grounded Real-Time", { spacing: { after: 60 } }, { size: 36, bold: true });
-tp("Neural Rendering of a Game", { spacing: { after: 60 } }, { size: 36, bold: true });
-tp("in Learned Painterly Styles", { spacing: { after: 600 } }, { size: 36, bold: true });
-tp("Submitted by", {}, { size: 24, italics: true });
-tp(TBD + " — Student name(s)", {}, { size: 26, bold: true });
-tp("Register number: " + TBD, { spacing: { after: 400 } }, { size: 24 });
-tp("Course: " + TBD, {}, { size: 24 });
-tp("Under the guidance of " + TBD + " — Supervisor name and designation", { spacing: { after: 900 } }, { size: 24 });
-tp("October 2026", {}, { size: 26, bold: true });
+const tpl = (t, r = {}, o = {}) => title.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { line: 360, after: 160 }, ...o,
+  children: t ? [new TextRun({ text: t, font: FONT, size: 24, ...r })] : [] }));
+const logo = (pageBreakBefore) => title.push(new Paragraph({ alignment: AlignmentType.CENTER, pageBreakBefore,
+  spacing: { line: 360, after: 240 }, children: [new ImageRun({ type: "png", data: fs.readFileSync(FIG("sriher_logo.png")),
+    transformation: { width: 602, height: 120 }, altText: { title: "SRIHER logo", description: "Sri Ramachandra Institute of Higher Education and Research", name: "sriher_logo" } })] }));
+function titlePage(pageBreakBefore) {
+  logo(pageBreakBefore);
+  tpl("");
+  tpl(REPORT_TITLE, { size: 32, bold: true }, { spacing: { line: 360, after: 240 } });
+  tpl("ADA23DLU06 - RECENT TRENDS IN DEEP LEARNING LABORATORY", { bold: true, size: 28 });
+  tpl("PROJECT REPORT", { bold: true });
+  tpl("");
+  tpl("Submitted by", { bold: true, italics: true });
+  STUDENTS.forEach((n) => tpl(n, { bold: true, size: 28 }));
+  tpl("");
+  tpl("In partial fulfilment for the award of the degree of", { bold: true, italics: true });
+  ["BACHELOR OF TECHNOLOGY", "in", "COMPUTER SCIENCE AND ENGINEERING", "(Artificial Intelligence and Data Analytics)",
+    "Sri Ramachandra Faculty of Engineering and Technology",
+    "Sri Ramachandra Institute of Higher Education and Research, Porur, Chennai -600116"].forEach((t) => tpl(t, { bold: true }));
+  tpl("");
+  tpl("NOVEMBER, 2026", { bold: true });
+}
+titlePage(false);
+titlePage(true);
+logo(true);
+tpl("");
+tpl("BONAFIDE CERTIFICATE", { bold: true, size: 32 });
+tpl("");
+title.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { line: 360, after: 160 }, children: [
+  new TextRun({ text: "Certified that this project report ", font: FONT, size: 24 }),
+  new TextRun({ text: "“" + REPORT_TITLE + "”", font: FONT, size: 24, bold: true }),
+  new TextRun({ text: " is the Bonafide record of work done by ", font: FONT, size: 24 }),
+  new TextRun({ text: "“" + STUDENTS[0] + "”", font: FONT, size: 24, bold: true }),
+  new TextRun({ text: " and ", font: FONT, size: 24 }),
+  new TextRun({ text: "“" + STUDENTS[1] + "”", font: FONT, size: 24, bold: true }),
+  new TextRun({ text: " who carried out the work under my supervision.", font: FONT, size: 24 }),
+] }));
+tpl("", {}, { spacing: { line: 360, after: 240 } });
+tpl("", {}, { spacing: { line: 360, after: 240 } });
+title.push(new Paragraph({ spacing: { line: 360, after: 240 }, tabStops: [{ type: TabStopType.LEFT, position: 5400 }], children: [
+  new TextRun({ text: "Signature of the Supervisor", font: FONT, size: 24, bold: true }),
+  new TextRun({ text: "\tSignature of External Examiner", font: FONT, size: 24, bold: true })] }));
+tpl("", {}, { spacing: { line: 360, after: 240 } });
+// supervisor block: plain paragraphs held to the template's 4464-DXA width by a right indent (no table, no border)
+["Dr. V. Vanitha", "Associate Professor,",
+  "Department of Computer Science and Engineering (AIML), Sri Ramachandra Faculty of Engineering and Technology,",
+  "SRIHER, Porur, Chennai-600 116."].forEach((t) => title.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED,
+  indent: { right: TEXT_W - 4464 }, spacing: { line: 360, after: 0 }, children: [new TextRun({ text: t, font: FONT, size: 24 })] })));
+tpl("", {}, { spacing: { line: 360, after: 0 } });
+title.push(new Paragraph({ spacing: { line: 360 }, children: [new TextRun({ text: "Evaluation Date: ", font: FONT, size: 24, bold: true }),
+  new TextRun({ text: "2 November 2026", font: FONT, size: 24 })] }));
 
 // ------------------------------------------------------------------ front matter
 const front = [];
@@ -380,7 +419,7 @@ p("All recording, teacher generation, training, evaluation and live deployment r
 table("Table 3.5: Hardware used for all experiments",
   ["Component", "Specification"],
   [
-    ["Machine", "Laptop — make and model " + TBD],
+    ["Machine", "ASUS ROG Strix G16 (2025) laptop"],
     ["CPU", "AMD Ryzen 9 8940HX, 16 cores / 32 threads"],
     ["System memory", "30 GiB visible to the operating system"],
     ["GPU", "NVIDIA GeForce RTX 5060 Laptop GPU, 8 GB (Blackwell, compute capability 12.0), driver 610.57.04"],
@@ -622,7 +661,7 @@ const doc = new Document({
       { id: "Equation", name: "Equation", basedOn: "Normal",
         run: { font: FONT, size: 24, italics: false }, paragraph: { spacing: { before: 120, after: 160, line: 300 }, alignment: AlignmentType.LEFT } },
       { id: "Code", name: "Code", basedOn: "Normal",
-        run: { font: "Courier New", size: 17 }, paragraph: { alignment: AlignmentType.LEFT, spacing: { line: 240, before: 0, after: 0 }, indent: { left: 284 } } },
+        run: { font: FONT, size: 17 }, paragraph: { alignment: AlignmentType.LEFT, spacing: { line: 240, before: 0, after: 0 }, indent: { left: 284 } } },
       { id: "TOC1", name: "toc 1", basedOn: "Normal", next: "Normal",
         run: { font: FONT, size: 24 }, paragraph: { alignment: AlignmentType.LEFT, spacing: { line: 264, before: 0, after: 40 } } },
       { id: "TOC2", name: "toc 2", basedOn: "Normal", next: "Normal",
